@@ -1,8 +1,6 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
+import React, { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/components/auth/auth-provider"
@@ -10,17 +8,15 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
 
 export default function SignUpPage() {
-  const [email, setEmail] = useState("")
-  const [fullname, setFullname] = useState("")
+  const [username, setUsername] = useState("") // Bỏ email
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
-  const [phone, setPhone] = useState("")
-  const [address, setAddress] = useState("")
-  const [skinType, setSkinType] = useState("")
   const [error, setError] = useState("")
   const { signUp, isLoading } = useAuth()
+  const [isChecked, setIsChecked] = useState(false)
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -33,7 +29,7 @@ export default function SignUpPage() {
     }
 
     try {
-      await signUp({ email, fullname, password, phone, address, skinType })
+      await signUp({ username, password }) // Bỏ email
       router.push("/login")
     } catch (err) {
       setError("Sign up failed")
@@ -52,24 +48,13 @@ export default function SignUpPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="username">Username</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="name@example.com"
-                value={email}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="fullname">Full Name</Label>
-              <Input
-                id="fullname"
+                id="username"
                 type="text"
-                placeholder="John Doe"
-                value={fullname}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFullname(e.target.value)}
+                placeholder="johndoe"
+                value={username}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)}
                 required
               />
             </div>
@@ -93,35 +78,22 @@ export default function SignUpPage() {
                 required
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone</Label>
-              <Input
-                id="phone"
-                type="text"
-                placeholder="123-456-7890"
-                value={phone}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPhone(e.target.value)}
+            <div className="flex items-center gap-3">
+              <Checkbox
+                className="w-5 h-5"
+                checked={isChecked}
+                onCheckedChange={(checked: boolean) => setIsChecked(checked)}
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="address">Address</Label>
-              <Input
-                id="address"
-                type="text"
-                placeholder="123 Main St"
-                value={address}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddress(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="skinType">Skin Type</Label>
-              <Input
-                id="skinType"
-                type="text"
-                placeholder="Normal"
-                value={skinType}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSkinType(e.target.value)}
-              />
+              <p className="inline-block font-normal text-gray-500 dark:text-gray-400">
+                By creating an account means you agree to the{" "}
+                <span className="text-gray-800 dark:text-white/90">
+                  Terms and Conditions,
+                </span>{" "}
+                and our{" "}
+                <span className="text-gray-800 dark:text-white">
+                  Privacy Policy
+                </span>
+              </p>
             </div>
 
             {error && <p className="text-sm text-destructive">{error}</p>}

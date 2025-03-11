@@ -13,7 +13,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { FcGoogle } from "react-icons/fc"
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("")
+  const [username, setUsername] = useState("") // Thay email thành username
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const { login, loginWithGoogle, isLoading } = useAuth()
@@ -24,9 +24,9 @@ export default function LoginPage() {
     setError("")
 
     try {
-      await login(email, password)
+      await login(username, password) // Thay email thành username
     } catch (err) {
-      setError("Invalid email or password")
+      setError("Invalid username or password") // Cập nhật thông báo lỗi
     }
   }
 
@@ -44,19 +44,19 @@ export default function LoginPage() {
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">Sign in to GlowCorner</CardTitle>
           <CardDescription className="text-center">
-            Enter your email and password to access your account
+            Enter your username and password to access your account
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="username">Username</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="name@example.com"
-                value={email}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+                id="username"
+                type="text"
+                placeholder="yourusername"
+                value={username}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)} // Thay setEmail thành setUsername
                 required
               />
             </div>
@@ -99,7 +99,7 @@ export default function LoginPage() {
         </CardContent>
         <CardFooter className="flex justify-center">
           <p className="text-sm text-muted-foreground">
-            Don&apos;t have an account?{" "}
+            Don't have an account?{" "}
             <Link href="/signup" className="text-primary hover:underline">
               Sign up
             </Link>
@@ -109,4 +109,3 @@ export default function LoginPage() {
     </div>
   )
 }
-

@@ -7,8 +7,7 @@ import { useRouter } from "next/navigation"
 
 type User = {
   id: string
-  name: string
-  email: string
+  username: string
   image?: string
   skinType?: string
   loyaltyPoints: number
@@ -17,9 +16,9 @@ type User = {
 type AuthContextType = {
   user: User | null
   isLoading: boolean
-  login: (email: string, password: string) => Promise<void>
+  login: (username: string, password: string) => Promise<void>
   loginWithGoogle: () => Promise<void>
-  signUp: (data: { email: string, fullname: string, password: string, phone: string, address: string, skinType: string }) => Promise<void>
+  signUp: (data: { username: string, password: string }) => Promise<void>
   logout: () => void
 }
 
@@ -48,15 +47,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false)
   }, [])
 
-  const login = async (email: string, password: string) => {
+  const login = async (username: string, password: string) => { // Thay email bằng username
     setIsLoading(true)
     try {
       // This would be an API call in a real application
       // Simulating a successful login for demo purposes
       const mockUser: User = {
         id: "user-1",
-        name: "Jane Doe",
-        email,
+        username, // Thay email bằng username
         loyaltyPoints: 150,
         skinType: "combination",
       }
@@ -79,8 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Simulating a successful login for demo purposes
       const mockUser: User = {
         id: "google-user-1",
-        name: "Google User",
-        email: "googleuser@example.com",
+        username: "googleuser", // Thay email và name bằng username
         image: "/placeholder.svg?height=40&width=40",
         loyaltyPoints: 75,
       }
@@ -96,17 +93,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const signUp = async (data: { email: string, fullname: string, password: string, phone: string, address: string, skinType: string }) => {
+  const signUp = async (data: { username: string, password: string }) => { // Thay email và fullname bằng username
     setIsLoading(true)
     try {
       // This would be an API call in a real application
       // Simulating a successful sign-up for demo purposes
       const mockUser: User = {
         id: "user-2",
-        name: data.fullname,
-        email: data.email,
+        username: data.username, // Thay email và fullname bằng username
         loyaltyPoints: 0,
-        skinType: data.skinType,
       }
 
       setUser(mockUser)
@@ -132,4 +127,3 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     </AuthContext.Provider>
   )
 }
-
