@@ -19,11 +19,11 @@ const categories = ["All", "Cleanser", "Toner", "Serum", "Moisturizer", "Mask", 
 const skinTypes = ["All", "Dry", "Oily", "Combination", "Normal", "Sensitive"]
 
 interface Product {
-  id: string;
-  name: string;
-  category: string;
-  skinType: string[];
+  _id: string;
+  productName: string;
+  description: string;
   price: number;
+  category: string;
   rating: number;
   image: string;
 }
@@ -43,8 +43,6 @@ export default function ShopPage() {
         setProducts(data)
       } catch (error) {
         console.error("Error fetching products:", error)
-        // Sử dụng dữ liệu tĩnh khi API không có dữ liệu trả về
-        setProducts(staticProducts)
       }
     }
 
@@ -53,17 +51,12 @@ export default function ShopPage() {
 
   const filteredProducts = products.filter((product) => {
     // Filter by search query
-    if (searchQuery && !product.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+    if (searchQuery && !product.productName.toLowerCase().includes(searchQuery.toLowerCase())) {
       return false
     }
 
     // Filter by category
     if (selectedCategory !== "All" && product.category !== selectedCategory) {
-      return false
-    }
-
-    // Filter by skin type
-    if (selectedSkinType !== "All" && !product.skinType.includes(selectedSkinType)) {
       return false
     }
 
@@ -260,12 +253,12 @@ export default function ShopPage() {
           {sortedProducts.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {sortedProducts.map((product) => (
-                <Card key={product.id} className="overflow-hidden group">
-                  <Link href={`/shop/product/${product.id}`} className="block">
+                <Card key={product._id} className="overflow-hidden group">
+                  <Link href={`/shop/product/${product._id}`} className="block">
                     <div className="aspect-square relative">
                       <Image
                         src={product.image || "/placeholder.svg"}
-                        alt={product.name}
+                        alt={product.productName}
                         fill
                         className="object-cover transition-transform group-hover:scale-105"
                       />
@@ -274,15 +267,15 @@ export default function ShopPage() {
                   <CardContent className="p-4">
                     <div className="flex justify-between items-start">
                       <div>
-                        <Link href={`/shop/product/${product.id}`} className="hover:underline">
-                          <h3 className="font-medium">{product.name}</h3>
+                        <Link href={`/shop/product/${product._id}`} className="hover:underline">
+                          <h3 className="font-medium">{product.productName}</h3>
                         </Link>
                         <p className="text-sm text-muted-foreground">{product.category}</p>
                       </div>
                       <p className="font-semibold">${product.price}</p>
                     </div>
                     <div className="mt-2 flex items-center text-sm">
-                      <span className="text-muted-foreground">For {product.skinType.join(", ")} skin</span>
+                      <span className="text-muted-foreground">{product.description}</span>
                     </div>
                   </CardContent>
                   <CardFooter className="p-4 pt-0">
@@ -313,26 +306,3 @@ export default function ShopPage() {
     </div>
   )
 }
-
-const staticProducts: Product[] = [
-  {
-    id: "1",
-    name: "Cleanser",
-    category: "Cleanser",
-    skinType: ["All"],
-    price: 10,
-    rating: 4.5,
-    image: "/images/cleanser.jpg",
-  },
-  {
-    id: "2",
-    name: "Toner",
-    category: "Toner",
-    skinType: ["All"],
-    price: 15,
-    rating: 4.0,
-    image: "/images/toner.jpg",
-  },
-  // Thêm các sản phẩm tĩnh khác ở đây
-]
-

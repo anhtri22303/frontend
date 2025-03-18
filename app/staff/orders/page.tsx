@@ -1,14 +1,46 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, SetStateAction } from "react"
+import { useRouter } from "next/navigation"
 import { Search, MoreHorizontal, Filter, Download } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
+import { fetchOrders, deleteOrder, fetchOrdersByCustomer, fetchOrdersByDate, fetchOrderById, fetchOrdersByStatus } from "@/app/api/orderApi"
+
+interface Order {
+  id: string
+  customerID: string
+  orderDate: string
+  status: string
+  payment: string
+  amount: number
+}
 
 export default function OrdersPage() {
+  const router = useRouter()
   const [selectedOrders, setSelectedOrders] = useState<string[]>([])
+  const [orders, setOrders] = useState<Order[]>([])
+  const [customerIdSearch, setCustomerIdSearch] = useState("")
+  const [orderDateSearch, setOrderDateSearch] = useState("")
+  const [orderIdSearch, setOrderIdSearch] = useState("")
+  const [statusFilter, setStatusFilter] = useState("")
+
+  useEffect(() => {
+    loadOrders()
+  }, [])
+
+  const loadOrders = async () => {
+    try {
+      const data = await fetchOrders()
+      setOrders(data)
+    } catch (error) {
+      console.error("Error loading orders:", error)
+    }
+  }
 
   const toggleOrderSelection = (orderId: string) => {
     if (selectedOrders.includes(orderId)) {
@@ -18,64 +50,39 @@ export default function OrdersPage() {
     }
   }
 
-  const orders = [
-    {
-      id: "ORD-001",
-      customer: "John Doe",
-      date: "Mar 2, 2023",
-      status: "Completed",
-      payment: "Credit Card",
-      amount: "$125.00",
-    },
-    {
-      id: "ORD-002",
-      customer: "Jane Smith",
-      date: "Mar 1, 2023",
-      status: "Processing",
-      payment: "PayPal",
-      amount: "$75.50",
-    },
-    {
-      id: "ORD-003",
-      customer: "Robert Johnson",
-      date: "Feb 28, 2023",
-      status: "Shipped",
-      payment: "Credit Card",
-      amount: "$250.00",
-    },
-    {
-      id: "ORD-004",
-      customer: "Emily Davis",
-      date: "Feb 27, 2023",
-      status: "Cancelled",
-      payment: "Debit Card",
-      amount: "$45.99",
-    },
-    {
-      id: "ORD-005",
-      customer: "Michael Wilson",
-      date: "Feb 26, 2023",
-      status: "Completed",
-      payment: "Credit Card",
-      amount: "$189.99",
-    },
-    {
-      id: "ORD-006",
-      customer: "Sarah Thompson",
-      date: "Feb 25, 2023",
-      status: "Refunded",
-      payment: "PayPal",
-      amount: "$67.25",
-    },
-    {
-      id: "ORD-007",
-      customer: "David Martinez",
-      date: "Feb 24, 2023",
-      status: "Processing",
-      payment: "Credit Card",
-      amount: "$129.50",
-    },
-  ]
+  const handleSearch = async (type: string) => {
+    try {
+      let data
+      switch (type) {
+        case 'customer':
+          data = await fetchOrdersByCustomer(customerIdSearch)
+          break
+        case 'date':
+          data = await fetchOrdersByDate(orderDateSearch)
+          break
+        case 'order':
+          data = await fetchOrderById(orderIdSearch)
+          break
+        case 'status':
+          data = await fetchOrdersByStatus(statusFilter)
+          break
+      }
+      setOrders(Array.isArray(data) ? data : [data])
+    } catch (error) {
+      console.error("Error searching orders:", error)
+    }
+  }
+
+  const handleDeleteOrder = async (orderId: string) => {
+    if (confirm("Are you sure you want to delete this order?")) {
+      try {
+        await deleteOrder(orderId)
+        loadOrders()
+      } catch (error) {
+        console.error("Error deleting order:", error)
+      }
+    }
+  }
 
   return (
     <>
@@ -87,21 +94,50 @@ export default function OrdersPage() {
         </Button>
       </div>
 
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
-        <div className="relative w-full md:w-96">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input type="search" placeholder="Search orders..." className="pl-8 w-full" />
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+        <div className="relative">
+          <Input
+            placeholder="Search by Customer ID"
+            value={customerIdSearch}
+            onChange={(e: { target: { value: SetStateAction<string> } }) => setCustomerIdSearch(e.target.value)}
+            onKeyDown={(e: { key: string }) => e.key === "Enter" && handleSearch('customer')}
+          />
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
-            <Filter className="mr-2 h-4 w-4" />
-            Filter
-          </Button>
-          <Button variant="outline" size="sm">
-            Bulk Actions
-          </Button>
+        <div className="relative">
+          <Input
+            type="date"
+            value={orderDateSearch}
+            onChange={(e: { target: { value: SetStateAction<string> } }) => setOrderDateSearch(e.target.value)}
+            onKeyDown={(e: { key: string }) => e.key === "Enter" && handleSearch('date')}
+          />
         </div>
+        <div className="relative">
+          <Input
+            placeholder="Search by Order ID"
+            value={orderIdSearch}
+            onChange={(e: { target: { value: SetStateAction<string> } }) => setOrderIdSearch(e.target.value)}
+            onKeyDown={(e: { key: string }) => e.key === "Enter" && handleSearch('order')}
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={(value) => {
+          setStatusFilter(value)
+          handleSearch('status')
+        }}>
+          <SelectTrigger>
+            <SelectValue placeholder="Filter by Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Completed">Completed</SelectItem>
+            <SelectItem value="Processing">Processing</SelectItem>
+            <SelectItem value="Shipped">Shipped</SelectItem>
+            <SelectItem value="Cancelled">Cancelled</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
+
+      <Button onClick={() => router.push('/staff/orders/create')} className="mb-4">
+        Create New Order
+      </Button>
 
       <div className="rounded-lg border shadow-sm">
         <div className="overflow-x-auto">
@@ -123,7 +159,7 @@ export default function OrdersPage() {
                   />
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-medium">Order ID</th>
-                <th className="px-4 py-3 text-left text-sm font-medium">Customer</th>
+                <th className="px-4 py-3 text-left text-sm font-medium">Customer ID</th>
                 <th className="px-4 py-3 text-left text-sm font-medium">Date</th>
                 <th className="px-4 py-3 text-left text-sm font-medium">Status</th>
                 <th className="px-4 py-3 text-left text-sm font-medium">Payment</th>
@@ -143,8 +179,8 @@ export default function OrdersPage() {
                     />
                   </td>
                   <td className="px-4 py-3 text-sm font-medium">#{order.id}</td>
-                  <td className="px-4 py-3 text-sm">{order.customer}</td>
-                  <td className="px-4 py-3 text-sm">{order.date}</td>
+                  <td className="px-4 py-3 text-sm">{order.customerID}</td>
+                  <td className="px-4 py-3 text-sm">{order.orderDate}</td>
                   <td className="px-4 py-3 text-sm">
                     <span
                       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
@@ -163,7 +199,7 @@ export default function OrdersPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-sm">{order.payment}</td>
-                  <td className="px-4 py-3 text-right text-sm font-medium">{order.amount}</td>
+                  <td className="px-4 py-3 text-right text-sm font-medium">${order.amount.toFixed(2)}</td>
                   <td className="px-4 py-3 text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -173,9 +209,15 @@ export default function OrdersPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>View Details</DropdownMenuItem>
-                        <DropdownMenuItem>Update Status</DropdownMenuItem>
-                        <DropdownMenuItem>Print Invoice</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => router.push(`/staff/orders/${order.id}`)}>
+                          View Details
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => router.push(`/staff/orders/edit/${order.id}`)}>
+                          Edit Order
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteOrder(order.id)}>
+                          Delete Order
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </td>
@@ -186,16 +228,8 @@ export default function OrdersPage() {
         </div>
         <div className="flex items-center justify-between px-4 py-3 border-t">
           <div className="text-sm text-muted-foreground">
-            Showing <span className="font-medium">1</span> to <span className="font-medium">7</span> of{" "}
-            <span className="font-medium">7</span> orders
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" disabled>
-              Previous
-            </Button>
-            <Button variant="outline" size="sm" disabled>
-              Next
-            </Button>
+            Showing <span className="font-medium">1</span> to <span className="font-medium">{orders.length}</span> of{" "}
+            <span className="font-medium">{orders.length}</span> orders
           </div>
         </div>
       </div>

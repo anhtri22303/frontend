@@ -139,7 +139,7 @@ export default function Header() {
                 <Button variant="ghost" size="icon" className="rounded-full">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={user.image || ""} alt={user.username} />
-                    <AvatarFallback>{user.username.charAt(0)}</AvatarFallback>
+                    <AvatarFallback>{user.username ? user.username.charAt(0) : "U"}</AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
@@ -172,4 +172,3 @@ export default function Header() {
     </header>
   )
 }
-

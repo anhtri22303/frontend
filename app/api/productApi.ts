@@ -1,34 +1,77 @@
 import axiosInstance from "@/lib/axiosInstance"
 
-const staticProducts = [
-  {
-    id: "1",
-    name: "Cleanser",
-    category: "Cleanser",
-    skinType: ["All"],
-    price: 10,
-    rating: 4.5,
-    image: "/images/cleanser.jpg",
-  },
-  {
-    id: "2",
-    name: "Toner",
-    category: "Toner",
-    skinType: ["All"],
-    price: 15,
-    rating: 4.0,
-    image: "/images/toner.jpg",
-  },
-  // Thêm các sản phẩm tĩnh khác ở đây
-]
-
 export const fetchProducts = async () => {
   try {
     const response = await axiosInstance.get("/products")
+    console.log("Get success")
     return response.data
   } catch (error) {
     console.error("Error fetching products:", error)
-    // Trả về dữ liệu tĩnh khi có lỗi
-    return staticProducts
+    return []
+  }
+}
+
+interface ProductCreate {
+  productID: string
+  productName: string
+  description: string
+  price: number
+  category: string
+  rating: number
+  image_url: string
+}
+
+export const createProduct = async (product: ProductCreate) => {
+  try {
+    const response = await axiosInstance.post("/products", product)
+    console.log("Create success")
+    return response.data
+  } catch (error) {
+    console.error("Error creating product:", error)
+    throw error
+  }
+}
+
+export const updateProduct = async (id: string, product: { name: string, category: string, price: string, stock: number, status: string }) => {
+  try {
+    const response = await axiosInstance.put(`/products/${id}`, product)
+    console.log("Update success")
+    return response.data
+  } catch (error) {
+    console.error("Error updating product:", error)
+    throw error
+  }
+}
+
+export const deleteProduct = async (id: string) => {
+  try {
+    const response = await axiosInstance.delete(`/products/${id}`)
+    console.log("Delete success")
+    return response.data
+  } catch (error) {
+    console.error("Error deleting product:", error)
+    throw error
+  }
+}
+
+export const fetchProductsByCategory = async (category: string) => {
+  try {
+    const response = await axiosInstance.get(`/products/category/${category}`)
+    console.log("Get by category success")
+    return response.data
+  } catch (error) {
+    console.error("Error fetching products by category:", error)
+    return []
+  }
+}
+
+export const fetchProductsByName = async (productName: string) => {
+  try {
+    const response = await axiosInstance.get(`/products/name/${productName}`)
+    console.log("Get by name success")
+    return response.data
+  } catch (error) {
+    console.error("Error fetching products by name:", error)
+    return []
   }
 }

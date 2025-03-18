@@ -11,28 +11,81 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { FcGoogle } from "react-icons/fc"
+import { login, loginWithGoogle } from "@/app/api/authApi"
 
 export default function LoginPage() {
-  const [username, setUsername] = useState("") // Thay email thành username
+  const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
-  const { login, loginWithGoogle, isLoading } = useAuth()
+  const { isLoading } = useAuth()
   const router = useRouter()
 
+  // Add this function at the top of your component
+  const saveAuthToken = (token: string) => {
+    // Save to localStorage
+    localStorage.setItem('jwtToken', token)
+    
+    // Save to cookies (expires in 7 days)
+    document.cookie = `jwtToken=${token}; path=/; max-age=${7 * 24 * 60 * 60}`
+  }
+
+  // Modify handleSubmit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
-
+  
     try {
-      await login(username, password) // Thay email thành username
+      const response = await login({
+        email: username,
+        password: password
+      })
+      
+      if (response.token) {
+        saveAuthToken(response.token)
+        
+        // Redirect based on user role
+        switch (response.role) {
+          case 'MANAGER':
+            router.push('/manager')
+            break
+          case 'STAFF':
+            router.push('/staff')
+            break
+          case 'CUSTOMER':
+            router.push('/')
+            break
+          default:
+            router.push('/')
+        }
+      }
     } catch (err) {
-      setError("Invalid username or password") // Cập nhật thông báo lỗi
+      setError("Invalid username or password")
     }
   }
 
+  // Modify handleGoogleLogin
   const handleGoogleLogin = async () => {
     try {
-      await loginWithGoogle()
+      const response = await loginWithGoogle({ email: "" })
+      
+      if (response.token) {
+        saveAuthToken(response.token)
+        
+        // Same role-based redirect for Google login
+        switch (response.role) {
+          case 'MANAGER':
+            router.push('/manager')
+            break
+          case 'STAFF':
+            router.push('/staff')
+            break
+          case 'CUSTOMER':
+            router.push('/')
+            break
+          default:
+            router.push('/')
+        }
+      }
     } catch (err) {
       setError("Google login failed")
     }
