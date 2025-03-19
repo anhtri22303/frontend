@@ -1,73 +1,69 @@
-"use client"
+"use client";
 
-import type React from "react"
-
-import { useState } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { useAuth } from "@/components/auth/auth-provider"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { FcGoogle } from "react-icons/fc"
-import { login, loginWithGoogle } from "@/app/api/authApi"
-import router from "next/router"
+import type React from "react";
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/components/auth/auth-provider";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { FcGoogle } from "react-icons/fc";
+import { login, loginWithGoogle } from "@/app/api/authApi";
 
 export default function LoginPage() {
-  const [username, setUsername] = useState("")
-  const [password, setPassword] = useState("")
-  const [error, setError] = useState("")
-  const { isLoading } = useAuth()
-  const router = useRouter()
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const { isLoading } = useAuth();
+  const router = useRouter();
 
   const saveAuthToken = (token: string) => {
-    // Save to localStorage
-    localStorage.setItem('jwtToken', token)
-    // Save to cookies (expires in 7 days)
-    document.cookie = `jwtToken=${token}; path=/; max-age=${7 * 24 * 60 * 60}`
-  }
+    localStorage.setItem("jwtToken", token);
+    document.cookie = `jwtToken=${token}; path=/; max-age=${7 * 24 * 60 * 60}`;
+  };
 
-  // Modify handleSubmit
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
-  
+    e.preventDefault();
+    setError("");
     try {
       const response = await login({
         email: username,
-        password: password
-      })
-      
-      if (response.data?.jwtToken) {
-        saveAuthToken(response.data.jwtToken)
-        
-        // Store additional user info if needed
-        localStorage.setItem('userRole', response.data.role)
-        localStorage.setItem('userEmail', response.data.email)
-        localStorage.setItem('userName', response.data.fullName)
-        
-        // Redirect based on user role
+        password: password,
+      });
+      if (response.data) {
+        saveAuthToken(response.data.jwtToken);
+        localStorage.setItem("userRole", response.data.role);
+        localStorage.setItem("userEmail", response.data.email);
+        localStorage.setItem("userName", response.data.fullName);
         switch (response.data.role) {
-          case 'MANAGER':
-            router.push('/manager')
-            break
-          case 'STAFF':
-            router.push('/staff')
-            break
-          case 'CUSTOMER':
-            router.push('/')
-            break
+          case "MANAGER":
+            router.push("/manager");
+            break;
+          case "STAFF":
+            router.push("/staff");
+            break;
+          case "CUSTOMER":
+            router.push("/");
+            break;
           default:
-            router.push('/')
+            router.push("/");
         }
       }
     } catch (err) {
-      setError("Invalid username or password")
+      setError("Invalid username or password");
     }
-  }
+  };
 
-  // Remove googleEmail state and modify Google login section
+  const handleGoogleLogin = async () => {
+    try {
+      await loginWithGoogle();
+    } catch (err) {
+      setError("Google login failed");
+    }
+  };
+
   return (
     <div className="container flex items-center justify-center min-h-[80vh] py-8">
       <Card className="w-full max-w-md">
@@ -86,7 +82,7 @@ export default function LoginPage() {
                 type="text"
                 placeholder="yourusername"
                 value={username}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)} // Thay setEmail thành setUsername
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)}
                 required
               />
             </div>
@@ -122,13 +118,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Simplified Google login button */}
-          <Button 
-            variant="outline" 
-            className="w-full" 
-            onClick={handleGoogleLogin} 
-            disabled={isLoading}
-          >
+          <Button variant="outline" className="w-full" onClick={handleGoogleLogin} disabled={isLoading}>
             <FcGoogle className="mr-2 h-5 w-5" />
             Continue with Google
           </Button>
@@ -143,40 +133,5 @@ export default function LoginPage() {
         </CardFooter>
       </Card>
     </div>
-  )
+  );
 }
-
-// Modify handleGoogleLogin to accept email parameter
-const handleGoogleLogin = async (email: string) => {
-  try {
-    const response = await loginWithGoogle(email)
-    
-    if (response.data.token) {
-      saveAuthToken(response.token)
-      
-      switch (response.role) {
-        case 'MANAGER':
-          router.push('/manager')
-          break
-        case 'STAFF':
-          router.push('/staff')
-          break
-        case 'CUSTOMER':
-          router.push('/')
-          break
-        default:
-          router.push('/')
-      }
-    }
-  } catch (err) {
-    setError("Google login failed")
-  }
-}
-
-function saveAuthToken(_token: any) {
-  throw new Error("Function not implemented.")
-}
-function setError(arg0: string) {
-  throw new Error("Function not implemented.")
-}
-
