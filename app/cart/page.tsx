@@ -5,6 +5,7 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { fetchCartByUserId, updateCartItem, removeFromCart } from "@/app/api/cartApi"
+import stripePromise from '@/lib/stripe-client'
 
 interface CartItem {
   productId: string
@@ -22,17 +23,30 @@ interface Cart {
 
 export default function CartPage() {
   const [cartItems, setCartItems] = useState<CartItem[]>([])
-  const [userId, setUserId] = useState("user123") // Temporary userId, should be from auth system
+  const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isProcessing, setIsProcessing] = useState(false)
 
   useEffect(() => {
-    loadCartItems()
+    const storedUserId = localStorage.getItem("userId")
+    if (storedUserId) {
+      setUserId(storedUserId)
+    } else {
+      // Handle case when userId is not found in localStorage
+      console.error("User ID not found in localStorage")
+    }
+  }, [])
+
+  useEffect(() => {
+    if (userId) {
+      loadCartItems()
+    }
   }, [userId])
 
   const loadCartItems = async () => {
     try {
       setLoading(true)
-      const response = await fetchCartByUserId(userId)
+      const response = await fetchCartByUserId(userId!)
       if (response && response.items) {
         setCartItems(response.items)
       }
@@ -47,7 +61,7 @@ export default function CartPage() {
     if (newQuantity < 1) return
 
     try {
-      await updateCartItem(userId, productId, newQuantity)
+      await updateCartItem(userId!, productId, newQuantity)
       setCartItems(prev =>
         prev.map(item =>
           item.productId === productId ? { ...item, quantity: newQuantity } : item
@@ -61,7 +75,7 @@ export default function CartPage() {
 
   const handleRemoveItem = async (productId: string) => {
     try {
-      await removeFromCart(userId, productId)
+      await removeFromCart(userId!, productId)
       setCartItems(prev => prev.filter(item => item.productId !== productId))
     } catch (error) {
       console.error("Error removing item:", error)
@@ -69,22 +83,64 @@ export default function CartPage() {
     }
   }
 
+  const handleCheckout = async () => {
+    try {
+      setIsProcessing(true);
+      const stripe = await stripePromise;
+      if (!stripe) throw new Error('Stripe failed to initialize');
+
+      // Kiểm tra total trước khi gửi request
+      if (!total || total <= 0) {
+        throw new Error('Invalid cart total');
+      }
+
+      const response = await fetch('/api/stripe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: total
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Payment failed');
+      }
+
+      const data = await response.json();
+      if (!data.sessionId) {
+        throw new Error('Invalid response from server');
+      }
+
+      const result = await stripe.redirectToCheckout({
+        sessionId: data.sessionId,
+      });
+
+      if (result.error) {
+        throw new Error(result.error.message);
+      }
+    } catch (error: any) {
+      console.error('Checkout error:', error);
+      alert(error.message || 'Payment failed. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
   const shipping = subtotal > 50 ? 0 : 5.99
   const total = subtotal + shipping
 
-  if (loading) {
-    return <div className="container py-8">Loading cart...</div>
-  }
-
   return (
-    <div className="container py-8">
+    <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8">Your Shopping Cart</h1>
 
-      {cartItems.length > 0 ? (
-        <div className="grid md:grid-cols-3 gap-8">
-          <div className="md:col-span-2 space-y-6">
-            {cartItems.map((item) => (
+      <div className="grid md:grid-cols-3 gap-8">
+        <div className="md:col-span-2 space-y-6">
+          {cartItems.length > 0 ? (
+            cartItems.map((item) => (
               <div key={item.productId} className="flex items-center space-x-4 border-b pb-4">
                 <Image
                   src={item.image || "/placeholder.svg"}
@@ -118,37 +174,39 @@ export default function CartPage() {
                   Remove
                 </Button>
               </div>
-            ))}
+            ))
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-xl mb-4">Your cart is empty</p>
+              <Button onClick={() => window.location.href = '/shop'}>Continue Shopping</Button>
+            </div>
+          )}
+        </div>
+
+        <div className="bg-gray-50 p-6 rounded-lg">
+          <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <span>Subtotal</span>
+              <span>${subtotal.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between font-semibold text-lg border-t pt-2">
+              <span>Total</span>
+              <span>${total.toFixed(2)}</span>
+            </div>
           </div>
 
-          <div className="bg-gray-50 p-6 rounded-lg">
-            <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span>Subtotal</span>
-                <span>${subtotal.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Shipping</span>
-                <span>{shipping === 0 ? "Free" : `$${shipping.toFixed(2)}`}</span>
-              </div>
-              <div className="flex justify-between font-semibold text-lg border-t pt-2">
-                <span>Total</span>
-                <span>${total.toFixed(2)}</span>
-              </div>
-            </div>
-
-            <Button className="w-full mt-6" size="lg">
-              Proceed to Checkout
+          <div className="mt-6">
+            <Button 
+              onClick={handleCheckout} 
+              disabled={isProcessing}
+              className="w-full"
+            >
+              {isProcessing ? 'Processing...' : 'Proceed to Checkout'}
             </Button>
           </div>
         </div>
-      ) : (
-        <div className="text-center py-12">
-          <p className="text-xl mb-4">Your cart is empty</p>
-          <Button onClick={() => window.location.href = '/shop'}>Continue Shopping</Button>
-        </div>
-      )}
+      </div>
     </div>
-  )
+  );
 }

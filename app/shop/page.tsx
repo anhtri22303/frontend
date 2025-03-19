@@ -22,10 +22,19 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [searchName, setSearchName] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("")
-  const [userId, setUserId] = useState("user123") // Temporary userId, should be from auth system
+  const [userId, setUserId] = useState<string | null>(null)
   const router = useRouter()
 
   const categories = ["DRY", "OILY", "COMBINATION", "SENSITIVE", "NORMAL"]
+
+  useEffect(() => {
+    const storedUserId = localStorage.getItem("userId")
+    if (storedUserId) {
+      setUserId(storedUserId)
+    } else {
+      console.error("User ID not found in localStorage")
+    }
+  }, [])
 
   useEffect(() => {
     loadProducts()
@@ -125,16 +134,20 @@ export default function ProductsPage() {
                   variant="default" 
                   size="sm" 
                   onClick={() => {
-                    addToCart(userId, {
-                      productId: product.id,
-                      quantity: 1,
-                      price: parseFloat(product.price)
-                    }).then(() => {
-                      alert("Added to cart successfully!")
-                    }).catch((error) => {
-                      console.error("Error adding to cart:", error)
-                      alert("Failed to add to cart")
-                    })
+                    if (userId) {
+                      addToCart(userId, {
+                        productId: product.id,
+                        quantity: 1,
+                        price: parseFloat(product.price)
+                      }).then(() => {
+                        alert("Added to cart successfully!")
+                      }).catch((error) => {
+                        console.error("Error adding to cart:", error)
+                        alert("Failed to add to cart")
+                      })
+                    } else {
+                      alert("User ID not found. Please log in.")
+                    }
                   }}
                 >
                   Add to Cart

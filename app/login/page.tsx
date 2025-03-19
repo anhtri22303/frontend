@@ -19,9 +19,16 @@ export default function LoginPage() {
   const { isLoading } = useAuth();
   const router = useRouter();
 
-  const saveAuthToken = (token: string) => {
-    localStorage.setItem("jwtToken", token);
-    document.cookie = `jwtToken=${token}; path=/; max-age=${7 * 24 * 60 * 60}`;
+  const saveUserData = (userData: any) => {
+    // Lưu JWT token
+    localStorage.setItem("jwtToken", userData.jwtToken);
+    document.cookie = `jwtToken=${userData.jwtToken}; path=/; max-age=${7 * 24 * 60 * 60}`;
+    
+    // Lưu thông tin user
+    localStorage.setItem("userId", userData.id); // Lưu userId
+    localStorage.setItem("userRole", userData.role);
+    localStorage.setItem("userEmail", userData.email);
+    localStorage.setItem("userName", userData.fullName);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -32,11 +39,11 @@ export default function LoginPage() {
         email: username,
         password: password,
       });
+
       if (response.data) {
-        saveAuthToken(response.data.jwtToken);
-        localStorage.setItem("userRole", response.data.role);
-        localStorage.setItem("userEmail", response.data.email);
-        localStorage.setItem("userName", response.data.fullName);
+        saveUserData(response.data);
+        
+        // Điều hướng dựa vào role
         switch (response.data.role) {
           case "MANAGER":
             router.push("/manager");
@@ -53,6 +60,7 @@ export default function LoginPage() {
       }
     } catch (err) {
       setError("Invalid username or password");
+      console.error("Login error:", err);
     }
   };
 
@@ -61,8 +69,13 @@ export default function LoginPage() {
       await loginWithGoogle();
     } catch (err) {
       setError("Google login failed");
+      console.error("Google login error:", err);
     }
   };
+
+  // if (isLoading) {
+  //   return <div>Loading...</div>;
+  // }
 
   return (
     <div className="container flex items-center justify-center min-h-[80vh] py-8">
@@ -101,32 +114,28 @@ export default function LoginPage() {
                 required
               />
             </div>
-
-            {error && <p className="text-sm text-destructive">{error}</p>}
-
+            {error && <p className="text-sm text-red-500">{error}</p>}
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Signing in..." : "Sign in"}
             </Button>
           </form>
-
           <div className="relative my-4">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-muted"></div>
+              <div className="w-full border-t"></div>
             </div>
             <div className="relative flex justify-center text-xs uppercase">
               <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
             </div>
           </div>
-
-          <Button variant="outline" className="w-full" onClick={handleGoogleLogin} disabled={isLoading}>
-            <FcGoogle className="mr-2 h-5 w-5" />
-            Continue with Google
+          <Button variant="outline" className="w-full" onClick={handleGoogleLogin}>
+            <FcGoogle className="mr-2 h-4 w-4" />
+            Google
           </Button>
         </CardContent>
         <CardFooter className="flex justify-center">
           <p className="text-sm text-muted-foreground">
             Don't have an account?{" "}
-            <Link href="/signup" className="text-primary hover:underline">
+            <Link href="/register" className="text-primary hover:underline">
               Sign up
             </Link>
           </p>

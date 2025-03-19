@@ -52,8 +52,6 @@ export default function Header() {
     { href: "/skin-quiz", label: "Skin Quiz" },
     { href: "/routines", label: "Routines" },
     { href: "/about", label: "About" },
-    { href: "/manager", label: "Manager Page" },
-    { href: "/staff", label: "Staff Page" },
   ]
 
   return (

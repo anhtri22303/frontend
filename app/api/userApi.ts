@@ -10,17 +10,10 @@ interface User {
   updatedAt: string
 }
 
-// Common headers configuration
-const config = {
-  headers: {
-    'Authorization': `eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0cmljbmFzZTE3MzI4NEBmcHQuZWR1LnZuIiwicm9sZSI6Ik1BTkFHRVIiLCJpYXQiOjE3NDIzNTU1NDQsImV4cCI6MTc0MjM1OTE0NH0.sUOfTrJPhPBO_9Dxlh3nNyfxgRyDZWv6-zwn-I7iX08`
-  }
-}
-
 // Beauty Advisor endpoints
 export const fetchAllUsers = async () => {
   try {
-    const response = await axiosInstance.get("/beautyAdvisor/users", config)
+    const response = await axiosInstance.get("/beautyAdvisor/users")
     return response.data
   } catch (error) {
     console.error("Error fetching users:", error)
@@ -30,7 +23,7 @@ export const fetchAllUsers = async () => {
 
 export const fetchAllUsersManager = async () => {
   try {
-    const response = await axiosInstance.get("/manager/users", config)
+    const response = await axiosInstance.get("/manager/users")
     return response.data
   } catch (error) {
     console.error("Error fetching users (manager):", error)
@@ -38,10 +31,10 @@ export const fetchAllUsersManager = async () => {
   }
 }
 
-// Apply the same pattern to other API calls
+// Áp dụng cùng một mẫu cho các API khác
 export const createUser = async (userData: any) => {
   try {
-    const response = await axiosInstance.post("/manager/users", userData, config)
+    const response = await axiosInstance.post("/manager/users", userData)
     return response.data
   } catch (error) {
     console.error("Error creating user:", error)
@@ -52,7 +45,6 @@ export const createUser = async (userData: any) => {
 export const fetchUserByEmail = async (email: string) => {
   try {
     const response = await axiosInstance.get(`/beautyAdvisor/users/${email}`)
-    console.log("Get user by email success")
     return response.data
   } catch (error) {
     console.error("Error fetching user by email:", error)
@@ -63,7 +55,6 @@ export const fetchUserByEmail = async (email: string) => {
 export const searchUsersByName = async (name: string) => {
   try {
     const response = await axiosInstance.get(`/beautyAdvisor/users/search/${name}`)
-    console.log("Search users by name success")
     return response.data
   } catch (error) {
     console.error("Error searching users:", error)
@@ -75,7 +66,6 @@ export const searchUsersByName = async (name: string) => {
 export const fetchUserById = async (userId: string) => {
   try {
     const response = await axiosInstance.get(`/manager/users/${userId}`)
-    console.log("Get user by ID success")
     return response.data
   } catch (error) {
     console.error("Error fetching user by ID:", error)
@@ -86,7 +76,6 @@ export const fetchUserById = async (userId: string) => {
 export const updateUserManager = async (userId: string, userData: Partial<User>) => {
   try {
     const response = await axiosInstance.put(`/manager/users/${userId}`, userData)
-    console.log("Update user success")
     return response.data
   } catch (error) {
     console.error("Error updating user:", error)
@@ -97,7 +86,6 @@ export const updateUserManager = async (userId: string, userData: Partial<User>)
 export const deleteUser = async (userId: string) => {
   try {
     const response = await axiosInstance.delete(`/manager/users/${userId}`)
-    console.log("Delete user success")
     return response.data
   } catch (error) {
     console.error("Error deleting user:", error)
@@ -108,7 +96,6 @@ export const deleteUser = async (userId: string) => {
 export const searchUsersManager = async (name: string) => {
   try {
     const response = await axiosInstance.get(`/manager/users/search?name=${name}`)
-    console.log("Search users success")
     return response.data
   } catch (error) {
     console.error("Error searching users:", error)
@@ -120,7 +107,6 @@ export const searchUsersManager = async (name: string) => {
 export const updateUserSelf = async (userId: string, userData: Partial<User>) => {
   try {
     const response = await axiosInstance.put(`/user/${userId}`, userData)
-    console.log("Update user profile success")
     return response.data
   } catch (error) {
     console.error("Error updating user profile:", error)
