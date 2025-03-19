@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { FcGoogle } from "react-icons/fc"
 import { login, loginWithGoogle } from "@/app/api/authApi"
+import router from "next/router"
 
 export default function LoginPage() {
   const [username, setUsername] = useState("")
@@ -20,11 +21,9 @@ export default function LoginPage() {
   const { isLoading } = useAuth()
   const router = useRouter()
 
-  // Add this function at the top of your component
   const saveAuthToken = (token: string) => {
     // Save to localStorage
     localStorage.setItem('jwtToken', token)
-    
     // Save to cookies (expires in 7 days)
     document.cookie = `jwtToken=${token}; path=/; max-age=${7 * 24 * 60 * 60}`
   }
@@ -40,11 +39,16 @@ export default function LoginPage() {
         password: password
       })
       
-      if (response.token) {
-        saveAuthToken(response.token)
+      if (response.data?.jwtToken) {
+        saveAuthToken(response.data.jwtToken)
+        
+        // Store additional user info if needed
+        localStorage.setItem('userRole', response.data.role)
+        localStorage.setItem('userEmail', response.data.email)
+        localStorage.setItem('userName', response.data.fullName)
         
         // Redirect based on user role
-        switch (response.role) {
+        switch (response.data.role) {
           case 'MANAGER':
             router.push('/manager')
             break
@@ -63,34 +67,7 @@ export default function LoginPage() {
     }
   }
 
-  // Modify handleGoogleLogin
-  const handleGoogleLogin = async () => {
-    try {
-      const response = await loginWithGoogle({ email: "" })
-      
-      if (response.token) {
-        saveAuthToken(response.token)
-        
-        // Same role-based redirect for Google login
-        switch (response.role) {
-          case 'MANAGER':
-            router.push('/manager')
-            break
-          case 'STAFF':
-            router.push('/staff')
-            break
-          case 'CUSTOMER':
-            router.push('/')
-            break
-          default:
-            router.push('/')
-        }
-      }
-    } catch (err) {
-      setError("Google login failed")
-    }
-  }
-
+  // Remove googleEmail state and modify Google login section
   return (
     <div className="container flex items-center justify-center min-h-[80vh] py-8">
       <Card className="w-full max-w-md">
@@ -145,9 +122,15 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <Button variant="outline" className="w-full" onClick={handleGoogleLogin} disabled={isLoading}>
+          {/* Simplified Google login button */}
+          <Button 
+            variant="outline" 
+            className="w-full" 
+            onClick={handleGoogleLogin} 
+            disabled={isLoading}
+          >
             <FcGoogle className="mr-2 h-5 w-5" />
-            Google
+            Continue with Google
           </Button>
         </CardContent>
         <CardFooter className="flex justify-center">
@@ -162,3 +145,38 @@ export default function LoginPage() {
     </div>
   )
 }
+
+// Modify handleGoogleLogin to accept email parameter
+const handleGoogleLogin = async (email: string) => {
+  try {
+    const response = await loginWithGoogle(email)
+    
+    if (response.data.token) {
+      saveAuthToken(response.token)
+      
+      switch (response.role) {
+        case 'MANAGER':
+          router.push('/manager')
+          break
+        case 'STAFF':
+          router.push('/staff')
+          break
+        case 'CUSTOMER':
+          router.push('/')
+          break
+        default:
+          router.push('/')
+      }
+    }
+  } catch (err) {
+    setError("Google login failed")
+  }
+}
+
+function saveAuthToken(_token: any) {
+  throw new Error("Function not implemented.")
+}
+function setError(arg0: string) {
+  throw new Error("Function not implemented.")
+}
+

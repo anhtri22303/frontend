@@ -26,16 +26,17 @@ export const login = async (credentials: LoginCredentials) => {
 }
 
 // Login with Google Email
-export const loginWithGoogle = async (credentials: GoogleLoginCredentials) => {
+export const loginWithGoogle = async (email: string) => {
   try {
-    const response = await axiosInstance.post("/auth/login/google", credentials)
-    console.log("Google login success")
+    const response = await axiosInstance.post("/oauth2/authorization/google", { email }) // Gửi email dưới dạng object
+    console.log("Google login success", response.data)
     return response.data
   } catch (error) {
     console.error("Error during Google login:", error)
     throw error
   }
 }
+
 
 // Login with Google JWT Token
 export const loginWithGoogleToken = async (credentials: GoogleTokenCredentials) => {
