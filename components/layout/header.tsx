@@ -136,8 +136,23 @@ export default function Header() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user.image || ""} alt={user.username} />
-                    <AvatarFallback>{user.username ? user.username.charAt(0) : "U"}</AvatarFallback>
+                    <AvatarImage src={user.image || ""} alt={user.fullName || ""} />
+                    <AvatarFallback>
+                      {(() => {
+                        switch (user.role) {
+                          case "MANAGER":
+                            return "M"
+                          case "STAFF":
+                            return "S"
+                          case "CUSTOMER":
+                            return "C"
+                          case "BEAUTY_ADVISOR":
+                            return "B"
+                          default:
+                            return "U"
+                        }
+                      })()}
+                    </AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>

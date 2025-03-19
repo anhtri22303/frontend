@@ -3,9 +3,11 @@
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
+import { useRouter } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { fetchCartByUserId, updateCartItem, removeFromCart } from "@/app/api/cartApi"
 import stripePromise from '@/lib/stripe-client'
+import { createOrder } from "@/app/api/orderApi"
 
 interface CartItem {
   productId: string
@@ -26,6 +28,7 @@ export default function CartPage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [isProcessing, setIsProcessing] = useState(false)
+  const router = useRouter()
 
   useEffect(() => {
     const storedUserId = localStorage.getItem("userId")
@@ -83,41 +86,63 @@ export default function CartPage() {
     }
   }
 
+  // In your cart page, modify the handleCheckout function:
+  
   const handleCheckout = async () => {
     try {
       setIsProcessing(true);
+      const userId = localStorage.getItem("userId");
+      
+      // Create order data
+      const orderData = {
+        customerID: userId!,
+        orderDate: new Date().toISOString(),
+        status: "PENDING",
+        payment: "STRIPE",
+        amount: total,
+        details: cartItems.map(item => ({
+          productID: item.productId,
+          quantity: item.quantity,
+          price: item.price
+        }))
+      };
+  
+      // Create order first
+      const orderResponse = await createOrder(orderData);
+      
+      if (!orderResponse) {
+        throw new Error('Failed to create order');
+      }
+  
+      // Then proceed with Stripe payment
       const stripe = await stripePromise;
       if (!stripe) throw new Error('Stripe failed to initialize');
-
-      // Kiểm tra total trước khi gửi request
-      if (!total || total <= 0) {
-        throw new Error('Invalid cart total');
-      }
-
+  
       const response = await fetch('/api/stripe', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          amount: total
+          amount: total,
+          orderId: orderResponse.orderID // Include order ID in stripe payment
         }),
       });
-
+  
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Payment failed');
       }
-
+  
       const data = await response.json();
       if (!data.sessionId) {
         throw new Error('Invalid response from server');
       }
-
+  
       const result = await stripe.redirectToCheckout({
         sessionId: data.sessionId,
       });
-
+  
       if (result.error) {
         throw new Error(result.error.message);
       }
@@ -196,7 +221,13 @@ export default function CartPage() {
             </div>
           </div>
 
-          <div className="mt-6">
+          <div className="mt-6 space-y-3">
+            <Button 
+              onClick={() => router.push('/informCustomer')}
+              className="w-full"
+            >
+              Enter Information
+            </Button>
             <Button 
               onClick={handleCheckout} 
               disabled={isProcessing}

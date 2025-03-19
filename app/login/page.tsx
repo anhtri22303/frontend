@@ -20,30 +20,62 @@ export default function LoginPage() {
   const router = useRouter();
 
   const saveUserData = (userData: any) => {
-    // Lưu JWT token
-    localStorage.setItem("jwtToken", userData.jwtToken);
-    document.cookie = `jwtToken=${userData.jwtToken}; path=/; max-age=${7 * 24 * 60 * 60}`;
-    
-    // Lưu thông tin user
-    localStorage.setItem("userId", userData.id); // Lưu userId
-    localStorage.setItem("userRole", userData.role);
-    localStorage.setItem("userEmail", userData.email);
-    localStorage.setItem("userName", userData.fullName);
-  };
+    localStorage.setItem("jwtToken", userData.jwtToken)
+    document.cookie = `jwtToken=${userData.jwtToken}; path=/; max-age=${7 * 24 * 60 * 60}`
+    localStorage.setItem("userId", userData.id)
+    localStorage.setItem("userRole", userData.role)
+    localStorage.setItem("userEmail", userData.email)
+    localStorage.setItem("userName", userData.fullName)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
+    e.preventDefault()
+    setError("")
     try {
       const response = await login({
         email: username,
         password: password,
-      });
+      })
 
       if (response.data) {
-        saveUserData(response.data);
+        saveUserData(response.data)
+        handleRedirect(response.data.role)
+      }
+    } catch (err) {
+      setError("Invalid username or password")
+      console.error("Login error:", err)
+    }
+  }
+
+  const handleRedirect = (role: string) => {
+    switch (role) {
+      case "MANAGER":
+        router.push("/manager")
+        break
+      case "STAFF":
+        router.push("/staff")
+        break
+      case "CUSTOMER":
+        router.push("/")
+        break
+      default:
+        router.push("/")
+    }
+  }
+
+  const handleGoogleLogin = async () => {
+    try {
+      const response = await loginWithGoogle();
+      if (response?.data) {
+        // Save user data from Google login
+        localStorage.setItem("jwtToken", response.data.jwtToken);
+        document.cookie = `jwtToken=${response.data.jwtToken}; path=/; max-age=${7 * 24 * 60 * 60}`;
         
-        // Điều hướng dựa vào role
+        localStorage.setItem("userRole", response.data.role);
+        localStorage.setItem("userEmail", response.data.email);
+        localStorage.setItem("userName", response.data.fullName);
+
+        // Redirect based on role
         switch (response.data.role) {
           case "MANAGER":
             router.push("/manager");
@@ -58,15 +90,6 @@ export default function LoginPage() {
             router.push("/");
         }
       }
-    } catch (err) {
-      setError("Invalid username or password");
-      console.error("Login error:", err);
-    }
-  };
-
-  const handleGoogleLogin = async () => {
-    try {
-      await loginWithGoogle();
     } catch (err) {
       setError("Google login failed");
       console.error("Google login error:", err);

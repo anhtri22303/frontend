@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { fetchAllUsersManager } from "@/app/api/userApi"
+import { fetchAllUsersManager } from "@/app/api/userManagerApi"
 import { useRouter } from "next/navigation"
 
 interface User {

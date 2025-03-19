@@ -87,6 +87,27 @@ export default function ProductsPage() {
     }
   }
 
+  const handleAddToCart = async (product: Product) => {
+    const userId = localStorage.getItem("userId")
+    if (!userId) {
+      alert("Please login to add items to cart")
+      router.push("/login")
+      return
+    }
+
+    try {
+      await addToCart(userId, {
+        productId: product.id,
+        quantity: 1,
+        price: parseFloat(product.price)
+      })
+      alert("Added to cart successfully!")
+    } catch (error) {
+      console.error("Error adding to cart:", error)
+      alert("Failed to add to cart")
+    }
+  }
+
   return (
     <>
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
@@ -133,22 +154,7 @@ export default function ProductsPage() {
                 <Button 
                   variant="default" 
                   size="sm" 
-                  onClick={() => {
-                    if (userId) {
-                      addToCart(userId, {
-                        productId: product.id,
-                        quantity: 1,
-                        price: parseFloat(product.price)
-                      }).then(() => {
-                        alert("Added to cart successfully!")
-                      }).catch((error) => {
-                        console.error("Error adding to cart:", error)
-                        alert("Failed to add to cart")
-                      })
-                    } else {
-                      alert("User ID not found. Please log in.")
-                    }
-                  }}
+                  onClick={() => handleAddToCart(product)}
                 >
                   Add to Cart
                 </Button>
