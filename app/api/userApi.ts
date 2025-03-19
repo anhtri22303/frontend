@@ -10,14 +10,41 @@ interface User {
   updatedAt: string
 }
 
+// Common headers configuration
+const config = {
+  headers: {
+    'Authorization': `eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0cmljbmFzZTE3MzI4NEBmcHQuZWR1LnZuIiwicm9sZSI6Ik1BTkFHRVIiLCJpYXQiOjE3NDIzNTU1NDQsImV4cCI6MTc0MjM1OTE0NH0.sUOfTrJPhPBO_9Dxlh3nNyfxgRyDZWv6-zwn-I7iX08`
+  }
+}
+
 // Beauty Advisor endpoints
 export const fetchAllUsers = async () => {
   try {
-    const response = await axiosInstance.get("/beautyAdvisor/users")
-    console.log("Get all users success")
+    const response = await axiosInstance.get("/beautyAdvisor/users", config)
     return response.data
   } catch (error) {
     console.error("Error fetching users:", error)
+    throw error
+  }
+}
+
+export const fetchAllUsersManager = async () => {
+  try {
+    const response = await axiosInstance.get("/manager/users", config)
+    return response.data
+  } catch (error) {
+    console.error("Error fetching users (manager):", error)
+    throw error
+  }
+}
+
+// Apply the same pattern to other API calls
+export const createUser = async (userData: any) => {
+  try {
+    const response = await axiosInstance.post("/manager/users", userData, config)
+    return response.data
+  } catch (error) {
+    console.error("Error creating user:", error)
     throw error
   }
 }
@@ -45,28 +72,6 @@ export const searchUsersByName = async (name: string) => {
 }
 
 // Manager endpoints
-export const fetchAllUsersManager = async () => {
-  try {
-    const response = await axiosInstance.get("/manager/users")
-    console.log("Get all users (manager) success")
-    return response.data
-  } catch (error) {
-    console.error("Error fetching users (manager):", error)
-    throw error
-  }
-}
-
-export const createUser = async (user: Omit<User, 'id' | 'createdAt' | 'updatedAt'>) => {
-  try {
-    const response = await axiosInstance.post("/manager/users", user)
-    console.log("Create user success")
-    return response.data
-  } catch (error) {
-    console.error("Error creating user:", error)
-    throw error
-  }
-}
-
 export const fetchUserById = async (userId: string) => {
   try {
     const response = await axiosInstance.get(`/manager/users/${userId}`)

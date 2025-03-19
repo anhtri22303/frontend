@@ -4,67 +4,78 @@ import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { fetchCart, updateCart, deleteCartItem } from "@/app/api/cartApi"
+import { fetchCartByUserId, updateCartItem, removeFromCart } from "@/app/api/cartApi"
 
 interface CartItem {
-  id: string
-  name: string
-  price: number
-  image: string
+  productId: string
   quantity: number
+  price: number
+  name?: string
+  image?: string
+}
+
+interface Cart {
+  userId: string
+  items: CartItem[]
+  total: number
 }
 
 export default function CartPage() {
   const [cartItems, setCartItems] = useState<CartItem[]>([])
-  const [promoCode, setPromoCode] = useState("")
-  const [promoApplied, setPromoApplied] = useState(false)
+  const [userId, setUserId] = useState("user123") // Temporary userId, should be from auth system
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const loadCartItems = async () => {
-      try {
-        const data = await fetchCart()
-        setCartItems(data)
-      } catch (error) {
-        console.error("Error loading cart items:", error)
-      }
-    }
-
     loadCartItems()
-  }, [])
+  }, [userId])
 
-  const updateQuantity = async (id: string, newQuantity: number) => {
+  const loadCartItems = async () => {
+    try {
+      setLoading(true)
+      const response = await fetchCartByUserId(userId)
+      if (response && response.items) {
+        setCartItems(response.items)
+      }
+    } catch (error) {
+      console.error("Error loading cart items:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleUpdateQuantity = async (productId: string, newQuantity: number) => {
     if (newQuantity < 1) return
 
     try {
-      await updateCart(id, newQuantity)
-      setCartItems((prev) =>
-        prev.map((item) => (item.id === id ? { ...item, quantity: newQuantity } : item))
+      await updateCartItem(userId, productId, newQuantity)
+      setCartItems(prev =>
+        prev.map(item =>
+          item.productId === productId ? { ...item, quantity: newQuantity } : item
+        )
       )
     } catch (error) {
-      console.error("Error updating cart item:", error)
+      console.error("Error updating quantity:", error)
+      alert("Failed to update quantity")
     }
   }
 
-  const removeItem = async (id: string) => {
+  const handleRemoveItem = async (productId: string) => {
     try {
-      await deleteCartItem(id)
-      setCartItems((prev) => prev.filter((item) => item.id !== id))
+      await removeFromCart(userId, productId)
+      setCartItems(prev => prev.filter(item => item.productId !== productId))
     } catch (error) {
-      console.error("Error removing cart item:", error)
+      console.error("Error removing item:", error)
+      alert("Failed to remove item")
     }
   }
 
-  const applyPromoCode = () => {
-    if (promoCode.toLowerCase() === "welcome10") {
-      setPromoApplied(true)
-    }
-  }
-
-  // Calculate totals
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
-  const discount = promoApplied ? subtotal * 0.1 : 0
   const shipping = subtotal > 50 ? 0 : 5.99
-  const total = subtotal - discount + shipping
+  const total = subtotal + shipping
+
+  if (loading) {
+    return <div className="container py-8">Loading cart...</div>
+  }
 
   return (
     <div className="container py-8">
@@ -74,28 +85,36 @@ export default function CartPage() {
         <div className="grid md:grid-cols-3 gap-8">
           <div className="md:col-span-2 space-y-6">
             {cartItems.map((item) => (
-              <div key={item.id} className="flex items-center space-x-4 border-b pb-4">
+              <div key={item.productId} className="flex items-center space-x-4 border-b pb-4">
                 <Image
                   src={item.image || "/placeholder.svg"}
-                  alt={item.name}
+                  alt={item.name || `Product ${item.productId}`}
                   width={100}
                   height={100}
                   className="rounded-md"
                 />
                 <div className="flex-grow">
-                  <h3 className="font-semibold">{item.name}</h3>
+                  <h3 className="font-semibold">{item.name || `Product ${item.productId}`}</h3>
                   <p className="text-sm text-gray-500">${item.price.toFixed(2)}</p>
                   <div className="flex items-center mt-2">
-                    <Button size="sm" variant="outline" onClick={() => updateQuantity(item.id, item.quantity - 1)}>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={() => handleUpdateQuantity(item.productId, item.quantity - 1)}
+                    >
                       -
                     </Button>
                     <span className="mx-2">{item.quantity}</span>
-                    <Button size="sm" variant="outline" onClick={() => updateQuantity(item.id, item.quantity + 1)}>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={() => handleUpdateQuantity(item.productId, item.quantity + 1)}
+                    >
                       +
                     </Button>
                   </div>
                 </div>
-                <Button variant="ghost" onClick={() => removeItem(item.id)}>
+                <Button variant="ghost" onClick={() => handleRemoveItem(item.productId)}>
                   Remove
                 </Button>
               </div>
@@ -109,12 +128,6 @@ export default function CartPage() {
                 <span>Subtotal</span>
                 <span>${subtotal.toFixed(2)}</span>
               </div>
-              {promoApplied && (
-                <div className="flex justify-between text-green-600">
-                  <span>Discount</span>
-                  <span>-${discount.toFixed(2)}</span>
-                </div>
-              )}
               <div className="flex justify-between">
                 <span>Shipping</span>
                 <span>{shipping === 0 ? "Free" : `$${shipping.toFixed(2)}`}</span>
@@ -125,20 +138,7 @@ export default function CartPage() {
               </div>
             </div>
 
-            <div className="mt-6">
-              <Input
-                type="text"
-                placeholder="Promo Code"
-                value={promoCode}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPromoCode(e.target.value)}
-                className="mb-2"
-              />
-              <Button onClick={applyPromoCode} className="w-full">
-                Apply Promo Code
-              </Button>
-            </div>
-
-            <Button className="w-full mt-4" size="lg">
+            <Button className="w-full mt-6" size="lg">
               Proceed to Checkout
             </Button>
           </div>
@@ -146,10 +146,9 @@ export default function CartPage() {
       ) : (
         <div className="text-center py-12">
           <p className="text-xl mb-4">Your cart is empty</p>
-          <Button>Continue Shopping</Button>
+          <Button onClick={() => window.location.href = '/shop'}>Continue Shopping</Button>
         </div>
       )}
     </div>
   )
 }
-
