@@ -1,51 +1,60 @@
-import axiosInstance from "@/lib/axiosInstance"
+import axios from "axios";
 
 interface LoginCredentials {
-  email: string
-  password: string
+  email: string;
+  password: string;
 }
 
 interface GoogleLoginCredentials {
-  email: string
+  email: string;
 }
 
 interface GoogleTokenCredentials {
-  token: string
+  token: string;
 }
 
 // Regular login
 export const login = async (credentials: LoginCredentials) => {
   try {
-    const response = await axiosInstance.post("/auth/login", credentials)
-    console.log("Login success")
-    return response.data
+    const response = await axios.post("http://localhost:8080/auth/login", credentials);
+    console.log("Login success");
+    return response.data;
   } catch (error) {
-    console.error("Error during login:", error)
-    throw error
+    console.error("Error during login:", error);
+    throw error;
   }
-}
+};
 
-// Login with Google Email
-export const loginWithGoogle = async (email: string) => {
+// Google login with OAuth2 redirect
+export const loginWithGoogle = async (): Promise<void> => {
   try {
-    const response = await axiosInstance.post("/oauth2/authorization/google", { email }) // Gửi email dưới dạng object
-    console.log("Google login success", response.data)
-    return response.data
+    window.location.href = "http://localhost:8080/oauth2/authorization/google";
   } catch (error) {
-    console.error("Error during Google login:", error)
-    throw error
+    console.error("Error during Google login:", error);
+    throw error;
   }
-}
+};
 
+// Handle Google callback
+export const handleGoogleCallback = async (code: string) => {
+  try {
+    const response = await axios.get(`http://localhost:8080/auth/oauth2/callback?code=${code}`);
+    console.log("Google callback success", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error during Google callback:", error);
+    throw error;
+  }
+};
 
 // Login with Google JWT Token
 export const loginWithGoogleToken = async (credentials: GoogleTokenCredentials) => {
   try {
-    const response = await axiosInstance.post("/auth/login/token/google", credentials)
-    console.log("Google token login success")
-    return response.data
+    const response = await axios.post("http://localhost:8080/auth/login/token/google", credentials);
+    console.log("Google token login success");
+    return response.data;
   } catch (error) {
-    console.error("Error during Google token login:", error)
-    throw error
+    console.error("Error during Google token login:", error);
+    throw error;
   }
-}
+};
