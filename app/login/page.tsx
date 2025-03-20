@@ -22,10 +22,10 @@ export default function LoginPage() {
   const saveUserData = (userData: any) => {
     localStorage.setItem("jwtToken", userData.jwtToken)
     document.cookie = `jwtToken=${userData.jwtToken}; path=/; max-age=${7 * 24 * 60 * 60}`
-    localStorage.setItem("userId", userData.id)
+    localStorage.setItem("userID", userData.userID)  // Changed from userId to userID
     localStorage.setItem("userRole", userData.role)
     localStorage.setItem("userEmail", userData.email)
-    localStorage.setItem("userName", userData.fullName)
+    localStorage.setItem("userName", userData.fullName || "")  // Handle null fullName
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -158,7 +158,7 @@ export default function LoginPage() {
         <CardFooter className="flex justify-center">
           <p className="text-sm text-muted-foreground">
             Don't have an account?{" "}
-            <Link href="/register" className="text-primary hover:underline">
+            <Link href="/signup" className="text-primary hover:underline">
               Sign up
             </Link>
           </p>

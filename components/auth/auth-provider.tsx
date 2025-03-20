@@ -7,12 +7,14 @@ import { useRouter } from "next/navigation"
 
 import { login as loginApi, loginWithGoogle as loginWithGoogleApi } from "@/app/api/authApi"
 
+// Update User type
 type User = {
   id: string
   username: string
-  fullName: string
+  fullName: string | null
   image?: string
   role: string
+  email: string
 }
 
 type AuthContextType = {
@@ -46,10 +48,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const jwtToken = localStorage.getItem("jwtToken")
     if (jwtToken) {
       const userData = {
-        id: localStorage.getItem("userId") || "",
+        id: localStorage.getItem("userID") || "",  // Changed from userId to userID
         username: localStorage.getItem("userEmail") || "",
-        fullName: localStorage.getItem("userName") || "",
+        fullName: localStorage.getItem("userName"),
         role: localStorage.getItem("userRole") || "",
+        email: localStorage.getItem("userEmail") || "",
       }
       setUser(userData)
     }

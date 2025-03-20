@@ -90,7 +90,7 @@ export default function ProductsPage() {
   const handleAddToCart = async (product: Product) => {
     const userId = localStorage.getItem("userId")
     if (!userId) {
-      alert("Please login to add items to cart")
+      alert("Need to login before add to cart")
       router.push("/login")
       return
     }
