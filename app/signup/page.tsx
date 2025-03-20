@@ -3,7 +3,6 @@
 import React, { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@/components/auth/auth-provider"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -11,28 +10,50 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Checkbox } from "@/components/ui/checkbox"
 
 export default function SignUpPage() {
-  const [username, setUsername] = useState("") // Bỏ email
+  const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [error, setError] = useState("")
-  const { signUp, isLoading } = useAuth()
+  const [isLoading, setIsLoading] = useState(false)
   const [isChecked, setIsChecked] = useState(false)
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
+    
+    if (!isChecked) {
+      setError("You must agree to the Terms and Conditions.")
+      return
+    }
 
     if (password !== confirmPassword) {
       setError("Passwords do not match")
       return
     }
 
+    setIsLoading(true)
+
     try {
-      await signUp({ username, password }) // Bỏ email
+      const response = await fetch("http://localhost:8080/auth/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, password }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || "Sign up failed")
+      }
+
       router.push("/login")
-    } catch (err) {
-      setError("Sign up failed")
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -54,7 +75,7 @@ export default function SignUpPage() {
                 type="text"
                 placeholder="johndoe"
                 value={username}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)}
+                onChange={(e) => setUsername(e.target.value)}
                 required
               />
             </div>
@@ -64,7 +85,7 @@ export default function SignUpPage() {
                 id="password"
                 type="password"
                 value={password}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+                onChange={(e) => setPassword(e.target.value)}
                 required
               />
             </div>
@@ -74,7 +95,7 @@ export default function SignUpPage() {
                 id="confirmPassword"
                 type="password"
                 value={confirmPassword}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value)}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 required
               />
             </div>
@@ -82,12 +103,12 @@ export default function SignUpPage() {
               <Checkbox
                 className="w-5 h-5"
                 checked={isChecked}
-                onCheckedChange={(checked: boolean) => setIsChecked(checked)}
+                onCheckedChange={(checked) => setIsChecked(checked)}
               />
               <p className="inline-block font-normal text-gray-500 dark:text-gray-400">
-                By creating an account means you agree to the{" "}
+                By creating an account, you agree to the{" "}
                 <span className="text-gray-800 dark:text-white/90">
-                  Terms and Conditions,
+                  Terms and Conditions
                 </span>{" "}
                 and our{" "}
                 <span className="text-gray-800 dark:text-white">

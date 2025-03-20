@@ -27,16 +27,20 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+  
     try {
       const response = await login({
-        email: username,
-        password: password,
+        username,
+        password,
       });
+  
       if (response.data) {
         saveAuthToken(response.data.jwtToken);
         localStorage.setItem("userRole", response.data.role);
         localStorage.setItem("userEmail", response.data.email);
         localStorage.setItem("userName", response.data.fullName);
+  
+        // Điều hướng dựa trên role
         switch (response.data.role) {
           case "MANAGER":
             router.push("/manager");
@@ -45,8 +49,6 @@ export default function LoginPage() {
             router.push("/staff");
             break;
           case "CUSTOMER":
-            router.push("/");
-            break;
           default:
             router.push("/");
         }

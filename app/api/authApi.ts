@@ -14,15 +14,8 @@ interface GoogleTokenCredentials {
 }
 
 // Regular login
-export const login = async (credentials: LoginCredentials) => {
-  try {
-    const response = await axios.post("http://localhost:8080/auth/login", credentials);
-    console.log("Login success");
-    return response.data;
-  } catch (error) {
-    console.error("Error during login:", error);
-    throw error;
-  }
+export const login = async (credentials: { username: string; password: string }) => {
+  return axios.post("http://localhost:8080/auth/login", credentials);
 };
 
 // Google login with OAuth2 redirect
