@@ -114,6 +114,8 @@ export default function CartPage() {
       const stripe = await stripePromise;
       if (!stripe) throw new Error('Stripe failed to initialize');
   
+      console.log('Sending request to /api/stripe with amount:', total, 'and orderId:', orderResponse.orderID);
+
       const response = await fetch('/api/stripe', {
         method: 'POST',
         headers: {

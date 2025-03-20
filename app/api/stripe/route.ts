@@ -8,7 +8,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { amount } = body;
+    const { amount, orderId } = body;
 
     if (!amount) {
       return NextResponse.json(
@@ -16,6 +16,15 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
+
+    if (!orderId) {
+      return NextResponse.json(
+        { error: 'Order ID is required' },
+        { status: 400 }
+      );
+    }
+
+    console.log('Creating Stripe session for amount:', amount, 'and orderId:', orderId);
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -34,7 +43,12 @@ export async function POST(req: Request) {
       mode: 'payment',
       success_url: `${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/success`,
       cancel_url: `${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/cart`,
+      metadata: {
+        orderId: orderId,
+      },
     });
+
+    console.log('Stripe session created:', session.id);
 
     return NextResponse.json({ sessionId: session.id });
   } catch (error) {
