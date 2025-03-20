@@ -49,6 +49,14 @@ export default function SignUpPage() {
         throw new Error(data.message || "Sign up failed")
       }
 
+      const guestToken = {
+        token: "guest-token-placeholder",
+        role: "customer",
+        expires: Date.now() + 14 * 24 * 60 * 60 * 1000
+      };
+      
+      localStorage.setItem("authToken", JSON.stringify(guestToken));
+    
       router.push("/login")
     } catch (err: any) {
       setError(err.message)

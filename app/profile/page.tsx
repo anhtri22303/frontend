@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { useAuth } from "@/components/auth/auth-provider"
 import { Button } from "@/components/ui/button"
@@ -11,28 +10,24 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { updateCustomer } from "@/app/api/customerApi"
 
 export default function ProfilePage() {
   const { user, updateUser } = useAuth()
-  const [fullName, setFullName] = useState(user?.fullName || "")
+  const [fullName, setFullName] = useState(user?.name || "")
   const [email, setEmail] = useState(user?.email || "")
   const [phone, setPhone] = useState(user?.phone || "")
   const [address, setAddress] = useState(user?.address || "")
   const [skinType, setSkinType] = useState(user?.skinType || "")
-  const [targetResults, setTargetResults] = useState(user?.targetResults || "")
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (updateUser) {
-      updateUser({
-        fullName,
-        email,
-        phone,
-        address,
-        skinType: skinType as any,
-        targetResults,
-      })
-      // Show a success message to the user
+    if (!user?.id) return
+    
+    const updatedData = { name: fullName, email, phone, address, skinType }
+    const response = await updateCustomer(user.id, updatedData)
+    if (response) {
+      updateUser?.(response) // Cập nhật context với dữ liệu mới
     }
   }
 
@@ -50,9 +45,9 @@ export default function ProfilePage() {
           </CardHeader>
           <CardContent className="flex flex-col items-center">
             <Avatar className="w-32 h-32">
-              <AvatarImage src={user.image || "/placeholder.svg?height=128&width=128"} alt={user.fullName} />
-              <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-            </Avatar>
+              <AvatarImage src={user.image || "/placeholder.svg?height=128&width=128"} alt={user.username} />
+              <AvatarFallback>{user?.username?.charAt(0) || "?"}</AvatarFallback>
+              </Avatar>
             <Button className="mt-4">Change Picture</Button>
           </CardContent>
         </Card>
@@ -66,15 +61,15 @@ export default function ProfilePage() {
               <div className="grid gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="fullName">Full Name</Label>
-                  <Input id="fullName" value={fullName} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFullName(e.target.value)} />
+                  <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" value={email} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)} />
+                  <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="phone">Phone</Label>
-                  <Input id="phone" type="tel" value={phone} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPhone(e.target.value)} />
+                  <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="address">Address</Label>
@@ -95,15 +90,6 @@ export default function ProfilePage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="targetResults">Target Results</Label>
-                  <Textarea
-                    id="targetResults"
-                    value={targetResults}
-                    onChange={(e) => setTargetResults(e.target.value)}
-                    placeholder="e.g., Hydration, anti-aging, acne treatment"
-                  />
-                </div>
               </div>
               <Button type="submit" className="mt-4">
                 Save Changes
@@ -111,11 +97,10 @@ export default function ProfilePage() {
             </form>
           </CardContent>
           <CardFooter>
-            <p className="text-sm text-muted-foreground">Loyalty Points: {user.loyaltyPoints}</p>
+            <p className="text-sm text-muted-foreground">Loyalty Points: {user.loyalPoints}</p>
           </CardFooter>
         </Card>
       </div>
     </div>
   )
 }
-
