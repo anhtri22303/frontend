@@ -12,10 +12,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { addToCart } from "@/app/api/cartApi"
 
 interface Product {
-  id: string
-  name: string
+  productID: string
+  productName: string
   category: string
-  price: string
+  price: number
+  description: string
+  rating: number
+  image_url: string
 }
 
 export default function ProductsPage() {
@@ -36,7 +39,6 @@ export default function ProductsPage() {
     }
   }, [])
 
-  // Remove the first handleAddToCart function and keep only this one
   const handleAddToCart = async (product: Product) => {
     const userId = localStorage.getItem("userID");
     const token = localStorage.getItem("jwtToken");
@@ -47,8 +49,7 @@ export default function ProductsPage() {
     }
   
     try {
-      await addToCart(userId, product.id
-      );
+      await addToCart(userId, product.productID);
       alert("Added to cart successfully!");
     } catch (error) {
       console.error("Error adding to cart:", error);
@@ -136,16 +137,16 @@ export default function ProductsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {products.length > 0 ? (
           products.map((product) => (
-            <div key={product.id} className="border rounded-lg p-4 shadow-sm">
+            <div key={product.productID} className="border rounded-lg p-4 shadow-sm">
               <Image
-                src={`/placeholder.svg?height=150&width=150`}
+                src={product.image_url}
                 width={150}
                 height={150}
                 className="rounded-md object-cover w-full h-40"
-                alt={`${product.name} thumbnail`}
+                alt={`${product.productName} thumbnail`}
               />
               <div className="mt-4">
-                <h3 className="text-lg font-medium">{product.name}</h3>
+                <h3 className="text-lg font-medium">{product.productName}</h3>
                 <p className="text-sm text-gray-500">{product.category}</p>
                 <p className="text-md font-semibold mt-2">${product.price}</p>
               </div>
@@ -157,7 +158,7 @@ export default function ProductsPage() {
                 >
                   Add to Cart
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => router.push(`/staff/products/edit/${product.id}`)}>
+                <Button variant="outline" size="sm" onClick={() => router.push(`/staff/products/edit/${product.productID}`)}>
                   Edit
                 </Button>
                 <DropdownMenu>
@@ -167,10 +168,10 @@ export default function ProductsPage() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => router.push(`/staff/products/edit/${product.id}`)}>
+                    <DropdownMenuItem onClick={() => router.push(`/staff/products/edit/${product.productID}`)}>
                       Edit
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteProduct(product.id)}>
+                    <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteProduct(product.productID)}>
                       Delete
                     </DropdownMenuItem>
                   </DropdownMenuContent>
