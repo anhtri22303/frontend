@@ -28,13 +28,35 @@ export default function ProductsPage() {
   const categories = ["DRY", "OILY", "COMBINATION", "SENSITIVE", "NORMAL"]
 
   useEffect(() => {
-    const storedUserId = localStorage.getItem("userId")
+    const storedUserId = localStorage.getItem("userID")
     if (storedUserId) {
       setUserId(storedUserId)
     } else {
       console.error("User ID not found in localStorage")
     }
   }, [])
+
+  // Remove the first handleAddToCart function and keep only this one
+  const handleAddToCart = async (product: Product) => {
+    const userId = localStorage.getItem("userID")  // Changed from userId to userID
+    if (!userId) {
+      alert("Need to login before add to cart")
+      router.push("/login")
+      return
+    }
+
+    try {
+      await addToCart(userId, {
+        productId: product.id,
+        quantity: 1,
+        price: parseFloat(product.price)
+      })
+      alert("Added to cart successfully!")
+    } catch (error) {
+      console.error("Error adding to cart:", error)
+      alert("Failed to add to cart")
+    }
+  }
 
   useEffect(() => {
     loadProducts()
@@ -84,27 +106,6 @@ export default function ProductsPage() {
       } catch (error) {
         console.error("Error deleting product:", error)
       }
-    }
-  }
-
-  const handleAddToCart = async (product: Product) => {
-    const userId = localStorage.getItem("userId")
-    if (!userId) {
-      alert("Need to login before add to cart")
-      router.push("/login")
-      return
-    }
-
-    try {
-      await addToCart(userId, {
-        productId: product.id,
-        quantity: 1,
-        price: parseFloat(product.price)
-      })
-      alert("Added to cart successfully!")
-    } catch (error) {
-      console.error("Error adding to cart:", error)
-      alert("Failed to add to cart")
     }
   }
 

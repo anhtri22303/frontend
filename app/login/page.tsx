@@ -39,8 +39,10 @@ export default function LoginPage() {
       });
   
       if (response.data) {
-        saveUserData(response.data)
-        handleRedirect(response.data.role)
+        console.log("Login response data:", response.data);  // Added this line
+        saveUserData(response.data.data)
+        handleRedirect(response.data.data.role)
+        console.log("Login successful")
       }
     } catch (err) {
       setError("Invalid username or password")

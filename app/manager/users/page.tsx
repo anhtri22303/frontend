@@ -44,7 +44,7 @@ export default function UserListPage() {
     <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">User Management</h1>
-        <Button onClick={() => router.push('/manager/users')}>
+        <Button onClick={() => router.push('/manager/users/create')}>
           Create New User
         </Button>
       </div>

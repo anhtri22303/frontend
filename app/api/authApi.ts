@@ -1,16 +1,21 @@
-import axios from "axios";
+import axios from "axios"
 
 interface LoginCredentials {
-  email: string;
-  password: string;
+  email: string
+  password: string
+}
+
+interface SignUpCredentials {
+  username: string
+  password: string
 }
 
 interface GoogleLoginCredentials {
-  email: string;
+  email: string
 }
 
 interface GoogleTokenCredentials {
-  token: string;
+  token: string
 }
 
 // Regular login
@@ -51,3 +56,8 @@ export const loginWithGoogleToken = async (credentials: GoogleTokenCredentials) 
     throw error;
   }
 };
+
+// Add the signUp function
+export const signUp = async (credentials: SignUpCredentials) => {
+  return axios.post("http://localhost:8080/auth/register", credentials)
+}

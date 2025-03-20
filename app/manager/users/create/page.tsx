@@ -11,6 +11,8 @@ import { createUser } from "@/app/api/userManagerApi"
 export default function CreateUserPage() {
   const router = useRouter()
   const [formData, setFormData] = useState({
+    name: "",
+    username: "",
     fullName: "",
     email: "",
     phone: "",
@@ -34,11 +36,29 @@ export default function CreateUserPage() {
       <h1 className="text-2xl font-bold mb-6">Create New User</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
+          <Label htmlFor="name">Username</Label>
+          <Input
+            id="name"
+            value={formData.name}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, name: e.target.value})}
+            required
+          />
+        </div>
+        <div>
+          <Label htmlFor="username">Login Username</Label>
+          <Input
+            id="username"
+            value={formData.username}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, username: e.target.value})}
+            required
+          />
+        </div>
+        <div>
           <Label htmlFor="fullName">Full Name</Label>
           <Input
             id="fullName"
             value={formData.fullName}
-            onChange={(e: { target: { value: any } }) => setFormData({...formData, fullName: e.target.value})}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, fullName: e.target.value})}
             required
           />
         </div>
@@ -49,7 +69,7 @@ export default function CreateUserPage() {
             id="email"
             type="email"
             value={formData.email}
-            onChange={(e: { target: { value: any } }) => setFormData({...formData, email: e.target.value})}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, email: e.target.value})}
             required
           />
         </div>
@@ -59,7 +79,7 @@ export default function CreateUserPage() {
           <Input
             id="phone"
             value={formData.phone}
-            onChange={(e: { target: { value: any } }) => setFormData({...formData, phone: e.target.value})}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, phone: e.target.value})}
           />
         </div>
 
@@ -68,7 +88,7 @@ export default function CreateUserPage() {
           <Input
             id="address"
             value={formData.address}
-            onChange={(e: { target: { value: any } }) => setFormData({...formData, address: e.target.value})}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, address: e.target.value})}
           />
         </div>
 

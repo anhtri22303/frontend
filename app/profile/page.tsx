@@ -11,23 +11,59 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { updateCustomer } from "@/app/api/customerApi"
+import { useEffect } from "react"
 
 export default function ProfilePage() {
   const { user, updateUser } = useAuth()
-  const [fullName, setFullName] = useState(user?.name || "")
+  const [fullName, setFullName] = useState(user?.fullName || "")
   const [email, setEmail] = useState(user?.email || "")
   const [phone, setPhone] = useState(user?.phone || "")
   const [address, setAddress] = useState(user?.address || "")
   const [skinType, setSkinType] = useState(user?.skinType || "")
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
+  const [success, setSuccess] = useState("")
+
+
+  useEffect(() => {
+    if (user) {
+      setFullName(user.fullName || "")
+      setEmail(user.email || "")
+      setPhone(user.phone || "")
+      setAddress(user.address || "")
+      setSkinType(user.skinType || "")
+    }
+  }, [user])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user?.id) return
+
+    setIsLoading(true)
+    setError("")
+    setSuccess("")
     
-    const updatedData = { name: fullName, email, phone, address, skinType }
-    const response = await updateCustomer(user.id, updatedData)
-    if (response) {
-      updateUser?.(response) // Cập nhật context với dữ liệu mới
+    try {
+      const updatedData = {
+        name: fullName,
+        email,
+        phone,
+        address,
+        skinType
+      }
+      
+      const response = await updateCustomer(user.id, updatedData)
+      if (response) {
+        updateUser(response)
+        setSuccess("Profile updated successfully!")
+      } else {
+        setError("Failed to update profile")
+      }
+    } catch (err) {
+      setError("An error occurred while updating profile")
+      console.error("Update error:", err)
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -61,15 +97,15 @@ export default function ProfilePage() {
               <div className="grid gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="fullName">Full Name</Label>
-                  <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+                  <Input id="fullName" value={fullName} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFullName(e.target.value)} />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                  <Input id="email" type="email" value={email} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)} />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="phone">Phone</Label>
-                  <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                  <Input id="phone" type="tel" value={phone} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPhone(e.target.value)} />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="address">Address</Label>
@@ -91,8 +127,8 @@ export default function ProfilePage() {
                   </Select>
                 </div>
               </div>
-              <Button type="submit" className="mt-4">
-                Save Changes
+              <Button type="submit" className="mt-4" disabled={isLoading}>
+                {isLoading ? "Saving..." : "Save Changes"}
               </Button>
             </form>
           </CardContent>
