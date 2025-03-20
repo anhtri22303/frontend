@@ -15,7 +15,7 @@ interface User {
 export const fetchAllUsersManager = async () => {
   try {
     const response = await axiosInstance.get("/manager/users")
-    return response.data
+    return response
   } catch (error) {
     console.error("Error fetching all users:", error)
     return null

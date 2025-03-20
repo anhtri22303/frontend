@@ -18,26 +18,33 @@ interface User {
 }
 
 export default function UserListPage() {
-  const [users, setUsers] = useState<User[]>([])
+  const [users, setUsers] = useState<User[]>([]);
   const router = useRouter()
 
   useEffect(() => {
     const loadUsers = async () => {
       try {
-        const response = await fetchAllUsersManager()
-        setUsers(response.data)
+        const response = await fetchAllUsersManager();
+        if (response?.data && Array.isArray(response.data)) {
+          setUsers(response.data);
+        } else {
+          setUsers([]); 
+          console.error("Invalid response format:", response);
+        }
       } catch (error) {
-        console.error("Failed to load users:", error)
+        console.error("Failed to load users:", error);
+        setUsers([]); 
       }
-    }
-    loadUsers()
-  }, [])
+    };
+    loadUsers();
+  }, []);
+  
 
   return (
     <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">User Management</h1>
-        <Button onClick={() => router.push('/manager/users/create')}>
+        <Button onClick={() => router.push('/manager/users')}>
           Create New User
         </Button>
       </div>
@@ -55,7 +62,7 @@ export default function UserListPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {users.map((user) => (
+          {Array.isArray(users) ? users.map((user) => (
               <tr key={user.userID}>
                 <td className="px-6 py-4">{user.userID}</td>
                 <td className="px-6 py-4">{user.fullName}</td>
@@ -68,7 +75,7 @@ export default function UserListPage() {
                   </Button>
                 </td>
               </tr>
-            ))}
+            )): <tr><td colSpan={5} className="text-center py-4">No users found</td></tr>}
           </tbody>
         </table>
       </div>
