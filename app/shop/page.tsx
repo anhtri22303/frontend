@@ -47,10 +47,8 @@ export default function ProductsPage() {
     }
   
     try {
-      await addToCart(userId, {
-        productId: product.id,
-        quantity: 1
-      });
+      await addToCart(userId, product.id
+      );
       alert("Added to cart successfully!");
     } catch (error) {
       console.error("Error adding to cart:", error);

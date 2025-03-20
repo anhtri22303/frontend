@@ -1,7 +1,7 @@
 import axiosInstance from "@/lib/axiosInstance"
 
 interface CartItem {
-  productId: string
+  productID: string
   quantity: number
   price?: number
 }
@@ -25,9 +25,9 @@ export const fetchCartByUserId = async (userId: string) => {
 }
 
 // Get specific cart item
-export const fetchCartItem = async (userId: string, productId: string) => {
+export const fetchCartItem = async (userId: string, productID: string) => {
   try {
-    const response = await axiosInstance.get(`/cart/${userId}/${productId}`)
+    const response = await axiosInstance.get(`/cart/${userId}/${productID}`)
     console.log("Get cart item success")
     return response.data
   } catch (error) {
@@ -37,9 +37,9 @@ export const fetchCartItem = async (userId: string, productId: string) => {
 }
 
 // Update cart item quantity
-export const updateCartItem = async (userId: string, productId: string, quantity: number) => {
+export const updateCartItem = async (userId: string, productID: string, quantity: number) => {
   try {
-    const response = await axiosInstance.put(`/cart/${userId}/${productId}`, { quantity })
+    const response = await axiosInstance.put(`/cart/${userId}/${productID}`, { quantity })
     console.log("Update cart item success")
     return response.data
   } catch (error) {
@@ -48,10 +48,10 @@ export const updateCartItem = async (userId: string, productId: string, quantity
   }
 }
 
-export const addToCart = async (userId: string, item: CartItem) => {
+export const addToCart = async (userId: string, productID: String) => {
   try {
     const response = await axiosInstance.post(
-      `/cart/${userId}/add/${item.productId}` // Thêm productId vào URL
+      `/cart/${userId}/add/${productID}`
     );
     console.log("Add to cart success");
     return response.data;
@@ -80,9 +80,9 @@ export const clearCart = async (userId: string) => {
 }
 
 // Remove item from cart
-export const removeFromCart = async (userId: string, productId: string) => {
+export const removeFromCart = async (userId: string, productID: string) => {
   try {
-    const response = await axiosInstance.delete(`/cart/${userId}/remove/${productId}`)
+    const response = await axiosInstance.delete(`/cart/${userId}/remove/${productID}`)
     console.log("Remove from cart success")
     return response.data
   } catch (error) {
