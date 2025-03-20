@@ -22,10 +22,10 @@ export default function LoginPage() {
   const saveUserData = (userData: any) => {
     localStorage.setItem("jwtToken", userData.jwtToken)
     document.cookie = `jwtToken=${userData.jwtToken}; path=/; max-age=${7 * 24 * 60 * 60}`
-    localStorage.setItem("userId", userData.id)
+    localStorage.setItem("userID", userData.userID)  // Changed from userId to userID
     localStorage.setItem("userRole", userData.role)
     localStorage.setItem("userEmail", userData.email)
-    localStorage.setItem("userName", userData.fullName)
+    localStorage.setItem("userName", userData.fullName || "")  // Handle null fullName
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
