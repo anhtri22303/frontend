@@ -25,7 +25,7 @@ export default function LoginPage() {
     localStorage.setItem("userID", userData.userID)  // Changed from userId to userID
     localStorage.setItem("userRole", userData.role)
     localStorage.setItem("userEmail", userData.email)
-    localStorage.setItem("userName", userData.fullName || "")  // Handle null fullName
+    localStorage.setItem("fullName", userData.fullName || "")  // Handle null fullName
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -76,7 +76,7 @@ export default function LoginPage() {
         
         localStorage.setItem("userRole", response.data.role);
         localStorage.setItem("userEmail", response.data.email);
-        localStorage.setItem("userName", response.data.fullName);
+        localStorage.setItem("fullName", response.data.fullName);
   
         // Điều hướng dựa trên role
         switch (response.data.role) {

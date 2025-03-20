@@ -3,7 +3,7 @@ import axiosInstance from "@/lib/axiosInstance"
 interface CartItem {
   productId: string
   quantity: number
-  price: number
+  price?: number
 }
 
 interface Cart {
@@ -48,17 +48,24 @@ export const updateCartItem = async (userId: string, productId: string, quantity
   }
 }
 
-// Add item to cart
 export const addToCart = async (userId: string, item: CartItem) => {
   try {
-    const response = await axiosInstance.post(`/cart/${userId}/add`, item)
-    console.log("Add to cart success")
-    return response.data
+    const response = await axiosInstance.post(
+      `/cart/${userId}/add/${item.productId}?quantity=${item.quantity}` // Thêm productId vào URL
+    );
+    console.log("Add to cart success");
+    return response.data;
   } catch (error) {
-    console.error("Error adding item to cart:", error)
-    throw error
+    console.error("Error adding item to cart:", error);
+    if (error.response) {
+      throw new Error(error.response.data.error || "Failed to add to cart: Server error");
+    } else if (error.request) {
+      throw new Error("Failed to add to cart: No response from server");
+    } else {
+      throw new Error("Failed to add to cart: " + error.message);
+    }
   }
-}
+};
 
 // Clear cart
 export const clearCart = async (userId: string) => {

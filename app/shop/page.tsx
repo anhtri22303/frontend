@@ -38,25 +38,25 @@ export default function ProductsPage() {
 
   // Remove the first handleAddToCart function and keep only this one
   const handleAddToCart = async (product: Product) => {
-    const userId = localStorage.getItem("userID")  // Changed from userId to userID
-    if (!userId) {
-      alert("Need to login before add to cart")
-      router.push("/login")
-      return
+    const userId = localStorage.getItem("userID");
+    const token = localStorage.getItem("jwtToken");
+    if (!userId || !token) {
+      alert("Need to login before adding to cart");
+      router.push("/login");
+      return;
     }
-
+  
     try {
       await addToCart(userId, {
         productId: product.id,
-        quantity: 1,
-        price: parseFloat(product.price)
-      })
-      alert("Added to cart successfully!")
+        quantity: 1
+      });
+      alert("Added to cart successfully!");
     } catch (error) {
-      console.error("Error adding to cart:", error)
-      alert("Failed to add to cart")
+      console.error("Error adding to cart:", error);
+      alert(error.message || "Failed to add to cart");
     }
-  }
+  };
 
   useEffect(() => {
     loadProducts()
