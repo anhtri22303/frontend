@@ -4,13 +4,12 @@ import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
-import { Input } from "@/components/ui/input"
 import { fetchCartByUserId, updateCartItem, removeFromCart } from "@/app/api/cartApi"
 import stripePromise from '@/lib/stripe-client'
 import { createOrder } from "@/app/api/orderApi"
 
 interface CartItem {
-  productId: string
+  productID: string
   quantity: number
   price: number
   name?: string
@@ -18,38 +17,37 @@ interface CartItem {
 }
 
 interface Cart {
-  userId: string
+  userID: string
   items: CartItem[]
   total: number
 }
 
 export default function CartPage() {
   const [cartItems, setCartItems] = useState<CartItem[]>([])
-  const [userId, setUserId] = useState<string | null>(null)
+  const [userID, setUserID] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [isProcessing, setIsProcessing] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
-    const storedUserId = localStorage.getItem("userId")
-    if (storedUserId) {
-      setUserId(storedUserId)
+    const storedUserID = localStorage.getItem("userID")
+    if (storedUserID) {
+      setUserID(storedUserID)
     } else {
-      // Handle case when userId is not found in localStorage
       console.error("User ID not found in localStorage")
     }
   }, [])
 
   useEffect(() => {
-    if (userId) {
+    if (userID) {
       loadCartItems()
     }
-  }, [userId])
+  }, [userID])
 
   const loadCartItems = async () => {
     try {
       setLoading(true)
-      const response = await fetchCartByUserId(userId!)
+      const response = await fetchCartByUserId(userID!)
       if (response && response.items) {
         setCartItems(response.items)
       }
@@ -60,14 +58,14 @@ export default function CartPage() {
     }
   }
 
-  const handleUpdateQuantity = async (productId: string, newQuantity: number) => {
+  const handleUpdateQuantity = async (productID: string, newQuantity: number) => {
     if (newQuantity < 1) return
 
     try {
-      await updateCartItem(userId!, productId, newQuantity)
+      await updateCartItem(userID!, productID, newQuantity)
       setCartItems(prev =>
         prev.map(item =>
-          item.productId === productId ? { ...item, quantity: newQuantity } : item
+          item.productID === productID ? { ...item, quantity: newQuantity } : item
         )
       )
     } catch (error) {
@@ -76,32 +74,30 @@ export default function CartPage() {
     }
   }
 
-  const handleRemoveItem = async (productId: string) => {
+  const handleRemoveItem = async (productID: string) => {
     try {
-      await removeFromCart(userId!, productId)
-      setCartItems(prev => prev.filter(item => item.productId !== productId))
+      await removeFromCart(userID!, productID)
+      setCartItems(prev => prev.filter(item => item.productID !== productID))
     } catch (error) {
       console.error("Error removing item:", error)
       alert("Failed to remove item")
     }
   }
 
-  // In your cart page, modify the handleCheckout function:
-  
   const handleCheckout = async () => {
     try {
       setIsProcessing(true);
-      const userId = localStorage.getItem("userId");
+      const userID = localStorage.getItem("userID");
       
       // Create order data
       const orderData = {
-        customerID: userId!,
+        customerID: userID!,
         orderDate: new Date().toISOString(),
         status: "PENDING",
         payment: "STRIPE",
         amount: total,
         details: cartItems.map(item => ({
-          productID: item.productId,
+          productID: item.productID,
           quantity: item.quantity,
           price: item.price
         }))
@@ -166,22 +162,22 @@ export default function CartPage() {
         <div className="md:col-span-2 space-y-6">
           {cartItems.length > 0 ? (
             cartItems.map((item) => (
-              <div key={item.productId} className="flex items-center space-x-4 border-b pb-4">
+              <div key={item.productID} className="flex items-center space-x-4 border-b pb-4">
                 <Image
                   src={item.image || "/placeholder.svg"}
-                  alt={item.name || `Product ${item.productId}`}
+                  alt={item.name || `Product ${item.productID}`}
                   width={100}
                   height={100}
                   className="rounded-md"
                 />
                 <div className="flex-grow">
-                  <h3 className="font-semibold">{item.name || `Product ${item.productId}`}</h3>
+                  <h3 className="font-semibold">{item.name || `Product ${item.productID}`}</h3>
                   <p className="text-sm text-gray-500">${item.price.toFixed(2)}</p>
                   <div className="flex items-center mt-2">
                     <Button 
                       size="sm" 
                       variant="outline" 
-                      onClick={() => handleUpdateQuantity(item.productId, item.quantity - 1)}
+                      onClick={() => handleUpdateQuantity(item.productID, item.quantity - 1)}
                     >
                       -
                     </Button>
@@ -189,13 +185,13 @@ export default function CartPage() {
                     <Button 
                       size="sm" 
                       variant="outline" 
-                      onClick={() => handleUpdateQuantity(item.productId, item.quantity + 1)}
+                      onClick={() => handleUpdateQuantity(item.productID, item.quantity + 1)}
                     >
                       +
                     </Button>
                   </div>
                 </div>
-                <Button variant="ghost" onClick={() => handleRemoveItem(item.productId)}>
+                <Button variant="ghost" onClick={() => handleRemoveItem(item.productID)}>
                   Remove
                 </Button>
               </div>
