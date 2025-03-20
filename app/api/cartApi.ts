@@ -51,7 +51,7 @@ export const updateCartItem = async (userId: string, productId: string, quantity
 export const addToCart = async (userId: string, item: CartItem) => {
   try {
     const response = await axiosInstance.post(
-      `/cart/${userId}/add/${item.productId}?quantity=${item.quantity}` // Thêm productId vào URL
+      `/cart/${userId}/add/${item.productId}` // Thêm productId vào URL
     );
     console.log("Add to cart success");
     return response.data;

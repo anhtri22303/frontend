@@ -73,7 +73,7 @@ export default function LoginPage() {
         // Save user data from Google login
         localStorage.setItem("jwtToken", response.data.jwtToken);
         document.cookie = `jwtToken=${response.data.jwtToken}; path=/; max-age=${7 * 24 * 60 * 60}`;
-        
+        localStorage.setItem("userID", response.data.userID);
         localStorage.setItem("userRole", response.data.role);
         localStorage.setItem("userEmail", response.data.email);
         localStorage.setItem("fullName", response.data.fullName);

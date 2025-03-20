@@ -12,14 +12,17 @@ export default function CallbackPage() {
     const role = urlParams.get("role");
     const email = urlParams.get("email");
     const fullName = urlParams.get("fullName");
+    const userId = urlParams.get("userId");
 
     console.log("Callback params:", { jwtToken, role, email, fullName });
 
-    if (jwtToken && role && email && fullName) {
+    if (jwtToken && role && email && fullName && userId) {
       localStorage.setItem("jwtToken", jwtToken);
       localStorage.setItem("userRole", role);
       localStorage.setItem("userEmail", email);
-      localStorage.setItem("userName", fullName);
+      localStorage.setItem("fullName", fullName);
+      localStorage.setItem("userId", userId);
+
 
       switch (role) {
         case "MANAGER":
