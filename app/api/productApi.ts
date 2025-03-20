@@ -75,3 +75,14 @@ export const fetchProductsByName = async (productName: string) => {
     return []
   }
 }
+
+export const fetchProductById = async (id: string) => {
+  try {
+    const response = await axiosInstance.get(`/products/${id}`)
+    console.log("Get by ID success")
+    return response.data
+  } catch (error) {
+    console.error("Error fetching product by ID:", error)
+    return null
+  }
+}

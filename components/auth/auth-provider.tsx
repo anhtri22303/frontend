@@ -5,23 +5,26 @@ import type React from "react"
 import { createContext, useContext, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 
+import { login as loginApi, loginWithGoogle as loginWithGoogleApi } from "@/app/api/authApi"
+
 type User = {
   id: string
   username: string
+  fullName: string
   image?: string
-  skinType?: string
-  loyaltyPoints: number
+  role: string
 }
 
 type AuthContextType = {
   user: User | null
   isLoading: boolean
-  login: (username: string, password: string) => Promise<void>
+  login: (email: string, password: string) => Promise<void>
   loginWithGoogle: () => Promise<void>
-  signUp: (data: { username: string, password: string }) => Promise<void>
+  signUp: (data: { username: string; password: string }) => Promise<void>
   logout: () => void
 }
 
+// Create and export the context
 const AuthContext = createContext<AuthContextType>({
   user: null,
   isLoading: true,
@@ -31,6 +34,7 @@ const AuthContext = createContext<AuthContextType>({
   logout: () => {},
 })
 
+// Export the useAuth hook
 export const useAuth = () => useContext(AuthContext)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -39,29 +43,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
 
   useEffect(() => {
-    // Check if user is logged in from localStorage
-    const storedUser = localStorage.getItem("user")
-    if (storedUser) {
-      setUser(JSON.parse(storedUser))
+    const jwtToken = localStorage.getItem("jwtToken")
+    if (jwtToken) {
+      const userData = {
+        id: localStorage.getItem("userId") || "",
+        username: localStorage.getItem("userEmail") || "",
+        fullName: localStorage.getItem("userName") || "",
+        role: localStorage.getItem("userRole") || "",
+      }
+      setUser(userData)
     }
     setIsLoading(false)
   }, [])
 
-  const login = async (username: string, password: string) => { // Thay email bằng username
+  const login = async (email: string, password: string) => {
     setIsLoading(true)
     try {
-      // This would be an API call in a real application
-      // Simulating a successful login for demo purposes
-      const mockUser: User = {
-        id: "user-1",
-        username, // Thay email bằng username
-        loyaltyPoints: 150,
-        skinType: "combination",
+      const response = await loginApi({ email, password })
+      if (response.data) {
+        const userData = response.data
+        setUser(userData)
       }
-
-      setUser(mockUser)
-      localStorage.setItem("user", JSON.stringify(mockUser))
-      router.push("/")
     } catch (error) {
       console.error("Login failed:", error)
       throw error
@@ -73,18 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loginWithGoogle = async () => {
     setIsLoading(true)
     try {
-      // This would be an API call to your Google OAuth endpoint in a real application
-      // Simulating a successful login for demo purposes
-      const mockUser: User = {
-        id: "google-user-1",
-        username: "googleuser", // Thay email và name bằng username
-        image: "/placeholder.svg?height=40&width=40",
-        loyaltyPoints: 75,
-      }
-
-      setUser(mockUser)
-      localStorage.setItem("user", JSON.stringify(mockUser))
-      router.push("/")
+      await loginWithGoogleApi()
     } catch (error) {
       console.error("Google login failed:", error)
       throw error
@@ -93,17 +84,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const signUp = async (data: { username: string, password: string }) => { // Thay email và fullname bằng username
+  const logout = () => {
+    setUser(null)
+    localStorage.removeItem("jwtToken")
+    localStorage.removeItem("userId")
+    localStorage.removeItem("userRole")
+    localStorage.removeItem("userEmail")
+    localStorage.removeItem("userName")
+    document.cookie = "jwtToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT"
+    router.push("/login")
+  }
+
+  const signUp = async (data: { username: string; password: string }) => {
     setIsLoading(true)
     try {
-      // This would be an API call in a real application
-      // Simulating a successful sign-up for demo purposes
       const mockUser: User = {
         id: "user-2",
-        username: data.username, // Thay email và fullname bằng username
-        loyaltyPoints: 0,
+        username: data.username,
+        fullName: data.username,
+        role: "CUSTOMER"
       }
-
       setUser(mockUser)
       localStorage.setItem("user", JSON.stringify(mockUser))
       router.push("/")
@@ -113,12 +113,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false)
     }
-  }
-
-  const logout = () => {
-    setUser(null)
-    localStorage.removeItem("user")
-    router.push("/")
   }
 
   return (
