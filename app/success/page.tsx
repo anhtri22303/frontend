@@ -12,15 +12,15 @@ interface OrderInfo {
     phone?: string
     address?: string
   }
-  orderId?: string
+  orderID?: string
   cartItems?: {
-    productId: string
+    productID: string
     name?: string
-    price: number
+    totalAmount: number
     quantity: number
     image?: string
   }[]
-  total?: number
+  totalAmount?: number
 }
 
 export default function SuccessPage() {
@@ -49,7 +49,7 @@ export default function SuccessPage() {
 
         <div className="bg-white shadow-lg rounded-lg p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">Order Information</h2>
-          <p className="text-gray-600">Order ID: {orderInfo.orderId || '-'}</p>
+          <p className="text-gray-600">Order ID: {orderInfo.orderID || '-'}</p>
           
           <div className="mt-4">
             <h3 className="font-medium mb-2">Customer Details:</h3>
@@ -64,7 +64,7 @@ export default function SuccessPage() {
           <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
           <div className="space-y-4">
             {orderInfo.cartItems?.map((item) => (
-              <div key={item.productId} className="flex items-center space-x-4 border-b pb-4">
+              <div key={item.productID} className="flex items-center space-x-4 border-b pb-4">
                 <Image
                   src={item.image || "/placeholder.svg"}
                   alt={item.name || 'Product'}
@@ -75,16 +75,16 @@ export default function SuccessPage() {
                 <div className="flex-grow">
                   <h3 className="font-medium">{item.name || 'Product'}</h3>
                   <p className="text-gray-600">
-                    ${item.price.toFixed(2)} x {item.quantity}
+                    ${item.totalAmount.toFixed(2)} x {item.quantity}
                   </p>
                 </div>
-                <p className="font-medium">${(item.price * item.quantity).toFixed(2)}</p>
+                <p className="font-medium">${(item.totalAmount * item.quantity).toFixed(2)}</p>
               </div>
             ))}
             
             <div className="flex justify-between pt-4 font-semibold">
               <span>Total</span>
-              <span>${orderInfo.total?.toFixed(2) || '0.00'}</span>
+              <span>${orderInfo.totalAmount?.toFixed(2) || '0.00'}</span>
             </div>
           </div>
         </div>

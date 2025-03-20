@@ -104,17 +104,14 @@ export default function CartPage() {
       };
   
       // Create order first
-      const orderResponse = await createOrder(userID!,orderData);
-      
-      if (!orderResponse) {
-        throw new Error('Failed to create order');
-      }
-  
+      const orderResponse = await createOrder(userID!, orderData);
+      console.log('Order response:', orderResponse);
+
       // Then proceed with Stripe payment
       const stripe = await stripePromise;
       if (!stripe) throw new Error('Stripe failed to initialize');
   
-      console.log('Sending request to /api/stripe with amount:', total, 'and orderId:', orderResponse.orderID);
+      console.log('Sending request to /api/stripe with amount:', orderResponse.data.totalAmount, 'and orderId:', orderResponse.data.orderID);
 
       const response = await fetch('/api/stripe', {
         method: 'POST',
@@ -122,8 +119,8 @@ export default function CartPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          amount: total,
-          orderId: orderResponse.orderID // Include order ID in stripe payment
+          totalAmount: orderResponse.data.totalAmount,
+          orderID: orderResponse.data.orderID // Include order ID in stripe payment
         }),
       });
   

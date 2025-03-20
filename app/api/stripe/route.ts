@@ -8,23 +8,26 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { amount, orderId } = body;
+    const { totalAmount, orderID } = body;
 
-    if (!amount) {
+    console.log('Received amount:', totalAmount);
+    console.log('Received orderID:', orderID);
+
+    if (!totalAmount) {
       return NextResponse.json(
         { error: 'Amount is required' },
         { status: 400 }
       );
     }
 
-    if (!orderId) {
+    if (!orderID) {
       return NextResponse.json(
         { error: 'Order ID is required' },
         { status: 400 }
       );
     }
 
-    console.log('Creating Stripe session for amount:', amount, 'and orderId:', orderId);
+    console.log('Creating Stripe session for amount:', totalAmount, 'and orderID:', orderID);
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -35,7 +38,7 @@ export async function POST(req: Request) {
             product_data: {
               name: 'Cart Payment',
             },
-            unit_amount: Math.round(amount * 100), // Stripe expects amount in cents
+            unit_amount: Math.round(totalAmount * 100), // Stripe expects amount in cents
           },
           quantity: 1,
         },
@@ -44,7 +47,7 @@ export async function POST(req: Request) {
       success_url: `${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/success`,
       cancel_url: `${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/cart`,
       metadata: {
-        orderId: orderId,
+        orderID: orderID,
       },
     });
 
