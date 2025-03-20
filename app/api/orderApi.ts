@@ -11,8 +11,7 @@ export interface Order {
   customerID: string
   orderDate: string
   status: string
-  payment: string
-  amount: number
+  totalAmount: number
   details?: OrderDetail[]
 }
 
@@ -29,9 +28,9 @@ export const fetchOrders = async () => {
 }
 
 // Create new order
-export const createOrder = async (orderData: Omit<Order, 'orderID'>) => {
+export const createOrder = async (userID: String ,orderData: Omit<Order, 'orderID'>) => {
   try {
-    const response = await axiosInstance.post("/orders", orderData)
+    const response = await axiosInstance.post(`/orders/${userID}`, orderData)
     console.log("Create success")
     return response.data
   } catch (error) {

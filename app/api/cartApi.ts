@@ -7,15 +7,15 @@ interface CartItem {
 }
 
 interface Cart {
-  userId: string
+  userID: string
   items: CartItem[]
   total: number
 }
 
 // Get cart by user ID
-export const fetchCartByUserId = async (userId: string) => {
+export const fetchCartByUserId = async (userID: string) => {
   try {
-    const response = await axiosInstance.get(`/cart/${userId}`)
+    const response = await axiosInstance.get(`/cart/${userID}`)
     console.log("Get cart success")
     return response.data
   } catch (error) {

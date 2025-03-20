@@ -9,9 +9,10 @@ import stripePromise from '@/lib/stripe-client'
 import { createOrder } from "@/app/api/orderApi"
 
 interface CartItem {
+  userID: string
   productID: string
   quantity: number
-  price: number
+  totalAmount: number
   name?: string
   image?: string
 }
@@ -94,17 +95,16 @@ export default function CartPage() {
         customerID: userID!,
         orderDate: new Date().toISOString(),
         status: "PENDING",
-        payment: "STRIPE",
-        amount: total,
-        details: cartItems.map(item => ({
+        totalAmount: total,
+        orderDetails: cartItems.map(item => ({
           productID: item.productID,
           quantity: item.quantity,
-          price: item.price
+          price: item.totalAmount
         }))
       };
   
       // Create order first
-      const orderResponse = await createOrder(orderData);
+      const orderResponse = await createOrder(userID!,orderData);
       
       if (!orderResponse) {
         throw new Error('Failed to create order');
@@ -150,7 +150,7 @@ export default function CartPage() {
     }
   };
 
-  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  const subtotal = cartItems.reduce((sum, item) => sum + item.totalAmount * item.quantity, 0)
   const shipping = subtotal > 50 ? 0 : 5.99
   const total = subtotal + shipping
 
@@ -172,7 +172,7 @@ export default function CartPage() {
                 />
                 <div className="flex-grow">
                   <h3 className="font-semibold">{item.name || `Product ${item.productID}`}</h3>
-                  <p className="text-sm text-gray-500">${item.price.toFixed(2)}</p>
+                  <p className="text-sm text-gray-500">${item.totalAmount.toFixed(2)}</p>
                   <div className="flex items-center mt-2">
                     <Button 
                       size="sm" 
