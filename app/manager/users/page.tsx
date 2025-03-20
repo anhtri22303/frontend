@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { fetchAllUsersManager } from "@/app/api/userManagerApi"
+import { fetchStaffAndManagers } from "@/app/api/userManagerApi"
 import { useRouter } from "next/navigation"
 
 interface User {
@@ -24,9 +24,13 @@ export default function UserListPage() {
   useEffect(() => {
     const loadUsers = async () => {
       try {
-        const response = await fetchAllUsersManager();
+        const response = await fetchStaffAndManagers();
         if (response?.data && Array.isArray(response.data)) {
-          setUsers(response.data);
+          // Filter for only MANAGER and STAFF roles
+          const staffAndManagers = response.data.filter(
+            user => user.role === "MANAGER" || user.role === "STAFF"
+          );
+          setUsers(staffAndManagers);
         } else {
           setUsers([]); 
           console.error("Invalid response format:", response);

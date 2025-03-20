@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, type ReactNode } from "react"
-import { Package, ShoppingCart, Menu, X } from "lucide-react"
+import { Package, ShoppingCart, Menu, X, BadgeDollarSign } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"

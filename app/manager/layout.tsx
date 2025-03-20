@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, type ReactNode } from "react"
-import { BarChart3, Package, Users, Menu, X, UserCheck } from "lucide-react"
+import { BarChart3, Package, Users, Menu, X, UserCheck, BadgeDollarSign } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -22,11 +22,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { name: "Dashboard", href: "/manager", icon: BarChart3 },
     { name: "Users", href: "/manager/users", icon: UserCheck },
     { name: "Customers", href: "/manager/customers", icon: Users },
+    { name: "Promotions", href: "/manager/promotions", icon: BadgeDollarSign },
   ]
 
   return (
     <div className="flex h-screen bg-background">
-      {/* Sidebar for mobile (overlay) */}
       <div
         className={`fixed inset-0 z-50 bg-background/80 backdrop-blur-sm lg:hidden ${sidebarOpen ? "block" : "hidden"}`}
         onClick={toggleSidebar}

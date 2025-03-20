@@ -11,13 +11,24 @@ interface User {
   loyalPoints: number
 }
 
-// Get all users
-export const fetchAllUsersManager = async () => {
+// Get all users with role MANAGER and STAFF
+export const fetchStaffAndManagers = async () => {
   try {
-    const response = await axiosInstance.get("/manager/users")
+    const response = await axiosInstance.get("/manager/users?role=STAFF,MANAGER")
     return response
   } catch (error) {
-    console.error("Error fetching all users:", error)
+    console.error("Error fetching staff and managers:", error)
+    return null
+  }
+}
+
+// Get all customers (users with role CUSTOMER)
+export const fetchCustomers = async () => {
+  try {
+    const response = await axiosInstance.get("/manager/users?role=CUSTOMER")
+    return response
+  } catch (error) {
+    console.error("Error fetching customers:", error)
     return null
   }
 }
@@ -66,10 +77,10 @@ export const deleteUser = async (userId: string) => {
   }
 }
 
-// Search users by name
-export const searchUsers = async (name: string) => {
+// Search users by name and role
+export const searchUsersByRole = async (name: string, role: string) => {
   try {
-    const response = await axiosInstance.get(`/manager/users/search?name=${name}`)
+    const response = await axiosInstance.get(`/manager/users/search?name=${name}&role=${role}`)
     return response.data
   } catch (error) {
     console.error("Error searching users:", error)

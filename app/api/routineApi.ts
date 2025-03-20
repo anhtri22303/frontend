@@ -1,22 +1,16 @@
 import axiosInstance from "@/lib/axiosInstance"
 
 interface SkinCareRoutine {
-  id: string
-  name: string
-  description: string
+  routineID: string
   category: string
-  steps: string[]
-  products: string[]
-  skinType: string
-  createdAt: string
-  updatedAt: string
+  routineName: string
+  routineDescription: string
 }
 
 // Get all skincare routines
 export const fetchRoutines = async () => {
   try {
     const response = await axiosInstance.get("/skin-care-routines")
-    console.log("Get routines success")
     return response.data
   } catch (error) {
     console.error("Error fetching routines:", error)
@@ -25,10 +19,9 @@ export const fetchRoutines = async () => {
 }
 
 // Create a new skincare routine
-export const createRoutine = async (routine: Omit<SkinCareRoutine, 'id' | 'createdAt' | 'updatedAt'>) => {
+export const createRoutine = async (routine: Omit<SkinCareRoutine, 'routineID'>) => {
   try {
     const response = await axiosInstance.post("/skin-care-routines", routine)
-    console.log("Create routine success")
     return response.data
   } catch (error) {
     console.error("Error creating routine:", error)

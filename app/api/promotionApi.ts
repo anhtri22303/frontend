@@ -1,20 +1,17 @@
 import axiosInstance from "@/lib/axiosInstance"
 
 interface Promotion {
-  id: string
-  name: string
-  description: string
-  discountPercent: number
+  promotionID: string
+  promotionName: string
+  discount: number
   startDate: string
   endDate: string
-  isActive: boolean
 }
 
-// Get all promotions
 export const fetchPromotions = async () => {
   try {
     const response = await axiosInstance.get("/promotions")
-    console.log("Get promotions success")
+    console.log("Get promotion success")
     return response.data
   } catch (error) {
     console.error("Error fetching promotions:", error)
@@ -22,8 +19,7 @@ export const fetchPromotions = async () => {
   }
 }
 
-// Create a new promotion
-export const createPromotion = async (promotion: Omit<Promotion, 'id'>) => {
+export const createPromotion = async (promotion: Omit<Promotion, 'promotionID'>) => {
   try {
     const response = await axiosInstance.post("/promotions", promotion)
     console.log("Create promotion success")
@@ -34,19 +30,6 @@ export const createPromotion = async (promotion: Omit<Promotion, 'id'>) => {
   }
 }
 
-// Get promotion by ID
-export const fetchPromotionById = async (id: string) => {
-  try {
-    const response = await axiosInstance.get(`/promotions/${id}`)
-    console.log("Get promotion success")
-    return response.data
-  } catch (error) {
-    console.error("Error fetching promotion:", error)
-    throw error
-  }
-}
-
-// Update promotion
 export const updatePromotion = async (id: string, promotion: Partial<Promotion>) => {
   try {
     const response = await axiosInstance.put(`/promotions/${id}`, promotion)
@@ -58,7 +41,6 @@ export const updatePromotion = async (id: string, promotion: Partial<Promotion>)
   }
 }
 
-// Delete promotion
 export const deletePromotion = async (id: string) => {
   try {
     const response = await axiosInstance.delete(`/promotions/${id}`)
@@ -66,6 +48,17 @@ export const deletePromotion = async (id: string) => {
     return response.data
   } catch (error) {
     console.error("Error deleting promotion:", error)
+    throw error
+  }
+}
+// Get promotion by ID
+export const fetchPromotionById = async (id: string) => {
+  try {
+    const response = await axiosInstance.get(`/promotions/${id}`)
+    console.log("Get promotion by ID success")
+    return response.data
+  } catch (error) {
+    console.error("Error fetching promotion:", error)
     throw error
   }
 }
