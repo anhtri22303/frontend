@@ -126,11 +126,11 @@ export default function CartPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          totalAmount: orderData.totalAmount,
-          orderID: orderResponse.data.orderID,
+          totalAmount: orderResponse.data.totalAmount,
+          orderID: orderResponse.data.orderID
         }),
       });
-  
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || "Payment failed");

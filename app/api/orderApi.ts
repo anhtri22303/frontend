@@ -31,7 +31,7 @@ export const fetchOrders = async () => {
 export const createOrder = async (userID: String ,orderData: Omit<Order, 'orderID'>) => {
   try {
     const response = await axiosInstance.post(`/orders/${userID}`, orderData)
-    console.log("Create success")
+    console.log("Create order success")
     return response.data
   } catch (error) {
     console.error("Error creating order:", error)
@@ -64,9 +64,9 @@ export const fetchOrdersByDate = async (orderDate: string) => {
 }
 
 // Get order by ID
-export const fetchOrderById = async (orderId: string) => {
+export const fetchOrderByID = async (orderID: string) => {
   try {
-    const response = await axiosInstance.get(`/orders/${orderId}`)
+    const response = await axiosInstance.get(`/orders/${orderID}`)
     console.log("Get By ID success")
     return response.data
   } catch (error) {
@@ -76,9 +76,9 @@ export const fetchOrderById = async (orderId: string) => {
 }
 
 // Update order
-export const updateOrder = async (orderId: string, orderData: Partial<Order>) => {
+export const updateOrder = async (orderID: string, orderData: Partial<Order>) => {
   try {
-    const response = await axiosInstance.put(`/orders/${orderId}`, orderData)
+    const response = await axiosInstance.put(`/orders/${orderID}`, orderData)
     console.log("Update success")
     return response.data
   } catch (error) {
@@ -88,9 +88,9 @@ export const updateOrder = async (orderId: string, orderData: Partial<Order>) =>
 }
 
 // Delete order
-export const deleteOrder = async (orderId: string) => {
+export const deleteOrder = async (orderID: string) => {
   try {
-    const response = await axiosInstance.delete(`/orders/${orderId}`)
+    const response = await axiosInstance.delete(`/orders/${orderID}`)
     console.log("Delete success")
     return response.data
   } catch (error) {
@@ -112,9 +112,9 @@ export const fetchOrderDetails = async (userID: string,orderID: string) => {
 }
 
 // Create order detail
-export const createOrderDetail = async (orderId: string, detailData: OrderDetail) => {
+export const createOrderDetail = async (orderID: string, detailData: OrderDetail) => {
   try {
-    const response = await axiosInstance.post(`/orders/${orderId}/details`, detailData)
+    const response = await axiosInstance.post(`/orders/${orderID}/details`, detailData)
     console.log("Create Order Detail success")
     return response.data
   } catch (error) {
@@ -124,9 +124,9 @@ export const createOrderDetail = async (orderId: string, detailData: OrderDetail
 }
 
 // Update order detail
-export const updateOrderDetail = async (orderId: string, productId: string, detailData: Partial<OrderDetail>) => {
+export const updateOrderDetail = async (orderID: string, productID: string, detailData: Partial<OrderDetail>) => {
   try {
-    const response = await axiosInstance.put(`/orders/${orderId}/details/${productId}`, detailData)
+    const response = await axiosInstance.put(`/orders/${orderID}/details/${productID}`, detailData)
     console.log("Update Order Detail success")
     return response.data
   } catch (error) {
@@ -136,9 +136,9 @@ export const updateOrderDetail = async (orderId: string, productId: string, deta
 }
 
 // Delete order detail
-export const deleteOrderDetail = async (orderId: string, productId: string) => {
+export const deleteOrderDetail = async (orderID: string, productID: string) => {
   try {
-    const response = await axiosInstance.delete(`/orders/${orderId}/details/${productId}`)
+    const response = await axiosInstance.delete(`/orders/${orderID}/details/${productID}`)
     console.log("Delete Order Detail success")
     return response.data
   } catch (error) {

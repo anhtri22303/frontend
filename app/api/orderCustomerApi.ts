@@ -1,8 +1,8 @@
 import axiosInstance from "@/lib/axiosInstance"
 
 interface Order {
-  orderId: string
-  userId: string
+  orderID: string
+  userID: string
   orderDate: string
   status: string
   total: number
@@ -10,15 +10,15 @@ interface Order {
 }
 
 interface OrderItem {
-  productId: string
+  productID: string
   quantity: number
   price: number
 }
 
 // Get orders by customer ID
-export const fetchOrdersByUserId = async (userId: string) => {
+export const fetchOrdersByUserID = async (userID: string) => {
   try {
-    const response = await axiosInstance.get(`/user/${userId}/orders`)
+    const response = await axiosInstance.get(`/user/${userID}/orders`)
     return response.data
   } catch (error) {
     console.error("Error fetching orders:", error)
@@ -26,21 +26,22 @@ export const fetchOrdersByUserId = async (userId: string) => {
   }
 }
 
-// Create a new order
-export const createOrder = async (userId: string, orderData: Omit<Order, 'orderId'>) => {
+// Create new order Customer
+export const createOrder = async (userID: String ,orderData: Omit<Order, 'orderID'>) => {
   try {
-    const response = await axiosInstance.post(`/user/${userId}/orders`, orderData)
+    const response = await axiosInstance.post(`/orders/${userID}`, orderData)
+    console.log("Create order Customer success")
     return response.data
   } catch (error) {
     console.error("Error creating order:", error)
-    return null
+    throw error
   }
 }
 
 // Get orders by order date
-export const fetchOrdersByDate = async (userId: string, orderDate: string) => {
+export const fetchOrdersByDate = async (userID: string, orderDate: string) => {
   try {
-    const response = await axiosInstance.get(`/user/${userId}/orders/${orderDate}`)
+    const response = await axiosInstance.get(`/user/${userID}/orders/${orderDate}`)
     return response.data
   } catch (error) {
     console.error("Error fetching orders by date:", error)
@@ -49,9 +50,9 @@ export const fetchOrdersByDate = async (userId: string, orderDate: string) => {
 }
 
 // Get orders by status
-export const fetchOrdersByStatus = async (userId: string, status: string) => {
+export const fetchOrdersByStatus = async (userID: string, status: string) => {
   try {
-    const response = await axiosInstance.get(`/user/${userId}/orders/${status}`)
+    const response = await axiosInstance.get(`/user/${userID}/orders/${status}`)
     return response.data
   } catch (error) {
     console.error("Error fetching orders by status:", error)
