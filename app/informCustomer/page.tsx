@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { createCustomer } from "@/app/api/customerApi"
+import { updateCustomer } from "@/app/api/customerApi"
 
 export default function InformCustomerPage() {
   const router = useRouter()
@@ -27,9 +27,10 @@ export default function InformCustomerPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    const userID = localStorage.getItem("userID")
 
     try {
-      const response = await createCustomer(formData)
+      const response = await updateCustomer(userID! ,formData)
       if (response) {
         alert("Customer information saved successfully!")
         router.push("/cart") // Changed to redirect back to cart

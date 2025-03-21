@@ -100,9 +100,9 @@ export const deleteOrder = async (orderId: string) => {
 }
 
 // Get order details
-export const fetchOrderDetails = async (orderId: string) => {
+export const fetchOrderDetails = async (userID: string,orderID: string) => {
   try {
-    const response = await axiosInstance.get(`/orders/${orderId}/details`)
+    const response = await axiosInstance.get(`/orders/${userID}/${orderID}/details`)
     console.log("Get Order Detail success")
     return response.data
   } catch (error) {

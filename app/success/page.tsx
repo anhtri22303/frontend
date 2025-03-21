@@ -1,43 +1,69 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import Image from "next/image"
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import Image from "next/image";
+import { fetchOrderDetails } from "@/app/api/orderApi";
 
 interface OrderInfo {
   customerInfo?: {
-    name?: string
-    email?: string
-    phone?: string
-    address?: string
-  }
-  orderID?: string
-  cartItems?: {
-    productID: string
-    name?: string
-    totalAmount: number
-    quantity: number
-    image?: string
-  }[]
-  totalAmount?: number
+    name?: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+  };
+  orderID?: string;
+  orderDetails?: {
+    productID: string;
+    name?: string;
+    price: number;
+    quantity: number;
+    image?: string;
+  }[];
+  totalAmount?: number;
 }
 
 export default function SuccessPage() {
-  const router = useRouter()
-  const [orderInfo, setOrderInfo] = useState<OrderInfo>({})
+  const router = useRouter();
+  const [orderInfo, setOrderInfo] = useState<OrderInfo>({});
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const info = sessionStorage.getItem("orderInfo")
-    if (info) {
-      setOrderInfo(JSON.parse(info))
+    const orderID = sessionStorage.getItem("orderID");
+    const userID = localStorage.getItem("userID"); // Lấy orderID từ sessionStorage
+    if (orderID) {
+      fetchOrderData(userID!,orderID);
+    } else {
+      setLoading(false);
     }
-  }, [])
+  }, []);
+
+  const fetchOrderData = async (userID: string, orderID: string) => {
+    try {
+      const orderData = await fetchOrderDetails(userID, orderID);
+      console.log("API Response:", orderData);
+      if (orderData && orderData.data) {
+        setOrderInfo({
+          orderID: orderData.data.orderID,
+          customerInfo: orderData.data.customerInfo,
+          orderDetails: orderData.data.orderDetails,
+          totalAmount: orderData.data.totalAmount,
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching order details:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleContinueShopping = () => {
-    sessionStorage.removeItem("orderInfo")
-    router.push("/shop")
-  }
+    sessionStorage.removeItem("orderID");
+    router.push("/shop");
+  };
+
+  if (loading) return <div className="text-center py-12">Loading...</div>;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -50,7 +76,7 @@ export default function SuccessPage() {
         <div className="bg-white shadow-lg rounded-lg p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">Order Information</h2>
           <p className="text-gray-600">Order ID: {orderInfo.orderID || '-'}</p>
-          
+
           <div className="mt-4">
             <h3 className="font-medium mb-2">Customer Details:</h3>
             <p>Name: {orderInfo.customerInfo?.name || '-'}</p>
@@ -63,28 +89,28 @@ export default function SuccessPage() {
         <div className="bg-white shadow-lg rounded-lg p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
           <div className="space-y-4">
-            {orderInfo.cartItems?.map((item) => (
+            {orderInfo.orderDetails?.map((item) => (
               <div key={item.productID} className="flex items-center space-x-4 border-b pb-4">
                 <Image
                   src={item.image || "/placeholder.svg"}
-                  alt={item.name || 'Product'}
+                  alt={item.name || "Product"}
                   width={80}
                   height={80}
                   className="rounded-md"
                 />
                 <div className="flex-grow">
-                  <h3 className="font-medium">{item.name || 'Product'}</h3>
+                  <h3 className="font-medium">{item.name || "Product"}</h3>
                   <p className="text-gray-600">
-                    ${item.totalAmount.toFixed(2)} x {item.quantity}
+                    ${item.price.toFixed(2)} x {item.quantity}
                   </p>
                 </div>
-                <p className="font-medium">${(item.totalAmount * item.quantity).toFixed(2)}</p>
+                <p className="font-medium">${(item.price * item.quantity).toFixed(2)}</p>
               </div>
             ))}
-            
+
             <div className="flex justify-between pt-4 font-semibold">
               <span>Total</span>
-              <span>${orderInfo.totalAmount?.toFixed(2) || '0.00'}</span>
+              <span>${orderInfo.totalAmount?.toFixed(2) || "0.00"}</span>
             </div>
           </div>
         </div>
@@ -96,5 +122,5 @@ export default function SuccessPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

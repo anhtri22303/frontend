@@ -89,8 +89,7 @@ export default function CartPage() {
     try {
       setIsProcessing(true);
       const userID = localStorage.getItem("userID");
-      
-      // Create order data
+  
       const orderData = {
         customerID: userID!,
         orderDate: new Date().toISOString(),
@@ -103,51 +102,58 @@ export default function CartPage() {
         }))
       };
   
-      // Create order first
       const orderResponse = await createOrder(userID!, orderData);
-      console.log('Order response:', orderResponse);
+      console.log("Order created response:", orderResponse);
+      sessionStorage.setItem("orderID", orderResponse.data.orderID);
 
-      // Then proceed with Stripe payment
-      const stripe = await stripePromise;
-      if (!stripe) throw new Error('Stripe failed to initialize');
   
-      console.log('Sending request to /api/stripe with amount:', orderResponse.data.totalAmount, 'and orderId:', orderResponse.data.orderID);
-
-      const response = await fetch('/api/stripe', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      if (!orderResponse?.data?.orderID) {
+        throw new Error("Order ID is undefined. Check API response.");
+      }
+  
+      const stripe = await stripePromise;
+      if (!stripe) {
+        console.error("Stripe failed to initialize.");
+        return;
+      }
+  
+      console.log("Sending request to /api/stripe", {
+        totalAmount: orderData.totalAmount,
+        orderID: orderResponse.data.orderID,
+      });
+  
+      const response = await fetch("/api/stripe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          totalAmount: orderResponse.data.totalAmount,
-          orderID: orderResponse.data.orderID // Include order ID in stripe payment
+          totalAmount: orderData.totalAmount,
+          orderID: orderResponse.data.orderID,
         }),
       });
   
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Payment failed');
+        throw new Error(errorData.error || "Payment failed");
       }
   
       const data = await response.json();
       if (!data.sessionId) {
-        throw new Error('Invalid response from server');
+        throw new Error("Invalid response from server");
       }
   
-      const result = await stripe.redirectToCheckout({
-        sessionId: data.sessionId,
-      });
+      const result = await stripe.redirectToCheckout({ sessionId: data.sessionId });
   
       if (result.error) {
         throw new Error(result.error.message);
       }
     } catch (error: any) {
-      console.error('Checkout error:', error);
-      alert(error.message || 'Payment failed. Please try again.');
+      console.error("Checkout error:", error);
+      alert(error.message || "Payment failed. Please try again.");
     } finally {
       setIsProcessing(false);
     }
   };
+  
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.totalAmount * item.quantity, 0)
   const shipping = subtotal > 50 ? 0 : 5.99
