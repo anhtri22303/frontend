@@ -1,9 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
+import { fetchOrderDetails } from "../api/orderApi"
 
 interface OrderInfo {
   customerInfo?: {
@@ -25,17 +26,30 @@ interface OrderInfo {
 
 export default function SuccessPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [orderInfo, setOrderInfo] = useState<OrderInfo>({})
 
   useEffect(() => {
-    const info = sessionStorage.getItem("orderInfo")
-    if (info) {
-      setOrderInfo(JSON.parse(info))
+    const loadOrderDetails = async () => {
+      try {
+        const orderID = searchParams.get('orderID')
+        
+        if (orderID) {
+          const orderDetails = await fetchOrderDetails(orderID)
+          setOrderInfo({
+            ...orderDetails,
+            orderID: orderID,
+          })
+        }
+      } catch (error) {
+        console.error('Error fetching order details:', error)
+      }
     }
-  }, [])
+
+    loadOrderDetails()
+  }, [searchParams])
 
   const handleContinueShopping = () => {
-    sessionStorage.removeItem("orderInfo")
     router.push("/shop")
   }
 

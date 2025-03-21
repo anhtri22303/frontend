@@ -29,31 +29,39 @@ export async function POST(req: Request) {
 
     console.log('Creating Stripe session for amount:', totalAmount, 'and orderID:', orderID);
 
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: 'Cart Payment',
+    try {
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: 'Cart Payment',
+              },
+              unit_amount: Math.round(totalAmount * 100), // Stripe expects amount in cents
             },
-            unit_amount: Math.round(totalAmount * 100), // Stripe expects amount in cents
+            quantity: 1,
           },
-          quantity: 1,
+        ],
+        mode: 'payment',
+        success_url: `${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/success?orderID=${orderID}`,
+        cancel_url: `${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/cart`,
+        metadata: {
+          orderID: orderID,
         },
-      ],
-      mode: 'payment',
-      success_url: `${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/cart`,
-      metadata: {
-        orderID: orderID,
-      },
-    });
+      });
 
-    console.log('Stripe session created:', session.id);
+      console.log('Stripe session created:', session.id);
 
-    return NextResponse.json({ sessionId: session.id });
+      return NextResponse.json({ sessionId: session.id });
+    } catch (error: any) {
+      console.error('Stripe session creation error:', error);
+      return NextResponse.json(
+        { error: error.message || 'Failed to create Stripe session' },
+        { status: 500 }
+      );
+    }
   } catch (error) {
     console.error('Error:', error);
     return NextResponse.json(

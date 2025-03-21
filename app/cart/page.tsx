@@ -120,22 +120,27 @@ export default function CartPage() {
         },
         body: JSON.stringify({
           totalAmount: orderResponse.data.totalAmount,
-          orderID: orderResponse.data.orderID // Include order ID in stripe payment
+          orderID: orderResponse.data.orderID
         }),
       });
-  
+
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Payment failed');
+        console.error('Stripe API error:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData
+        });
+        throw new Error(errorData.error || `Payment failed: ${response.statusText}`);
       }
-  
-      const data = await response.json();
-      if (!data.sessionId) {
-        throw new Error('Invalid response from server');
+
+      const sessionData = await response.json();
+      if (!sessionData.sessionId) {
+        throw new Error('No session ID returned from Stripe');
       }
-  
+
       const result = await stripe.redirectToCheckout({
-        sessionId: data.sessionId,
+        sessionId: sessionData.sessionId,
       });
   
       if (result.error) {
