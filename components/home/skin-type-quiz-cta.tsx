@@ -1,8 +1,30 @@
+'use client'
+
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 
 export function SkinTypeQuizCTA() {
+  const router = useRouter()
+  const [isClient, setIsClient] = useState(false)
+
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+
+  const handleQuizStart = () => {
+    if (isClient) {
+      const userID = localStorage.getItem("userID")
+      if (userID) {
+        router.push("/skin-quiz")
+      } else {
+        router.push("/login?redirect=/skin-quiz")
+      }
+    }
+  }
+
   return (
     <section className="container py-12">
       <div className="rounded-lg overflow-hidden bg-muted/50">
@@ -14,8 +36,8 @@ export function SkinTypeQuizCTA() {
               recommendations tailored just for you.
             </p>
             <div className="mt-8">
-              <Button asChild size="lg">
-                <Link href="/skin-quiz">Start Skin Quiz</Link>
+              <Button onClick={handleQuizStart} size="lg">
+                Start Skin Quiz
               </Button>
             </div>
           </div>
@@ -27,4 +49,3 @@ export function SkinTypeQuizCTA() {
     </section>
   )
 }
-

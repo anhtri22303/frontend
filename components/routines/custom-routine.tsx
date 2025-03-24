@@ -1,37 +1,34 @@
 "use client"
 
-import { useState } from "react"
+import { useState, ChangeEvent } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Plus, X } from "lucide-react"
+import { createRoutine } from "@/app/api/routineApi"
 
 type RoutineStep = {
-  id: number
   name: string
   product: string
   notes: string
 }
 
-type SkinCareRoutine = {
-  id: number
-  name: string
-  steps: RoutineStep[]
+interface SkinCareRoutine {
+  routineID: string
+  category: string
+  routineName: string
+  routineDescription: string
 }
 
-type CustomRoutineProps = {
-  userRoutines: SkinCareRoutine[]
-  setUserRoutines: React.Dispatch<React.SetStateAction<SkinCareRoutine[]>>
-}
-
-export function CustomRoutine({ userRoutines, setUserRoutines }: CustomRoutineProps) {
+export function CustomRoutine() {
   const [steps, setSteps] = useState<RoutineStep[]>([])
+  const [routineName, setRoutineName] = useState("")
+  const [routineDescription, setRoutineDescription] = useState("")
 
   const addStep = () => {
     const newStep: RoutineStep = {
-      id: Date.now(),
       name: "",
       product: "",
       notes: "",
@@ -39,75 +36,112 @@ export function CustomRoutine({ userRoutines, setUserRoutines }: CustomRoutinePr
     setSteps([...steps, newStep])
   }
 
-  const updateStep = (id: number, field: keyof RoutineStep, value: string) => {
-    setSteps(steps.map((step) => (step.id === id ? { ...step, [field]: value } : step)))
+  const updateStep = (index: number, field: keyof RoutineStep, value: string) => {
+    setSteps(steps.map((step, i) => (i === index ? { ...step, [field]: value } : step)))
   }
 
-  const removeStep = (id: number) => {
-    setSteps(steps.filter((step) => step.id !== id))
+  const removeStep = (index: number) => {
+    setSteps(steps.filter((_, i) => i !== index))
   }
 
-  const saveRoutine = () => {
-    // In a real app, you would save this to a backend
-    console.log("Saving routine:", steps)
-    alert("Routine saved successfully!")
+  const saveRoutine = async () => {
+    try {
+      const newRoutine = {
+        category: "custom",
+        routineName: routineName,
+        routineDescription: routineDescription
+      }
+      
+      await createRoutine(newRoutine)
+      // Reset form
+      setRoutineName("")
+      setRoutineDescription("")
+      setSteps([])
+    } catch (error) {
+      console.error("Error saving routine:", error)
+    }
   }
 
   return (
     <div className="space-y-6">
-      <p className="text-lg">Create your custom skincare routine:</p>
-      {steps.map((step, index) => (
-        <Card key={step.id}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Step {index + 1}</CardTitle>
-            <Button variant="ghost" size="sm" onClick={() => removeStep(step.id)}>
-              <X className="h-4 w-4" />
-            </Button>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor={`step-name-${step.id}`}>Step Name</Label>
-                  <Input
-                    id={`step-name-${step.id}`}
-                    value={step.name}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateStep(step.id, "name", e.target.value)}
-                    placeholder="e.g., Cleanse, Tone, Moisturize"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor={`step-product-${step.id}`}>Product</Label>
-                  <Input
-                    id={`step-product-${step.id}`}
-                    value={step.product}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateStep(step.id, "product", e.target.value)}
-                    placeholder="Product name"
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor={`step-notes-${step.id}`}>Notes</Label>
-                <Textarea
-                  id={`step-notes-${step.id}`}
-                  value={step.notes}
-                  onChange={(e) => updateStep(step.id, "notes", e.target.value)}
-                  placeholder="Any special instructions or notes"
-                />
-              </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Create Custom Routine</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="routineName">Routine Name</Label>
+              <Input
+                id="routineName"
+                value={routineName}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setRoutineName(e.target.value)}
+                placeholder="e.g., Evening Routine"
+              />
             </div>
-          </CardContent>
-        </Card>
-      ))}
-      <Button onClick={addStep} className="w-full">
-        <Plus className="mr-2 h-4 w-4" /> Add Step
-      </Button>
-      {steps.length > 0 && (
-        <Button onClick={saveRoutine} className="w-full">
-          Save Routine
-        </Button>
-      )}
+            <div>
+              <Label htmlFor="routineDescription">Description</Label>
+              <Textarea
+                id="routineDescription"
+                value={routineDescription}
+                onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setRoutineDescription(e.target.value)}
+                placeholder="Describe your routine..."
+              />
+            </div>
+            <div className="space-y-4">
+              <Label>Steps</Label>
+              {steps.map((step, index) => (
+                <Card key={index}>
+                  <CardContent className="pt-6">
+                    <div className="flex items-start gap-4">
+                      <div className="flex-1 space-y-4">
+                        <div>
+                          <Label>Step Name</Label>
+                          <Input
+                            value={step.name}
+                            onChange={(e: ChangeEvent<HTMLInputElement>) => updateStep(index, "name", e.target.value)}
+                            placeholder="e.g., Cleanse"
+                          />
+                        </div>
+                        <div>
+                          <Label>Product</Label>
+                          <Input
+                            value={step.product}
+                            onChange={(e: ChangeEvent<HTMLInputElement>) => updateStep(index, "product", e.target.value)}
+                            placeholder="e.g., Gentle Cleanser"
+                          />
+                        </div>
+                        <div>
+                          <Label>Notes</Label>
+                          <Textarea
+                            value={step.notes}
+                            onChange={(e: ChangeEvent<HTMLTextAreaElement>) => updateStep(index, "notes", e.target.value)}
+                            placeholder="Any special instructions..."
+                          />
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeStep(index)}
+                        className="mt-8"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+              <Button onClick={addStep} variant="outline" className="w-full">
+                <Plus className="mr-2 h-4 w-4" /> Add Step
+              </Button>
+            </div>
+            <Button onClick={saveRoutine} className="w-full" disabled={!routineName || steps.length === 0}>
+              Save Routine
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
-

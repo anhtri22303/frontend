@@ -10,17 +10,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PersonalizedRoutine } from "../../components/routines/personalized-routine"
 import { CustomRoutine } from "../../components/routines/custom-routine"
 import { RoutineProgress } from "../../components/routines/routine-progress"
+import { fetchRoutinesByCategory, fetchRoutineById } from "@/app/api/routineApi"
 
-type SkinCareRoutine = {
-  id: string
-  skinType: string
+interface SkinCareRoutine {
+  routineID: string
+  category: string
   routineName: string
-  description: string
-  products: {
-    id: string
-    name: string
-    description: string
-  }[]
+  routineDescription: string
 }
 
 export default function RoutinesPage() {
@@ -28,93 +24,75 @@ export default function RoutinesPage() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("personalized")
   const [userRoutines, setUserRoutines] = useState<SkinCareRoutine[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!user) {
-      router.push("/login?redirect=/routines")
-    } else {
-      // Fetch user routines from API
-      // For now, we'll use mock data
-      const mockRoutines: SkinCareRoutine[] = [
-        {
-          id: "1",
-          skinType: "combination",
-          routineName: "Morning Routine",
-          description: "A gentle routine to start your day",
-          products: [
-            { id: "p1", name: "Gentle Cleanser", description: "Cleanse your face" },
-            { id: "p2", name: "Hydrating Toner", description: "Balance your skin's pH" },
-            { id: "p3", name: "Lightweight Moisturizer", description: "Hydrate your skin" },
-            { id: "p4", name: "Sunscreen SPF 30", description: "Protect your skin from UV rays" },
-          ],
-        },
-        {
-          id: "2",
-          skinType: "combination",
-          routineName: "Evening Routine",
-          description: "A nourishing routine to end your day",
-          products: [
-            { id: "p5", name: "Oil Cleanser", description: "Remove makeup and sunscreen" },
-            { id: "p6", name: "Foam Cleanser", description: "Deep cleanse your skin" },
-            { id: "p7", name: "Exfoliating Toner", description: "Gently exfoliate and brighten" },
-            { id: "p8", name: "Hydrating Serum", description: "Boost hydration" },
-            { id: "p9", name: "Night Cream", description: "Nourish and repair your skin overnight" },
-          ],
-        },
-      ]
-      setUserRoutines(mockRoutines)
+    const fetchUserRoutines = async () => {
+      if (!user) {
+        router.push("/login?redirect=/routines")
+        return
+      }
+
+      try {
+        const userID = localStorage.getItem("userID")
+        if (!userID) {
+          router.push("/login?redirect=/routines")
+          return
+        }
+
+        // Get user's skin type and preferences from localStorage if they completed the quiz
+        const skinType = localStorage.getItem("userSkinType")
+        const routinePreference = localStorage.getItem("userRoutinePreference")
+
+        if (skinType && routinePreference) {
+          // Convert routine preference to category format
+          let routineCategory = "basic"
+          if (routinePreference === "Moderate (4-5 steps)") {
+            routineCategory = "moderate"
+          } else if (routinePreference === "Advanced (6+ steps)") {
+            routineCategory = "advanced"
+          }
+
+          // Fetch routines based on skin type and preference
+          const routines = await fetchRoutinesByCategory(`${skinType.toLowerCase()}-${routineCategory}`)
+          setUserRoutines(routines)
+        }
+        
+        setLoading(false)
+      } catch (error) {
+        console.error("Error fetching routines:", error)
+        setLoading(false)
+      }
     }
+
+    fetchUserRoutines()
   }, [user, router])
 
-  if (!user) {
-    return null // Prevent flash of content before redirect
+  if (loading) {
+    return <div className="container py-12">Loading...</div>
   }
 
   return (
-    <div className="container py-8">
-      <h1 className="text-3xl font-bold mb-8">Your Skincare Routines</h1>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-        <TabsList>
-          <TabsTrigger value="personalized">Personalized Routine</TabsTrigger>
-          <TabsTrigger value="custom">Custom Routine</TabsTrigger>
-          <TabsTrigger value="progress">Routine Progress</TabsTrigger>
+    <div className="container py-12">
+      <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="personalized">Personalized Routines</TabsTrigger>
+          <TabsTrigger value="custom">Custom Routines</TabsTrigger>
         </TabsList>
-
         <TabsContent value="personalized">
-          <PersonalizedRoutine userRoutines={userRoutines} />
+          <PersonalizedRoutine routines={userRoutines} />
         </TabsContent>
-
         <TabsContent value="custom">
-          <CustomRoutine userRoutines={userRoutines} setUserRoutines={setUserRoutines} />
-        </TabsContent>
-
-        <TabsContent value="progress">
-          <RoutineProgress userRoutines={userRoutines} />
+          <CustomRoutine />
         </TabsContent>
       </Tabs>
-
-      <div className="mt-12">
+      <div className="mt-8">
         <Card>
           <CardHeader>
-            <CardTitle>Need help with your routine?</CardTitle>
+            <CardTitle>Your Progress</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="mb-4">Our skincare experts are here to help you achieve your best skin.</p>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button>Book a Consultation</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Book a Skincare Consultation</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <p>This is where you would implement your consultation booking form.</p>
-                  <Button onClick={() => router.push("/consultation")}>Go to Consultation Booking</Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+            <RoutineProgress />
           </CardContent>
         </Card>
       </div>

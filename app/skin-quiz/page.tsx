@@ -1,148 +1,107 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Label } from "@/components/ui/label"
-import { Progress } from "@/components/ui/progress"
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Label } from '@/components/ui/label'
 
-const quizQuestions = [
+interface QuizQuestion {
+  id: number
+  question: string
+  options: string[]
+}
+
+const questions: QuizQuestion[] = [
   {
     id: 1,
-    question: "How would you describe your skin type?",
-    options: [
-      { id: "dry", label: "Dry - Often feels tight or flaky" },
-      { id: "oily", label: "Oily - Shiny, especially in the T-zone" },
-      { id: "combination", label: "Combination - Oily T-zone, dry cheeks" },
-      { id: "normal", label: "Normal - Neither too oily nor too dry" },
-      { id: "sensitive", label: "Sensitive - Easily irritated or reddened" },
-    ],
+    question: 'What is your skin type?',
+    options: ['Oily', 'Dry', 'Combination', 'Normal', 'Sensitive']
   },
   {
     id: 2,
-    question: "What skin concerns do you want to address?",
-    options: [
-      { id: "acne", label: "Acne and breakouts" },
-      { id: "aging", label: "Fine lines and wrinkles" },
-      { id: "dark-spots", label: "Dark spots and hyperpigmentation" },
-      { id: "dullness", label: "Dullness and uneven texture" },
-      { id: "redness", label: "Redness and inflammation" },
-    ],
+    question: 'What kind of skincare routine do you prefer?',
+    options: ['Basic (3 steps)', 'Moderate (4-5 steps)', 'Advanced (6+ steps)']
   },
   {
     id: 3,
-    question: "How does your skin feel after cleansing?",
-    options: [
-      { id: "tight", label: "Tight and dry" },
-      { id: "comfortable", label: "Comfortable and balanced" },
-      { id: "still-oily", label: "Still somewhat oily" },
-      { id: "irritated", label: "Irritated or sensitive" },
-    ],
-  },
-  {
-    id: 4,
-    question: "How often do you experience breakouts?",
-    options: [
-      { id: "never", label: "Rarely or never" },
-      { id: "occasionally", label: "Occasionally (once a month)" },
-      { id: "frequently", label: "Frequently (weekly)" },
-      { id: "constantly", label: "Constantly dealing with breakouts" },
-    ],
-  },
-  {
-    id: 5,
-    question: "What is your current skincare routine like?",
-    options: [
-      { id: "minimal", label: "Minimal - Just cleansing" },
-      { id: "basic", label: "Basic - Cleansing and moisturizing" },
-      { id: "moderate", label: "Moderate - Cleansing, toning, and moisturizing" },
-      { id: "extensive", label: "Extensive - Multiple steps and products" },
-    ],
-  },
+    question: 'When do you typically do your skincare routine?',
+    options: ['Morning', 'Night', 'Both morning and night']
+  }
 ]
 
-export default function SkinQuizPage() {
-  const [currentQuestion, setCurrentQuestion] = useState(0)
-  const [answers, setAnswers] = useState<Record<number, string>>({})
-  const [selectedOption, setSelectedOption] = useState<string | null>(null)
+export default function SkinQuiz() {
   const router = useRouter()
+  const [currentQuestion, setCurrentQuestion] = useState(0)
+  const [answers, setAnswers] = useState<{ [key: number]: string }>({})
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    const userID = localStorage.getItem('userID')
+    if (!userID) {
+      router.push('/login?redirect=/skin-quiz')
+    } else {
+      setIsLoading(false)
+    }
+  }, [router])
+
+  const handleAnswer = (answer: string) => {
+    setAnswers({ ...answers, [currentQuestion]: answer })
+  }
 
   const handleNext = () => {
-    if (selectedOption) {
-      setAnswers({ ...answers, [currentQuestion]: selectedOption })
-
-      if (currentQuestion < quizQuestions.length - 1) {
-        setCurrentQuestion(currentQuestion + 1)
-        setSelectedOption(null)
-      } else {
-        // Quiz completed, navigate to results
-        router.push(
-          `/skin-quiz/results?${new URLSearchParams(
-            Object.entries(answers).map(([key, value]) => [`q${key}`, value]),
-          )}`,
-        )
-      }
+    if (currentQuestion < questions.length - 1) {
+      setCurrentQuestion(currentQuestion + 1)
+    } else {
+      // Quiz completed, navigate to results with answers
+      const queryParams = new URLSearchParams({
+        skinType: answers[0] || '',
+        routinePreference: answers[1] || '',
+        timeOfDay: answers[2] || ''
+      })
+      router.push(`/skin-quiz/results?${queryParams.toString()}`)
     }
   }
 
-  const handlePrevious = () => {
-    if (currentQuestion > 0) {
-      setCurrentQuestion(currentQuestion - 1)
-      setSelectedOption(answers[currentQuestion - 1] || null)
-    }
+  if (isLoading) {
+    return <div className="container mx-auto px-4 py-8">Loading...</div>
   }
 
-  const question = quizQuestions[currentQuestion]
-  const progress = ((currentQuestion + 1) / quizQuestions.length) * 100
+  const currentQuestionData = questions[currentQuestion]
 
   return (
-    <div className="container max-w-2xl py-12">
-      <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold tracking-tight mb-2">Skin Type Quiz</h1>
-        <p className="text-muted-foreground">
-          Answer a few questions to discover your skin type and get personalized product recommendations
-        </p>
-      </div>
-
-      <div className="mb-8">
-        <div className="flex justify-between text-sm mb-2">
-          <span>
-            Question {currentQuestion + 1} of {quizQuestions.length}
-          </span>
-          <span>{Math.round(progress)}% Complete</span>
-        </div>
-        <Progress value={progress} className="h-2" />
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{question.question}</CardTitle>
-          <CardDescription>Select the option that best describes your skin</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <RadioGroup value={selectedOption || ""} onValueChange={setSelectedOption} className="space-y-3">
-            {question.options.map((option) => (
-              <div key={option.id} className="flex items-center space-x-2">
-                <RadioGroupItem value={option.id} id={option.id} />
-                <Label htmlFor={option.id} className="cursor-pointer flex-1 py-2">
-                  {option.label}
-                </Label>
-              </div>
-            ))}
-          </RadioGroup>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold text-center mb-8">Skin Care Quiz</h1>
+      <Card className="max-w-2xl mx-auto">
+        <CardContent className="p-6">
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold mb-4">{currentQuestionData.question}</h2>
+            <RadioGroup
+              onValueChange={handleAnswer}
+              value={answers[currentQuestion] || ''}
+              className="space-y-3"
+            >
+              {currentQuestionData.options.map((option) => (
+                <div key={option} className="flex items-center space-x-2">
+                  <RadioGroupItem value={option} id={option} />
+                  <Label htmlFor={option}>{option}</Label>
+                </div>
+              ))}
+            </RadioGroup>
+          </div>
+          <Button
+            onClick={handleNext}
+            disabled={!answers[currentQuestion]}
+            className="w-full"
+          >
+            {currentQuestion === questions.length - 1 ? 'See Results' : 'Next Question'}
+          </Button>
         </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button variant="outline" onClick={handlePrevious} disabled={currentQuestion === 0}>
-            Previous
-          </Button>
-          <Button onClick={handleNext} disabled={!selectedOption}>
-            {currentQuestion < quizQuestions.length - 1 ? "Next" : "See Results"}
-          </Button>
-        </CardFooter>
       </Card>
+      <div className="mt-4 text-center text-sm text-gray-500">
+        Question {currentQuestion + 1} of {questions.length}
+      </div>
     </div>
   )
 }
-
