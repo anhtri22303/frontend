@@ -80,3 +80,14 @@ export const fetchOrderDetails = async (orderID: string) => {
     return null
   }
 }
+
+export const fetchOrderDetailsByUserID = async (userID: string, orderID: string) => {
+  try {
+    const response = await axiosInstance.get(`/orders/${userID}/${orderID}/details`)
+    console.log("Fetch order details by user ID success:", response.data)
+    return response.data
+  } catch (error) {
+    console.error("Error fetching order details by user ID:", error)
+    return null
+  }
+}

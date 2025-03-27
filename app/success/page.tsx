@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { fetchOrderDetails } from "@/app/api/orderApi";
+import { fetchOrderDetailsByUserID } from "@/app/api/orderCustomerApi";
 
 interface OrderInfo {
   customerInfo?: {
@@ -41,7 +41,7 @@ export default function SuccessPage() {
 
   const fetchOrderData = async (userID: string, orderID: string) => {
     try {
-      const orderData = await fetchOrderDetails(userID, orderID);
+      const orderData = await fetchOrderDetailsByUserID(userID, orderID);
       console.log("API Response:", orderData);
       if (orderData && orderData.data) {
         setOrderInfo({
