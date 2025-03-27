@@ -1,6 +1,7 @@
 import axiosInstance from "@/lib/axiosInstance"
 
 export interface OrderDetail {
+  orderID: string | null
   productID: string
   quantity: number
   price: number
@@ -8,18 +9,17 @@ export interface OrderDetail {
 
 export interface Order {
   orderID: string
-  customerID: string
+  customerID: string | null
   orderDate: string
   status: string
   totalAmount: number
-  details?: OrderDetail[]
+  orderDetails?: OrderDetail[]
 }
 
 // Get all orders
 export const fetchOrders = async () => {
   try {
-    const response = await axiosInstance.get("/orders")
-    console.log("Get success")
+    const response = await axiosInstance.get("/orders/manager")
     return response.data
   } catch (error) {
     console.error("Error fetching orders:", error)
@@ -28,10 +28,9 @@ export const fetchOrders = async () => {
 }
 
 // Create new order
-export const createOrder = async (userID: String ,orderData: Omit<Order, 'orderID'>) => {
+export const createOrder = async (orderData: Omit<Order, 'orderID'>) => {
   try {
-    const response = await axiosInstance.post(`/orders/${userID}`, orderData)
-    console.log("Create order success")
+    const response = await axiosInstance.post("/orders/manager", orderData)
     return response.data
   } catch (error) {
     console.error("Error creating order:", error)
@@ -42,8 +41,7 @@ export const createOrder = async (userID: String ,orderData: Omit<Order, 'orderI
 // Get orders by customer ID
 export const fetchOrdersByCustomer = async (customerID: string) => {
   try {
-    const response = await axiosInstance.get(`/orders/${customerID}`)
-    console.log("Get By Customer success")
+    const response = await axiosInstance.get(`/orders/manager/${customerID}`)
     return response.data
   } catch (error) {
     console.error("Error fetching customer orders:", error)
@@ -54,8 +52,7 @@ export const fetchOrdersByCustomer = async (customerID: string) => {
 // Get orders by date
 export const fetchOrdersByDate = async (orderDate: string) => {
   try {
-    const response = await axiosInstance.get(`/orders/${orderDate}`)
-    console.log("Get By Date success")
+    const response = await axiosInstance.get(`/orders/manager/${orderDate}`)
     return response.data
   } catch (error) {
     console.error("Error fetching orders by date:", error)
@@ -66,8 +63,7 @@ export const fetchOrdersByDate = async (orderDate: string) => {
 // Get order by ID
 export const fetchOrderByID = async (orderID: string) => {
   try {
-    const response = await axiosInstance.get(`/orders/${orderID}`)
-    console.log("Get By ID success")
+    const response = await axiosInstance.get(`/orders/manager/${orderID}`)
     return response.data
   } catch (error) {
     console.error("Error fetching order:", error)
@@ -78,8 +74,7 @@ export const fetchOrderByID = async (orderID: string) => {
 // Update order
 export const updateOrder = async (orderID: string, orderData: Partial<Order>) => {
   try {
-    const response = await axiosInstance.put(`/orders/${orderID}`, orderData)
-    console.log("Update success")
+    const response = await axiosInstance.put(`/orders/manager/${orderID}`, orderData)
     return response.data
   } catch (error) {
     console.error("Error updating order:", error)
@@ -90,8 +85,7 @@ export const updateOrder = async (orderID: string, orderData: Partial<Order>) =>
 // Delete order
 export const deleteOrder = async (orderID: string) => {
   try {
-    const response = await axiosInstance.delete(`/orders/${orderID}`)
-    console.log("Delete success")
+    const response = await axiosInstance.delete(`/orders/manager/${orderID}`)
     return response.data
   } catch (error) {
     console.error("Error deleting order:", error)
@@ -100,10 +94,9 @@ export const deleteOrder = async (orderID: string) => {
 }
 
 // Get order details
-export const fetchOrderDetails = async (userID: string,orderID: string) => {
+export const fetchOrderDetails = async (orderID: string) => {
   try {
-    const response = await axiosInstance.get(`/orders/${userID}/${orderID}/details`)
-    console.log("Get Order Detail success")
+    const response = await axiosInstance.get(`/orders/manager/${orderID}/details`)
     return response.data
   } catch (error) {
     console.error("Error fetching order details:", error)
@@ -114,8 +107,7 @@ export const fetchOrderDetails = async (userID: string,orderID: string) => {
 // Create order detail
 export const createOrderDetail = async (orderID: string, detailData: OrderDetail) => {
   try {
-    const response = await axiosInstance.post(`/orders/${orderID}/details`, detailData)
-    console.log("Create Order Detail success")
+    const response = await axiosInstance.post(`/orders/manager/${orderID}/details`, detailData)
     return response.data
   } catch (error) {
     console.error("Error creating order detail:", error)
@@ -126,8 +118,7 @@ export const createOrderDetail = async (orderID: string, detailData: OrderDetail
 // Update order detail
 export const updateOrderDetail = async (orderID: string, productID: string, detailData: Partial<OrderDetail>) => {
   try {
-    const response = await axiosInstance.put(`/orders/${orderID}/details/${productID}`, detailData)
-    console.log("Update Order Detail success")
+    const response = await axiosInstance.put(`/orders/manager/${orderID}/details/${productID}`, detailData)
     return response.data
   } catch (error) {
     console.error("Error updating order detail:", error)
@@ -138,8 +129,7 @@ export const updateOrderDetail = async (orderID: string, productID: string, deta
 // Delete order detail
 export const deleteOrderDetail = async (orderID: string, productID: string) => {
   try {
-    const response = await axiosInstance.delete(`/orders/${orderID}/details/${productID}`)
-    console.log("Delete Order Detail success")
+    const response = await axiosInstance.delete(`/orders/manager/${orderID}/details/${productID}`)
     return response.data
   } catch (error) {
     console.error("Error deleting order detail:", error)
@@ -150,8 +140,7 @@ export const deleteOrderDetail = async (orderID: string, productID: string) => {
 // Get orders by status
 export const fetchOrdersByStatus = async (status: string) => {
   try {
-    const response = await axiosInstance.get(`/orders/${status}`)
-    console.log("Get By Status success")
+    const response = await axiosInstance.get(`/orders/manager/status/${status}`)
     return response.data
   } catch (error) {
     console.error("Error fetching orders by status:", error)

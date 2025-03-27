@@ -2,7 +2,7 @@ import axiosInstance from "@/lib/axiosInstance";
 
 interface Customer {
   id: string;
-  name: string;
+  fullName: string;
   email: string;
   phone: string;
   address: string;
@@ -30,6 +30,7 @@ export const updateCustomer = async (
 ) => {
   try {
     const response = await axiosInstance.put(`/user/${userId}`, customerData);
+    console.log("Update customer success")
     return response.data;
   } catch (error) {
     console.error("Error updating customer:", error);

@@ -48,6 +48,7 @@ export const createUser = async (userData: Omit<User, 'id' | 'loyalPoints'>) => 
 export const fetchUserById = async (userId: string) => {
   try {
     const response = await axiosInstance.get(`/manager/users/${userId}`)
+    console.log("GET user by ID success", response.data)
     return response.data
   } catch (error) {
     console.error("Error fetching user:", error)

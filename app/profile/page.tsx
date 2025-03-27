@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useAuth } from "@/components/auth/auth-provider"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,29 +11,48 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { updateCustomer } from "@/app/api/customerApi"
-import { useEffect } from "react"
+import { fetchUserById } from "@/app/api/userManagerApi"
 
 export default function ProfilePage() {
   const { user, updateUser } = useAuth()
-  const [fullName, setFullName] = useState(user?.fullName || "")
-  const [email, setEmail] = useState(user?.email || "")
-  const [phone, setPhone] = useState(user?.phone || "")
-  const [address, setAddress] = useState(user?.address || "")
-  const [skinType, setSkinType] = useState(user?.skinType || "")
+  const [formData, setFormData] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    address: "",
+    skinType: ""
+  })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
 
-
   useEffect(() => {
-    if (user) {
-      setFullName(user.fullName || "")
-      setEmail(user.email || "")
-      setPhone(user.phone || "")
-      setAddress(user.address || "")
-      setSkinType(user.skinType || "")
+    const fetchUserData = async () => {
+      if (!user?.id) return
+
+      try {
+        setIsLoading(true)
+        const response = await fetchUserById(user.id)
+        if (response?.data) {  
+          setFormData({
+            fullName: response.data.fullName || "",
+            email: response.data.email || "",
+            phone: response.data.phone || "",
+            address: response.data.address || "",
+            skinType: response.data.skinType || ""
+          })
+        }
+        console.log("User data:", response?.data)
+      } catch (err) {
+        console.error("Error fetching user data:", err)
+        setError("Failed to load user data")
+      } finally {
+        setIsLoading(false)
+      }
     }
-  }, [user])
+
+    fetchUserData()
+  }, [user?.id])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -44,17 +63,9 @@ export default function ProfilePage() {
     setSuccess("")
     
     try {
-      const updatedData = {
-        name: fullName,
-        email,
-        phone,
-        address,
-        skinType
-      }
-      
-      const response = await updateCustomer(user.id, updatedData)
-      if (response) {
-        updateUser(response)
+      const response = await updateCustomer(user.id, formData)
+      if (response?.data) {
+        updateUser(response.data)
         setSuccess("Profile updated successfully!")
       } else {
         setError("Failed to update profile")
@@ -83,8 +94,8 @@ export default function ProfilePage() {
             <Avatar className="w-32 h-32">
               <AvatarImage src={user.image || "/placeholder.svg?height=128&width=128"} alt={user.username} />
               <AvatarFallback>{user?.username?.charAt(0) || "?"}</AvatarFallback>
-              </Avatar>
-            <Button className="mt-4">Change Picture</Button>
+            </Avatar>
+            <Button className="mt-4" disabled>Change Picture</Button>
           </CardContent>
         </Card>
         <Card className="md:col-span-2">
@@ -93,43 +104,82 @@ export default function ProfilePage() {
             <CardDescription>Update your profile information</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="fullName">Full Name</Label>
-                  <Input id="fullName" value={fullName} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFullName(e.target.value)} />
+                  <Input
+                    id="fullName"
+                    value={formData.fullName}
+                    onChange={(e: { target: { value: any } }) => setFormData({...formData, fullName: e.target.value})}
+                    disabled={isLoading}
+                  />
                 </div>
+
                 <div className="grid gap-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" value={email} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)} />
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e: { target: { value: any } }) => setFormData({...formData, email: e.target.value})}
+                    disabled={isLoading}
+                  />
                 </div>
+
                 <div className="grid gap-2">
                   <Label htmlFor="phone">Phone</Label>
-                  <Input id="phone" type="tel" value={phone} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPhone(e.target.value)} />
+                  <Input
+                    id="phone"
+                    value={formData.phone}
+                    onChange={(e: { target: { value: any } }) => setFormData({...formData, phone: e.target.value})}
+                    disabled={isLoading}
+                  />
                 </div>
+
                 <div className="grid gap-2">
                   <Label htmlFor="address">Address</Label>
-                  <Textarea id="address" value={address} onChange={(e) => setAddress(e.target.value)} />
+                  <Textarea
+                    id="address"
+                    value={formData.address}
+                    onChange={(e) => setFormData({...formData, address: e.target.value})}
+                    disabled={isLoading}
+                  />
                 </div>
+
                 <div className="grid gap-2">
                   <Label htmlFor="skinType">Skin Type</Label>
-                  <Select value={skinType} onValueChange={setSkinType}>
-                    <SelectTrigger id="skinType">
-                      <SelectValue placeholder="Select your skin type" />
+                  <Select
+                    value={formData.skinType}
+                    onValueChange={(value) => setFormData({...formData, skinType: value})}
+                    disabled={isLoading}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select skin type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="dry">Dry</SelectItem>
-                      <SelectItem value="oily">Oily</SelectItem>
-                      <SelectItem value="combination">Combination</SelectItem>
-                      <SelectItem value="normal">Normal</SelectItem>
-                      <SelectItem value="sensitive">Sensitive</SelectItem>
+                      <SelectItem value="DRY">Dry</SelectItem>
+                      <SelectItem value="OILY">Oily</SelectItem>
+                      <SelectItem value="COMBINATION">Combination</SelectItem>
+                      <SelectItem value="NORMAL">Normal</SelectItem>
+                      <SelectItem value="SENSITIVE">Sensitive</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
-              <Button type="submit" className="mt-4" disabled={isLoading}>
-                {isLoading ? "Saving..." : "Save Changes"}
-              </Button>
+
+              {error && (
+                <div className="text-red-500 text-sm mt-2">{error}</div>
+              )}
+              {success && (
+                <div className="text-green-500 text-sm mt-2">{success}</div>
+              )}
+
+              <div className="flex justify-end">
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
             </form>
           </CardContent>
           <CardFooter>

@@ -1,6 +1,6 @@
 import axiosInstance from "@/lib/axiosInstance"
 
-interface Promotion {
+export interface Promotion {
   promotionID: string
   promotionName: string
   discount: number
@@ -11,7 +11,8 @@ interface Promotion {
 export const fetchPromotions = async () => {
   try {
     const response = await axiosInstance.get("/promotions")
-    console.log("Get promotion success")
+    console.log("Get promotion success");
+    console.log("response", response.data)
     return response.data
   } catch (error) {
     console.error("Error fetching promotions:", error)
@@ -22,7 +23,7 @@ export const fetchPromotions = async () => {
 export const createPromotion = async (promotion: Omit<Promotion, 'promotionID'>) => {
   try {
     const response = await axiosInstance.post("/promotions", promotion)
-    console.log("Create promotion success")
+    console.log("Create promotion success" ,response.data)
     return response.data
   } catch (error) {
     console.error("Error creating promotion:", error)
@@ -33,7 +34,7 @@ export const createPromotion = async (promotion: Omit<Promotion, 'promotionID'>)
 export const updatePromotion = async (id: string, promotion: Partial<Promotion>) => {
   try {
     const response = await axiosInstance.put(`/promotions/${id}`, promotion)
-    console.log("Update promotion success")
+    console.log("Update promotion success" ,response.data)
     return response.data
   } catch (error) {
     console.error("Error updating promotion:", error)
@@ -51,11 +52,12 @@ export const deletePromotion = async (id: string) => {
     throw error
   }
 }
+
 // Get promotion by ID
 export const fetchPromotionById = async (id: string) => {
   try {
     const response = await axiosInstance.get(`/promotions/${id}`)
-    console.log("Get promotion by ID success")
+    console.log("Get promotion by ID success" ,response.data)
     return response.data
   } catch (error) {
     console.error("Error fetching promotion:", error)

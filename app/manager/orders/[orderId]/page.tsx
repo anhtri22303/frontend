@@ -7,13 +7,21 @@ import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Order, fetchOrderByID } from "@/app/api/orderApi"
 
-export default function OrderDetails({ params }: { params: { orderId: string } }) {
+interface OrderDetailsProps {
+  params: {
+    orderId: string
+  }
+}
+
+export default function OrderDetails({ params }: OrderDetailsProps) {
   const router = useRouter()
   const [order, setOrder] = useState<Order | null>(null)
 
   useEffect(() => {
-    loadOrderDetails()
-  }, [])
+    if (params.orderId) {
+      loadOrderDetails()
+    }
+  }, [params.orderId])
 
   const loadOrderDetails = async () => {
     try {
@@ -22,6 +30,10 @@ export default function OrderDetails({ params }: { params: { orderId: string } }
     } catch (error) {
       console.error("Error loading order details:", error)
     }
+  }
+
+  if (!params.orderId) {
+    return <div>Invalid Order ID</div>
   }
 
   if (!order) {

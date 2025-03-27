@@ -2,138 +2,214 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { toast } from "react-hot-toast"
+
 import { createUser } from "@/app/api/userManagerApi"
+import { Button } from "@/components/ui/button"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import * as z from "zod"
+
+const formSchema = z.object({
+  fullName: z.string().min(1, "Full name is required"),
+  email: z.string().email("Invalid email address"),
+  phone: z.string().min(10, "Phone number must be at least 10 digits"),
+  address: z.string().min(1, "Address is required"),
+  role: z.enum(["CUSTOMER", "STAFF", "MANAGER", "BEAUTY_ADVISOR"]),
+  skinType: z.enum(["DRY", "OILY", "COMBINATION", "NORMAL", "SENSITIVE"]),
+})
 
 export default function CreateUserPage() {
   const router = useRouter()
-  const [formData, setFormData] = useState({
-    name: "",
-    username: "",
-    fullName: "",
-    email: "",
-    phone: "",
-    address: "",
-    role: "CUSTOMER",
-    skinType: "DRY"
+  const [loading, setLoading] = useState(false)
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      role: "CUSTOMER",
+      skinType: "DRY",
+    },
   })
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      await createUser(formData)
-      router.push('/manager/users')
+      setLoading(true)
+      const userData = {
+        ...values,
+        name: values.fullName // Map fullName to name for API
+      }
+      const response = await createUser(userData)
+
+      if (response) {
+        toast.success("User created successfully")
+        router.push("/manager/users")
+        router.refresh()
+      } else {
+        toast.error("Failed to create user")
+      }
     } catch (error) {
-      console.error("Failed to create user:", error)
+      toast.error("Something went wrong")
+    } finally {
+      setLoading(false)
     }
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-2xl">
-      <h1 className="text-2xl font-bold mb-6">Create New User</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <Label htmlFor="name">Username</Label>
-          <Input
-            id="name"
-            value={formData.name}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, name: e.target.value})}
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="username">Login Username</Label>
-          <Input
-            id="username"
-            value={formData.username}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, username: e.target.value})}
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="fullName">Full Name</Label>
-          <Input
-            id="fullName"
-            value={formData.fullName}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, fullName: e.target.value})}
-            required
-          />
-        </div>
+    <div className="mx-auto max-w-3xl p-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Create New User</CardTitle>
+          <CardDescription>
+            Add a new user to the system with their details and role.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="fullName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Full Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="John Doe" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-        <div>
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            value={formData.email}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, email: e.target.value})}
-            required
-          />
-        </div>
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input placeholder="john@example.com" type="email" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-        <div>
-          <Label htmlFor="phone">Phone</Label>
-          <Input
-            id="phone"
-            value={formData.phone}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, phone: e.target.value})}
-          />
-        </div>
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone</FormLabel>
+                    <FormControl>
+                      <Input placeholder="0123456789" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-        <div>
-          <Label htmlFor="address">Address</Label>
-          <Input
-            id="address"
-            value={formData.address}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, address: e.target.value})}
-          />
-        </div>
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Address</FormLabel>
+                    <FormControl>
+                      <Input placeholder="123 Street Name, City" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-        <div>
-          <Label htmlFor="role">Role</Label>
-          <Select
-            value={formData.role}
-            onValueChange={(value) => setFormData({...formData, role: value})}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select role" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="CUSTOMER">Customer</SelectItem>
-              <SelectItem value="STAFF">Staff</SelectItem>
-              <SelectItem value="MANAGER">Manager</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+              <FormField
+                control={form.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Role</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a role" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="CUSTOMER">Customer</SelectItem>
+                        <SelectItem value="STAFF">Staff</SelectItem>
+                        <SelectItem value="MANAGER">Manager</SelectItem>
+                        <SelectItem value="BEAUTY_ADVISOR">Beauty Advisor</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-        <div>
-          <Label htmlFor="skinType">Skin Type</Label>
-          <Select
-            value={formData.skinType}
-            onValueChange={(value) => setFormData({...formData, skinType: value})}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select skin type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="DRY">Dry</SelectItem>
-              <SelectItem value="OILY">Oily</SelectItem>
-              <SelectItem value="NORMAL">Normal</SelectItem>
-              <SelectItem value="COMBINATION">Combination</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+              <FormField
+                control={form.control}
+                name="skinType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Skin Type</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a skin type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="DRY">Dry</SelectItem>
+                        <SelectItem value="OILY">Oily</SelectItem>
+                        <SelectItem value="COMBINATION">Combination</SelectItem>
+                        <SelectItem value="NORMAL">Normal</SelectItem>
+                        <SelectItem value="SENSITIVE">Sensitive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-        <div className="flex gap-4">
-          <Button type="submit">Create User</Button>
-          <Button type="button" variant="outline" onClick={() => router.back()}>
-            Cancel
-          </Button>
-        </div>
-      </form>
+              <div className="flex justify-end space-x-4">
+                <Button
+                  variant="outline"
+                  onClick={() => router.back()}
+                  disabled={loading}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={loading}>
+                  {loading ? "Creating..." : "Create User"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
     </div>
   )
 }

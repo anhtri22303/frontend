@@ -1,24 +1,23 @@
 import axiosInstance from "@/lib/axiosInstance"
 
-interface Order {
-  orderID: string
-  userID: string
-  orderDate: string
-  status: string
-  total: number
-  items: OrderItem[]
-}
-
 interface OrderItem {
   productID: string
   quantity: number
   price: number
 }
 
+interface Order {
+  customerID: string
+  orderDate: string
+  status: string
+  totalAmount: number
+  orderDetails: OrderItem[]
+}
+
 // Get orders by customer ID
 export const fetchOrdersByUserID = async (userID: string) => {
   try {
-    const response = await axiosInstance.get(`/user/${userID}/orders`)
+    const response = await axiosInstance.get(`/orders/${userID}`)
     return response.data
   } catch (error) {
     console.error("Error fetching orders:", error)
@@ -27,10 +26,20 @@ export const fetchOrdersByUserID = async (userID: string) => {
 }
 
 // Create new order Customer
-export const createOrder = async (userID: String ,orderData: Omit<Order, 'orderID'>) => {
+export const createCustomerOrder = async (userID: string, orderData: Omit<Order, 'orderID'>) => {
   try {
-    const response = await axiosInstance.post(`/orders/${userID}`, orderData)
-    console.log("Create order Customer success")
+    const response = await axiosInstance.post(`/orders/${userID}`, {
+      customerID: orderData.customerID,
+      orderDate: orderData.orderDate,
+      status: orderData.status,
+      totalAmount: orderData.totalAmount,
+      orderDetails: orderData.orderDetails.map(item => ({
+        productID: item.productID,
+        quantity: item.quantity,
+        price: item.price
+      }))
+    })
+    console.log("Create order Customer success", response.data)
     return response.data
   } catch (error) {
     console.error("Error creating order:", error)
@@ -41,7 +50,7 @@ export const createOrder = async (userID: String ,orderData: Omit<Order, 'orderI
 // Get orders by order date
 export const fetchOrdersByDate = async (userID: string, orderDate: string) => {
   try {
-    const response = await axiosInstance.get(`/user/${userID}/orders/${orderDate}`)
+    const response = await axiosInstance.get(`/orders/${userID}/date/${orderDate}`)
     return response.data
   } catch (error) {
     console.error("Error fetching orders by date:", error)
@@ -52,10 +61,22 @@ export const fetchOrdersByDate = async (userID: string, orderDate: string) => {
 // Get orders by status
 export const fetchOrdersByStatus = async (userID: string, status: string) => {
   try {
-    const response = await axiosInstance.get(`/user/${userID}/orders/${status}`)
+    const response = await axiosInstance.get(`/orders/${userID}/status/${status}`)
     return response.data
   } catch (error) {
     console.error("Error fetching orders by status:", error)
+    return null
+  }
+}
+
+// Get order details
+export const fetchOrderDetails = async (orderID: string) => {
+  try {
+    const response = await axiosInstance.get(`/orders/manager/${orderID}/details`)
+    console.log("Fetch order details success:", response.data)
+    return response.data
+  } catch (error) {
+    console.error("Error fetching order details:", error)
     return null
   }
 }

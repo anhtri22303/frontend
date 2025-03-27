@@ -1,11 +1,10 @@
 import axiosInstance from "@/lib/axiosInstance"
-
-interface Feedback {
-  id: string
-  userId: string
-  content: string
+export interface Feedback {
+  feedbackID: string
+  customerID: string
   rating: number
-  createdAt: string
+  comment: string
+  feedbackDate: string
 }
 
 // Get all feedbacks
@@ -13,15 +12,15 @@ export const fetchFeedbacks = async () => {
   try {
     const response = await axiosInstance.get("/feedbacks")
     console.log("Get feedbacks success")
-    return response.data
+    return response.data.data
   } catch (error) {
     console.error("Error fetching feedbacks:", error)
     throw error
   }
 }
 
-// Create a new feedback
-export const createFeedback = async (feedback: Omit<Feedback, 'id'>) => {
+// Create feedback
+export const createFeedback = async (feedback: Omit<Feedback, "feedbackID">) => {
   try {
     const response = await axiosInstance.post("/feedbacks", feedback)
     console.log("Create feedback success")

@@ -71,7 +71,7 @@ export default function PromotionsPage() {  // Changed function name to match pa
               <div className="flex gap-2 mt-4">
                 <Button
                   variant="outline"
-                  onClick={() => router.push(`/manager/promotions/update/${promotion.promotionID}`)}
+                  onClick={() => router.push(`/manager/promotions/${promotion.promotionID}/edit`)}
                 >
                   Update
                 </Button>

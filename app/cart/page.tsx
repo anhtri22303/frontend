@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { fetchCartByUserId, updateCartItem, removeFromCart } from "@/app/api/cartApi"
 import stripePromise from '@/lib/stripe-client'
-import { createOrder } from "@/app/api/orderApi"
+import { createCustomerOrder } from "@/app/api/orderCustomerApi"
 
 interface CartItem {
   userID: string
@@ -89,9 +89,12 @@ export default function CartPage() {
     try {
       setIsProcessing(true);
       const userID = localStorage.getItem("userID");
-  
+      if (!userID) {
+        throw new Error("User ID not found. Please log in.");
+      }
+
       const orderData = {
-        customerID: userID!,
+        customerID: userID,
         orderDate: new Date().toISOString(),
         status: "PENDING",
         totalAmount: total,
@@ -101,15 +104,21 @@ export default function CartPage() {
           price: item.totalAmount
         }))
       };
-  
-      const orderResponse = await createOrder(userID!, orderData);
-      console.log("Order created response:", orderResponse);
-      sessionStorage.setItem("orderID", orderResponse.data.orderID);
 
-  
-      if (!orderResponse?.data?.orderID) {
+      console.log("Creating order with data:", orderData);
+      const orderResponse = await createCustomerOrder(userID, orderData);
+      console.log("Order created response:", orderResponse);
+      
+      if (!orderResponse?.data) {
+        throw new Error("Invalid response from API");
+      }
+      
+      if (!orderResponse.data.orderID) {
         throw new Error("Order ID is undefined. Check API response.");
       }
+      
+      sessionStorage.setItem("orderID", orderResponse.data.orderID);
+
   
       const stripe = await stripePromise;
       if (!stripe) {
