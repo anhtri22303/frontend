@@ -18,6 +18,16 @@ interface GoogleTokenCredentials {
   token: string
 }
 
+interface ForgotPasswordCredentials {
+  email: string
+}
+
+interface ChangePasswordCredentials {
+  email: string
+  passcode: string
+  newPassword: string
+}
+
 // Regular login
 export const login = async (credentials: { username: string; password: string }) => {
   return axios.post("http://localhost:8080/auth/login", credentials);
@@ -60,4 +70,14 @@ export const loginWithGoogleToken = async (credentials: GoogleTokenCredentials) 
 // Add the signUp function
 export const signUp = async (credentials: SignUpCredentials) => {
   return axios.post("http://localhost:8080/auth/register", credentials)
+}
+
+// Add the forgotPassword function
+export const forgotPassword = async (credentials: ForgotPasswordCredentials) => {
+  return axios.post("http://localhost:8080/auth/forgot-password", credentials)
+}
+
+// Add the changePassword function
+export const changePassword = async (credentials: ChangePasswordCredentials) => {
+  return axios.post("http://localhost:8080/auth/change-password", credentials)
 }

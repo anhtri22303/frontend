@@ -45,7 +45,7 @@ export default function AboutPage() {
           <Button 
             size="lg" 
             className="bg-pink-600 hover:bg-pink-700"
-            onClick={() => window.location.href = '/quiz'}
+            onClick={() => window.location.href = '/skin-quiz'}
           >
             <FileQuestion className="mr-2 h-5 w-5" />
             Take Beauty Quiz
@@ -194,7 +194,7 @@ export default function AboutPage() {
               <Button 
                 size="lg" 
                 className="mt-6 bg-pink-600 hover:bg-pink-700"
-                onClick={() => window.location.href = '/quiz'}
+                onClick={() => window.location.href = '/skin-quiz'}
               >
                 Start Quiz Now
               </Button>
