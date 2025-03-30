@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { fetchPromotions, deletePromotion } from "@/app/api/promotionApi"
+import { fetchPromotions, deletePromotion, searchPromotionsByName } from "@/app/api/promotionApi"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import { format } from "date-fns"
 
 interface Promotion {
@@ -13,12 +14,14 @@ interface Promotion {
   discount: number
   startDate: string
   endDate: string
+  productID: string
 }
 
-export default function PromotionsPage() {  // Changed function name to match page convention
+export default function PromotionsPage() {
   const router = useRouter()
   const [promotions, setPromotions] = useState<Promotion[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [searchTerm, setSearchTerm] = useState("")
 
   useEffect(() => {
     loadPromotions()
@@ -31,6 +34,23 @@ export default function PromotionsPage() {  // Changed function name to match pa
       setPromotions(data)
     } catch (error) {
       console.error("Failed to load promotions:", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleSearch = async () => {
+    if (!searchTerm.trim()) {
+      alert("Please enter a promotion name to search.")
+      return
+    }
+    setIsLoading(true)
+    try {
+      const response = await searchPromotionsByName(searchTerm)
+      console.log("Search results:", response) // Kiểm tra dữ liệu trả về
+      setPromotions(Array.isArray(response.data) ? response.data : []) // Truy cập vào `response.data`
+    } catch (error) {
+      console.error("Failed to search promotions:", error)
     } finally {
       setIsLoading(false)
     }
@@ -56,14 +76,29 @@ export default function PromotionsPage() {  // Changed function name to match pa
         </Button>
       </div>
 
+      {/* Khung nhập và nút tìm kiếm */}
+      <div className="flex gap-4 mb-6">
+        <Input
+          value={searchTerm}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+          placeholder="Enter promotion name"
+        />
+        <Button onClick={handleSearch} disabled={isLoading}>
+          {isLoading ? "Searching..." : "Search"}
+        </Button>
+      </div>
+
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {promotions.map((promotion) => (
+        {Array.isArray(promotions) && promotions.map((promotion) => (
           <Card key={promotion.promotionID}>
             <CardHeader>
               <CardTitle>{promotion.promotionName}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-lg font-bold mb-2">{promotion.discount}% OFF</p>
+              <p className="text-sm text-muted-foreground">
+                Product ID: {promotion.productID}
+              </p>
               <p className="text-sm text-muted-foreground">
                 Valid from {format(new Date(promotion.startDate), 'PP')} to{' '}
                 {format(new Date(promotion.endDate), 'PP')}

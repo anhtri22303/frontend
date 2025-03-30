@@ -1,6 +1,7 @@
 import axiosInstance from "@/lib/axiosInstance"
 export interface Feedback {
   feedbackID: string
+  productID: string
   customerID: string
   rating: number
   comment: string

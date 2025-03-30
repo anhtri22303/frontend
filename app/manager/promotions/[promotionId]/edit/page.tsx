@@ -30,6 +30,7 @@ export default function EditPromotionPage({ params }: EditPromotionPageProps) {
   const [promotion, setPromotion] = useState<Promotion>({
     promotionID: params.promotionId,
     promotionName: "",
+    productID: "", // Added productID
     discount: 0,
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date().toISOString().split('T')[0]
@@ -38,8 +39,8 @@ export default function EditPromotionPage({ params }: EditPromotionPageProps) {
   useEffect(() => {
     const loadPromotion = async () => {
       try {
-        const data = await fetchPromotionById(params.promotionId)
-        setPromotion(data)
+        const response = await fetchPromotionById(params.promotionId) // Lấy dữ liệu từ API
+        setPromotion(response.data) // Chỉ gán trường `data` vào state
       } catch (error) {
         console.error("Error loading promotion:", error)
         toast({
@@ -112,78 +113,93 @@ export default function EditPromotionPage({ params }: EditPromotionPageProps) {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="text-sm font-medium mb-1 block">
-                Promotion Name
+              Promotion Name
               </label>
               <Input
-                required
-                value={promotion.promotionName}
-                onChange={(e: { target: { value: any } }) =>
-                  setPromotion({ ...promotion, promotionName: e.target.value })
-                }
-                placeholder="Enter promotion name"
-                disabled={isSubmitting}
+              required
+              value={promotion.promotionName} // Hiển thị tên promotion
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setPromotion({ ...promotion, promotionName: e.target.value })
+              }
+              placeholder="Enter promotion name"
+              disabled={isSubmitting}
               />
             </div>
 
             <div>
               <label className="text-sm font-medium mb-1 block">
-                Discount (%)
+              Discount (%)
               </label>
               <Input
-                type="number"
-                required
-                min={0}
-                max={100}
-                value={promotion.discount}
-                onChange={(e: { target: { value: string } }) =>
-                  setPromotion({ ...promotion, discount: parseFloat(e.target.value) })
-                }
-                placeholder="Enter discount percentage"
-                disabled={isSubmitting}
+              type="number"
+              required
+              min={0}
+              max={100}
+              value={promotion.discount} // Hiển thị discount
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setPromotion({ ...promotion, discount: parseFloat(e.target.value) })
+              }
+              placeholder="Enter discount percentage"
+              disabled={isSubmitting}
               />
             </div>
 
             <div>
               <label className="text-sm font-medium mb-1 block">
-                Start Date
+              Start Date
               </label>
               <Input
-                type="date"
-                required
-                value={promotion.startDate}
-                onChange={(e: { target: { value: any } }) =>
-                  setPromotion({ ...promotion, startDate: e.target.value })
-                }
-                disabled={isSubmitting}
+              type="date"
+              required
+              value={promotion.startDate} // Hiển thị ngày bắt đầu
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setPromotion({ ...promotion, startDate: e.target.value })
+              }
+              disabled={isSubmitting}
               />
             </div>
 
             <div>
               <label className="text-sm font-medium mb-1 block">
-                End Date
+              End Date
               </label>
               <Input
-                type="date"
-                required
-                value={promotion.endDate}
-                onChange={(e: { target: { value: any } }) =>
-                  setPromotion({ ...promotion, endDate: e.target.value })
-                }
-                min={promotion.startDate}
-                disabled={isSubmitting}
+              type="date"
+              required
+              value={promotion.endDate} // Hiển thị ngày kết thúc
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setPromotion({ ...promotion, endDate: e.target.value })
+              }
+              min={promotion.startDate}
+              disabled={isSubmitting}
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-1 block">
+              Product ID
+              </label>
+              <Input
+              required
+              value={promotion.productID} // Hiển thị productID
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setPromotion({ ...promotion, productID: e.target.value })
+              }
+              placeholder="Enter product ID"
+              disabled={isSubmitting}
               />
             </div>
 
             <div className="flex gap-4">
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? "Saving..." : "Save Changes"}
               </Button>
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => router.back()}
                 disabled={isSubmitting}
               >

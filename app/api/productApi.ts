@@ -3,7 +3,8 @@ import axiosInstance from "@/lib/axiosInstance"
 export const fetchProducts = async () => {
   try {
     const response = await axiosInstance.get("/products")
-    console.log("Get success")
+    console.log("Get product success")
+    console.log("List product", response.data)
     return response.data
   } catch (error) {
     console.error("Error fetching products:", error)
@@ -32,16 +33,21 @@ export const createProduct = async (product: ProductCreate) => {
   }
 }
 
-export const updateProduct = async (id: string, product: { name: string, category: string, price: string, stock: number, status: string }) => {
+export const updateProduct = async (id: string, product: FormData) => {
   try {
-    const response = await axiosInstance.put(`/products/${id}`, product)
-    console.log("Update success")
-    return response.data
+    const response = await axiosInstance.put(`/products/${id}`, product, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    console.log("Update success");
+    return response.data;
   } catch (error) {
-    console.error("Error updating product:", error)
-    throw error
+    console.error("Error updating product:", error);
+    throw error;
   }
-}
+};
+
 
 export const deleteProduct = async (id: string) => {
   try {

@@ -13,7 +13,8 @@ export default function CreatePromotion() {
     promotionName: "",
     discount: 0,
     startDate: "",
-    endDate: ""
+    endDate: "",
+    productID: ""
   })
   const [isLoading, setIsLoading] = useState(false)
 
@@ -77,6 +78,16 @@ export default function CreatePromotion() {
                 type="date"
                 value={formData.endDate}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, endDate: e.target.value })}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label>Product ID</label>
+              <Input
+                value={formData.productID}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, productID: e.target.value })}
+                placeholder="Enter product ID"
                 required
               />
             </div>

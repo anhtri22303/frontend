@@ -48,6 +48,18 @@ export default function Header() {
     }
   }, [])
 
+  const handleLogout = () => {
+    // Gọi hàm logout từ useAuth
+    logout()
+
+    // Xóa thông tin người dùng khỏi localStorage
+    localStorage.removeItem("userRole")
+    localStorage.removeItem("authToken") // Nếu bạn lưu token ở đây
+
+    // Chuyển hướng về trang login và reload trang
+    window.location.href = "/login"
+  }
+
   const getRoutes = (): Route[] => {
     if (userRole === "MANAGER") {
       return []  // Manager không có menu items
@@ -171,7 +183,7 @@ export default function Header() {
                   <Link href="/wishlist">Wishlist</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={logout}>Logout</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (

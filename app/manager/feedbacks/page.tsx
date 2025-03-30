@@ -59,9 +59,7 @@ export default function FeedbacksPage() {
 
   const handleEdit = (feedback: Feedback) => {
     // Pass feedback data through router state
-    router.push(`/manager/feedbacks/${feedback.feedbackID}/edit`, {
-      state: { feedback }
-    })
+    router.push(`/manager/feedbacks/${feedback.feedbackID}/edit?customerID=${feedback.customerID}&productID=${feedback.productID}&rating=${feedback.rating}&comment=${encodeURIComponent(feedback.comment)}`)
   }
 
   const handleCreate = () => {
@@ -105,6 +103,7 @@ export default function FeedbacksPage() {
                 <div className="flex justify-between items-start">
                   <div>
                     <CardTitle>Customer ID: {feedback.customerID}</CardTitle>
+                    <CardDescription>Product ID: {feedback.productID}</CardDescription> {/* Hiển thị productID */}
                     <CardDescription>
                       Date: {new Date(feedback.feedbackDate).toLocaleDateString()}
                     </CardDescription>

@@ -14,7 +14,9 @@ import {
   BadgeDollarSign,
   ShoppingCart,
   Command,
-  ChevronRight
+  ChevronRight,
+  Database,
+  RouteIcon
 } from "lucide-react"
 
 import "./globals.css"
@@ -34,14 +36,18 @@ interface SidebarLink {
 }
 
 const managerLinks: SidebarLink[] = [
+  { href: "/manager", label: "Dasboard", icon: <Database className="h-6 w-6" /> },
   { href: "/manager/users", label: "Users", icon: <Users className="h-6 w-6" /> },
   { href: "/manager/customers", label: "Customers", icon: <Users className="h-6 w-6" /> },
-  { href: "/manager/promotions", label: "Promotions", icon: <BadgeDollarSign className="h-6 w-6" /> },
   { href: "/manager/orders", label: "Orders", icon: <ShoppingCart className="h-6 w-6" /> },
+  { href: "/manager/products", label: "Products", icon: <Package className="h-6 w-6" /> },
+  { href: "/manager/promotions", label: "Promotions", icon: <BadgeDollarSign className="h-6 w-6" /> },
   { href: "/manager/feedbacks", label: "Feedbacks", icon: <Command className="h-6 w-6" /> },
+  { href: "/manager/routines", label: "Routines", icon: <RouteIcon className="h-6 w-6" /> },
 ]
 
 const staffLinks: SidebarLink[] = [
+  { href: "/staff", label: "Routines", icon: <RouteIcon className="h-6 w-6" /> },
   { href: "/staff/products", label: "Products", icon: <Package className="h-6 w-6" /> },
   { href: "/staff/orders", label: "Orders", icon: <ShoppingCart className="h-6 w-6" /> },
   { href: "/staff/promotions", label: "Promotions", icon: <BadgeDollarSign className="h-6 w-6" /> },

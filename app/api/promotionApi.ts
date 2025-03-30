@@ -3,6 +3,7 @@ import axiosInstance from "@/lib/axiosInstance"
 export interface Promotion {
   promotionID: string
   promotionName: string
+  productID: string
   discount: number
   startDate: string
   endDate: string
@@ -23,7 +24,7 @@ export const fetchPromotions = async () => {
 export const createPromotion = async (promotion: Omit<Promotion, 'promotionID'>) => {
   try {
     const response = await axiosInstance.post("/promotions", promotion)
-    console.log("Create promotion success" ,response.data)
+    console.log("Create promotion success", response.data)
     return response.data
   } catch (error) {
     console.error("Error creating promotion:", error)
@@ -61,6 +62,19 @@ export const fetchPromotionById = async (id: string) => {
     return response.data
   } catch (error) {
     console.error("Error fetching promotion:", error)
+    throw error
+  }
+}
+
+export const searchPromotionsByName = async (name: string) => {
+  try {
+    const response = await axiosInstance.get(`/promotions/search`, {
+      params: { name },
+    })
+    console.log("Search promotions success", response.data)
+    return response.data
+  } catch (error) {
+    console.error("Error searching promotions:", error)
     throw error
   }
 }
