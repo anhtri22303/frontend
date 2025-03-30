@@ -76,8 +76,8 @@ export default function ProductsPage() {
       return
     }
     try {
-      const data = await fetchProductsByName(searchName)
-      setProducts(data)
+      const response = await fetchProductsByName(searchName)
+      setProducts(response.data)
     } catch (error) {
       console.error("Error searching products:", error)
     }
@@ -90,8 +90,8 @@ export default function ProductsPage() {
       return
     }
     try {
-      const data = await fetchProductsByCategory(category)
-      setProducts(data)
+      const response = await fetchProductsByCategory(category)
+      setProducts(response.data)
     } catch (error) {
       console.error("Error filtering products:", error)
     }
