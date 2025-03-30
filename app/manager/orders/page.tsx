@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Search, MoreHorizontal, Filter, Download, RotateCw } from "lucide-react"
+import { Search, MoreHorizontal, Filter, RotateCw } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,6 +15,7 @@ import toast from "react-hot-toast"
 export default function OrdersPage() {
   const router = useRouter()
   const [orders, setOrders] = useState<Order[]>([])
+  const [filteredOrder, setFilteredOrder] = useState<Order | null>(null) // State riêng cho orderID
   const [customerIdSearch, setCustomerIdSearch] = useState("")
   const [orderDateSearch, setOrderDateSearch] = useState("")
   const [orderIdSearch, setOrderIdSearch] = useState("")
@@ -30,6 +31,7 @@ export default function OrdersPage() {
     try {
       const data = await fetchOrders()
       setOrders(data || [])
+      setFilteredOrder(null) // Reset filteredOrder khi load tất cả orders
     } catch (error) {
       console.error("Error loading orders:", error)
       toast.error("Failed to load orders")
@@ -45,25 +47,34 @@ export default function OrdersPage() {
       switch (type) {
         case 'customer':
           response = await fetchOrdersByCustomer(customerIdSearch)
+          setOrders(response.data || [])
+          setFilteredOrder(null) // Reset filteredOrder
           break
         case 'date':
           response = await fetchOrdersByDate(orderDateSearch)
+          setOrders(response.data || [])
+          setFilteredOrder(null) // Reset filteredOrder
           break
         case 'order':
           response = await fetchOrderByID(orderIdSearch)
+          console.log("response", response)
+          setFilteredOrder(response.data || null) // Set filteredOrder
+          setOrders([]) // Clear orders list
           break
         case 'status':
           response = await fetchOrdersByStatus(statusFilter)
+          setOrders(response.data || [])
+          setFilteredOrder(null) // Reset filteredOrder
           break
         default:
           await loadOrders()
           return
       }
-      setOrders(response.data || [])
     } catch (error) {
       console.error("Error searching orders:", error)
       toast.error("Failed to filter orders")
       setOrders([])
+      setFilteredOrder(null)
     } finally {
       setIsLoading(false)
     }
@@ -91,6 +102,7 @@ export default function OrdersPage() {
     setOrderDateSearch("")
     setOrderIdSearch("")
     setStatusFilter("")
+    setFilteredOrder(null) // Reset filteredOrder
     loadOrders()
   }
 
@@ -112,11 +124,11 @@ export default function OrdersPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
-      <div className="flex gap-2">
+        <div className="flex gap-2">
           <Input
             placeholder="Search by Customer ID"
             value={customerIdSearch}
-            onChange={(e) => setCustomerIdSearch(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomerIdSearch(e.target.value)}
           />
           <Button onClick={() => handleSearch('customer')}>
             <Search className="h-4 w-4" />
@@ -127,7 +139,7 @@ export default function OrdersPage() {
           <Input
             type="date"
             value={orderDateSearch}
-            onChange={(e) => setOrderDateSearch(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setOrderDateSearch(e.target.value)}
           />
           <Button onClick={() => handleSearch('date')}>
             <Search className="h-4 w-4" />
@@ -138,7 +150,7 @@ export default function OrdersPage() {
           <Input
             placeholder="Search by Order ID"
             value={orderIdSearch}
-            onChange={(e) => setOrderIdSearch(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setOrderIdSearch(e.target.value)}
           />
           <Button onClick={() => handleSearch('order')}>
             <Search className="h-4 w-4" />
@@ -176,32 +188,27 @@ export default function OrdersPage() {
             </tr>
           </thead>
           <tbody>
-            {isLoading ? (
-              <tr>
-                <td colSpan={6} className="p-4 text-center">
-                  <div className="flex justify-center items-center gap-2">
-                    <RotateCw className="h-4 w-4 animate-spin" />
-                    <span>Loading orders...</span>
-                  </div>
-                </td>
-              </tr>
-            ) : orders.length > 0 ? (
-              orders.map((order) => (
-                <tr key={order.orderID} className="border-b">
-                  <td className="p-4">{order.orderID}</td>
-                <td className="p-4">{order.customerID || 'N/A'}</td>
-                <td className="p-4">{new Date(order.orderDate).toLocaleDateString()}</td>
+            {filteredOrder ? (
+              <tr className="border-b">
+                <td className="p-4">{filteredOrder.orderID}</td>
+                <td className="p-4">{filteredOrder.customerID || 'N/A'}</td>
+                <td className="p-4">{filteredOrder.orderDate ? new Date(filteredOrder.orderDate).toLocaleDateString() : 'N/A'}</td>
                 <td className="p-4">
-                  <span className={`px-2 py-1 rounded-full text-xs ${
-                    order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                    order.status === 'PROCESSING' ? 'bg-blue-100 text-blue-800' :
-                    order.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
-                    'bg-red-100 text-red-800'
-                  }`}>
-                    {order.status}
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs ${
+                      filteredOrder.status === 'PENDING'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : filteredOrder.status === 'PROCESSING'
+                        ? 'bg-blue-100 text-blue-800'
+                        : filteredOrder.status === 'COMPLETED'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'
+                    }`}
+                  >
+                    {filteredOrder.status}
                   </span>
                 </td>
-                <td className="p-4">${order.totalAmount.toFixed(2)}</td>
+                <td className="p-4">${filteredOrder.totalAmount ? filteredOrder.totalAmount.toFixed(2) : '0.00'}</td>
                 <td className="p-4">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -210,15 +217,55 @@ export default function OrdersPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleViewDetails(order.orderID)}>
+                      <DropdownMenuItem onClick={() => handleViewDetails(filteredOrder.orderID)}>
                         View Details
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDeleteOrder(order.orderID)}>
+                      <DropdownMenuItem onClick={() => handleDeleteOrder(filteredOrder.orderID)}>
                         Delete Order
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </td>
+              </tr>
+            ) : orders.length > 0 ? (
+              orders.map((order) => (
+                <tr key={order.orderID} className="border-b">
+                  <td className="p-4">{order.orderID}</td>
+                  <td className="p-4">{order.customerID || 'N/A'}</td>
+                  <td className="p-4">{new Date(order.orderDate).toLocaleDateString()}</td>
+                  <td className="p-4">
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs ${
+                        order.status === 'PENDING'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : order.status === 'PROCESSING'
+                          ? 'bg-blue-100 text-blue-800'
+                          : order.status === 'COMPLETED'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}
+                    >
+                      {order.status}
+                    </span>
+                  </td>
+                  <td className="p-4">${order.totalAmount.toFixed(2)}</td>
+                  <td className="p-4">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleViewDetails(order.orderID)}>
+                          View Details
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDeleteOrder(order.orderID)}>
+                          Delete Order
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </td>
                 </tr>
               ))
             ) : (

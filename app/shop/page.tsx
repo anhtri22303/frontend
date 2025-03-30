@@ -1,31 +1,17 @@
 "use client";
 
-import { useState, useEffect, SetStateAction } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { PlusCircle, MoreHorizontal } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Slider } from "@/components/ui/slider";
 import {
   fetchProducts,
-  deleteProduct,
   fetchProductsByCategory,
-  fetchProductsByName,
+  fetchProductsBySkinType,
 } from "@/app/api/productApi";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { addToCart } from "@/app/api/cartApi";
 
 interface Product {
   productID: string;
@@ -35,43 +21,19 @@ interface Product {
   description: string;
   rating: number;
   image_url: string;
+  skinType: string;
 }
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [searchName, setSearchName] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [userId, setUserId] = useState<string | null>(null);
-  const router = useRouter();
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedSkinTypes, setSelectedSkinTypes] = useState<string[]>([]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 50]);
+  const [maxPrice, setMaxPrice] = useState(50);
 
-  const categories = ["DRY", "OILY", "COMBINATION", "SENSITIVE", "NORMAL"];
-
-  useEffect(() => {
-    const storedUserId = localStorage.getItem("userID");
-    if (storedUserId) {
-      setUserId(storedUserId);
-    } else {
-      console.error("User ID not found in localStorage");
-    }
-  }, []);
-
-  const handleAddToCart = async (product: Product) => {
-    const userId = localStorage.getItem("userID");
-    const token = localStorage.getItem("jwtToken");
-    if (!userId || !token) {
-      alert("Need to login before adding to cart");
-      router.push("/login");
-      return;
-    }
-
-    try {
-      await addToCart(userId, product.productID);
-      alert("Added to cart successfully!");
-    } catch (error) {
-      console.error("Error adding to cart:", error);
-      alert(error.message || "Failed to add to cart");
-    }
-  };
+  const categories = ["Cleanser", "Toner", "Serum", "Moisturizer", "Mask", "Sunscreen"];
+  const skinTypes = ["Dry", "Oily", "Combination", "Normal", "Sensitive"];
 
   useEffect(() => {
     loadProducts();
@@ -81,151 +43,131 @@ export default function ProductsPage() {
     try {
       const data = await fetchProducts();
       setProducts(data);
+      setFilteredProducts(data);
+      const maxProductPrice: number = Math.max(...data.map((product: Product) => product.price));
+      setMaxPrice(maxProductPrice);
+      setPriceRange([0, maxProductPrice]);
     } catch (error) {
       console.error("Error fetching products:", error);
     }
   };
 
-  const handleSearchByName = async () => {
-    if (!searchName.trim()) {
-      loadProducts();
-      return;
-    }
-    try {
-      const response = await fetchProductsByName(searchName);
-      setProducts(response.data);
-    } catch (error) {
-      console.error("Error searching products:", error);
-    }
-  };
-
   const handleCategoryChange = async (category: string) => {
-    setSelectedCategory(category);
-    if (category === "all") {
-      loadProducts();
-      return;
-    }
+    const updatedCategories = selectedCategories.includes(category)
+      ? selectedCategories.filter((c) => c !== category)
+      : [...selectedCategories, category];
+    setSelectedCategories(updatedCategories);
+
     try {
-      const response = await fetchProductsByCategory(category);
-      setProducts(response.data);
+      const response = await fetchProductsByCategory(updatedCategories.join(","));
+      setFilteredProducts(response.data);
     } catch (error) {
-      console.error("Error filtering products:", error);
+      console.error("Error filtering by category:", error);
     }
   };
 
-  const handleDeleteProduct = async (productId: string) => {
-    if (confirm("Are you sure you want to delete this product?")) {
-      try {
-        await deleteProduct(productId);
-        loadProducts();
-      } catch (error) {
-        console.error("Error deleting product:", error);
-      }
+  const handleSkinTypeChange = async (skinType: string) => {
+    const updatedSkinTypes = selectedSkinTypes.includes(skinType)
+      ? selectedSkinTypes.filter((s) => s !== skinType)
+      : [...selectedSkinTypes, skinType];
+    setSelectedSkinTypes(updatedSkinTypes);
+
+    try {
+      const response = await fetchProductsBySkinType(updatedSkinTypes.join(","));
+      setFilteredProducts(response.data);
+    } catch (error) {
+      console.error("Error filtering by skin type:", error);
     }
+  };
+
+  const handlePriceChange = (newPriceRange: [number, number]) => {
+    setPriceRange(newPriceRange);
+    const filteredByPrice = products.filter(
+      (product) => product.price >= newPriceRange[0] && product.price <= newPriceRange[1]
+    );
+    setFilteredProducts(filteredByPrice);
   };
 
   return (
-    <>
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-        <div className="flex gap-4 w-full md:w-auto">
-          <Input
-            type="search"
-            placeholder="Search products..."
-            className="w-96"
-            value={searchName}
-            onChange={(e: { target: { value: SetStateAction<string> } }) =>
-              setSearchName(e.target.value)
-            }
-            onKeyDown={(e: { key: string }) =>
-              e.key === "Enter" && handleSearchByName()
-            }
-          />
-          <Select value={selectedCategory} onValueChange={handleCategoryChange}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select Category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {categories.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+    <div className="flex gap-6">
+      {/* Sidebar */}
+      <div className="w-1/4">
+        <h3 className="text-lg font-semibold mb-4">Categories</h3>
+        <div className="flex flex-col gap-2">
+          {categories.map((category) => (
+            <label key={category} className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={selectedCategories.includes(category)}
+                onChange={() => handleCategoryChange(category)}
+              />
+              {category}
+            </label>
+          ))}
+        </div>
+
+        <h3 className="text-lg font-semibold mt-6 mb-4">Skin Type</h3>
+        <div className="flex flex-col gap-2">
+          {skinTypes.map((skinType) => (
+            <label key={skinType} className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={selectedSkinTypes.includes(skinType)}
+                onChange={() => handleSkinTypeChange(skinType)}
+              />
+              {skinType}
+            </label>
+          ))}
+        </div>
+
+        <h3 className="text-lg font-semibold mt-6 mb-4">Price Range</h3>
+        <Slider
+          value={priceRange}
+          onValueChange={handlePriceChange}
+          min={0}
+          max={maxPrice}
+          step={1}
+        />
+        <div className="flex justify-between text-sm mt-2">
+          <span>${priceRange[0]}</span>
+          <span>${priceRange[1]}</span>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {products.length > 0 ? (
-          products.map((product) => (
-            <div
-              key={product.productID}
-              className="border rounded-lg p-4 shadow-sm"
-            >
-              <Image
-                src={product.image_url || "/placeholder.svg"} // Sử dụng placeholder nếu image_url không hợp lệ
-                width={150}
-                height={150}
-                className="rounded-md object-cover w-full h-40"
-                alt={`${product.productName} thumbnail`}
-              />
-              <div className="mt-4">
-                <h3 className="text-lg font-medium">{product.productName}</h3>
-                <p className="text-sm text-gray-500">{product.category}</p>
-                <p className="text-md font-semibold mt-2">${product.price}</p>
-              </div>
-              <div className="flex justify-between items-center mt-4">
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={() => handleAddToCart(product)}
-                >
-                  Add to Cart
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    router.push(`/staff/products/edit/${product.productID}`)
-                  }
-                >
-                  Edit
-                </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      onClick={() =>
-                        router.push(`/staff/products/edit/${product.productID}`)
-                      }
-                    >
-                      Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="text-red-600"
-                      onClick={() => handleDeleteProduct(product.productID)}
-                    >
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+      {/* Products Grid */}
+      <div className="w-3/4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {filteredProducts.length > 0 ? (
+            filteredProducts.map((product) => (
+              <Link
+                key={product.productID}
+                href={`/shop/product/${product.productID}`}
+                className="border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow"
+              >
+                <div>
+                  <Image
+                    src={product.image_url || "/placeholder.svg"}
+                    width={150}
+                    height={150}
+                    className="rounded-md object-cover w-full h-40"
+                    alt={`${product.productName} thumbnail`}
+                  />
+                  <div className="mt-4">
+                    <h3 className="text-lg font-medium">{product.productName}</h3>
+                    <p className="text-sm text-gray-500">{product.category}</p>
+                    <p className="text-md font-semibold mt-2">${product.price}</p>
+                  </div>
+                </div>
+              </Link>
+            ))
+          ) : (
+            <div className="text-center col-span-full py-12">
+              <h3 className="text-lg font-semibold">No Products Found</h3>
+              <p className="text-sm text-gray-500">Try adjusting your filters.</p>
             </div>
-          ))
-        ) : (
-          <div className="text-center col-span-full py-12">
-            <h3 className="text-lg font-semibold">No Products Found</h3>
-            <p className="text-sm text-gray-500">
-              Try adjusting your search or filter.
-            </p>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-    </>
+    </div>
   );
 }

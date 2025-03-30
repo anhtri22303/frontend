@@ -24,6 +24,8 @@ interface Product {
 
 export default function QuizResults() {
   const searchParams = useSearchParams()
+  const skinTypes = searchParams.get("skinTypes")?.split(",") || []
+  const categories = searchParams.get("categories")?.split(",") || []
   const [routines, setRoutines] = useState<Routine[]>([])
   const [products, setProducts] = useState<Product[]>([]) // Khởi tạo với mảng rỗng
   const [loading, setLoading] = useState(true)
@@ -65,7 +67,37 @@ export default function QuizResults() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-center mb-8">Your Personalized Skin Care Recommendations</h1>
+      <h1 className="text-3xl font-bold text-center mb-8">Your Quiz Results</h1>
+
+      {/* Hiển thị Skin Types */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold mb-4">Your Skin Type</h2>
+        <div className="flex gap-2">
+          {skinTypes.map((type) => (
+            <span
+              key={type}
+              className="px-3 py-1 text-sm border rounded-md text-muted-foreground"
+            >
+              {type}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Hiển thị Categories */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold mb-4">Your Preferred Categories</h2>
+        <div className="flex gap-2">
+          {categories.map((category) => (
+            <span
+              key={category}
+              className="px-3 py-1 text-sm border rounded-md text-muted-foreground"
+            >
+              {category}
+            </span>
+          ))}
+        </div>
+      </div>
 
       {/* Routines Section */}
       <div className="mb-8">
@@ -85,35 +117,35 @@ export default function QuizResults() {
       </div>
 
       {/* Products Section */}
-<div className="mb-8">
-  <h2 className="text-xl font-semibold mb-4">Recommended Products</h2>
-  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-    {Array.isArray(products) && products.map((product) => (
-      <Card key={product.id} className="shadow-lg hover:shadow-xl transition-shadow duration-300">
-        <div className="relative">
-          <img
-            src={product.image_url}
-            alt={product.productName}
-            className="w-full h-48 object-cover rounded-t-lg"
-          />
-          <div className="absolute top-2 right-2 bg-white text-gray-800 text-xs font-semibold px-2 py-1 rounded">
-            ${product.price.toFixed(2)}
-          </div>
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold mb-4">Recommended Products</h2>
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.isArray(products) && products.map((product) => (
+            <Card key={product.id} className="shadow-lg hover:shadow-xl transition-shadow duration-300">
+              <div className="relative">
+                <img
+                  src={product.image_url}
+                  alt={product.productName}
+                  className="w-full h-48 object-cover rounded-t-lg"
+                />
+                <div className="absolute top-2 right-2 bg-white text-gray-800 text-xs font-semibold px-2 py-1 rounded">
+                  ${product.price.toFixed(2)}
+                </div>
+              </div>
+              <CardContent className="p-4">
+                <h3 className="text-lg font-bold text-gray-800 truncate">{product.productName}</h3>
+                <p className="text-sm text-gray-600 mt-2 line-clamp-2">{product.description}</p>
+                <Button
+                  variant="outline"
+                  className="mt-4 w-full text-sm font-medium text-blue-600 border-blue-600 hover:bg-blue-50"
+                >
+                  View Details
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
         </div>
-        <CardContent className="p-4">
-          <h3 className="text-lg font-bold text-gray-800 truncate">{product.productName}</h3>
-          <p className="text-sm text-gray-600 mt-2 line-clamp-2">{product.description}</p>
-          <Button
-            variant="outline"
-            className="mt-4 w-full text-sm font-medium text-blue-600 border-blue-600 hover:bg-blue-50"
-          >
-            View Details
-          </Button>
-        </CardContent>
-      </Card>
-    ))}
-  </div>
-</div>
+      </div>
     </div>
   )
 }

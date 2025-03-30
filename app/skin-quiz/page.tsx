@@ -1,74 +1,114 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Label } from '@/components/ui/label'
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 interface QuizQuestion {
-  id: number
-  question: string
-  options: string[]
+  id: number;
+  question: string;
+  options: string[];
 }
 
 const questions: QuizQuestion[] = [
+  // 3 câu hỏi về Skin Type
   {
     id: 1,
-    question: 'What is your skin type?',
-    options: ['Dry', 'Oily', 'Combination', 'Sensitive', 'Normal']
+    question: "What is your skin type?",
+    options: ["Dry", "Oily", "Combination", "Sensitive", "Normal"],
   },
-  // {
-  //   id: 2,
-  //   question: 'What kind of skincare routine do you prefer?',
-  //   options: ['Basic (3 steps)', 'Moderate (4-5 steps)', 'Advanced (6+ steps)']
-  // },
-  // {
-  //   id: 3,
-  //   question: 'When do you typically do your skincare routine?',
-  //   options: ['Morning', 'Night', 'Both morning and night']
-  // }
-]
+  {
+    id: 2,
+    question: "How does your skin feel after cleansing?",
+    options: ["Dry", "Oily", "Combination", "Sensitive", "Normal"],
+  },
+  {
+    id: 3,
+    question: "How does your skin react to the sun?",
+    options: ["Dry", "Oily", "Combination", "Sensitive", "Normal"],
+  },
+  // 3 câu hỏi về Category
+  {
+    id: 4,
+    question: "Which product do you use most often?",
+    options: ["Cleanser", "Toner", "Serum", "Moisturizer", "Mask", "Sunscreen"],
+  },
+  {
+    id: 5,
+    question: "Which product do you prioritize in your routine?",
+    options: ["Cleanser", "Toner", "Serum", "Moisturizer", "Mask", "Sunscreen"],
+  },
+  {
+    id: 6,
+    question: "Which product do you want to improve?",
+    options: ["Cleanser", "Toner", "Serum", "Moisturizer", "Mask", "Sunscreen"],
+  },
+];
 
 export default function SkinQuiz() {
-  const router = useRouter()
-  const [currentQuestion, setCurrentQuestion] = useState(0)
-  const [answers, setAnswers] = useState<{ [key: number]: string }>({})
-  const [isLoading, setIsLoading] = useState(true)
+  const router = useRouter();
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [answers, setAnswers] = useState<{ [key: number]: string }>({});
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const userID = localStorage.getItem('userID')
+    const userID = localStorage.getItem("userID");
     if (!userID) {
-      router.push('/login?redirect=/skin-quiz')
+      router.push("/login?redirect=/skin-quiz");
     } else {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [router])
+  }, [router]);
 
   const handleAnswer = (answer: string) => {
-    setAnswers({ ...answers, [currentQuestion]: answer })
-  }
+    setAnswers({ ...answers, [currentQuestion]: answer });
+  };
 
   const handleNext = () => {
     if (currentQuestion < questions.length - 1) {
-      setCurrentQuestion(currentQuestion + 1)
+      setCurrentQuestion(currentQuestion + 1);
     } else {
-      // Quiz completed, navigate to results with answers
+      // Quiz completed, calculate results
+      const skinTypeAnswers = Object.values(answers).slice(0, 3); // Lấy 3 câu đầu
+      const categoryAnswers = Object.values(answers).slice(3, 6); // Lấy 3 câu sau
+
+      // Tính toán Skin Type
+      const skinTypeCounts: { [key: string]: number } = {};
+      skinTypeAnswers.forEach((answer) => {
+        skinTypeCounts[answer] = (skinTypeCounts[answer] || 0) + 1;
+      });
+      const selectedSkinTypes = Object.keys(skinTypeCounts).filter(
+        (key) =>
+          skinTypeCounts[key] === Math.max(...Object.values(skinTypeCounts))
+      );
+
+      // Tính toán Category
+      const categoryCounts: { [key: string]: number } = {};
+      categoryAnswers.forEach((answer) => {
+        categoryCounts[answer] = (categoryCounts[answer] || 0) + 1;
+      });
+      const selectedCategories = Object.keys(categoryCounts).filter(
+        (key) =>
+          categoryCounts[key] === Math.max(...Object.values(categoryCounts))
+      );
+
+      // Chuyển đến trang kết quả với các lựa chọn
       const queryParams = new URLSearchParams({
-        skinType: answers[0] || '',
-        // routinePreference: answers[1] || '',
-        // timeOfDay: answers[2] || ''
-      })
-      router.push(`/skin-quiz/results?${queryParams.toString()}`)
+        skinTypes: selectedSkinTypes.join(","),
+        categories: selectedCategories.join(","),
+      });
+      router.push(`/skin-quiz/results?${queryParams.toString()}`);
     }
-  }
+  };
 
   if (isLoading) {
-    return <div className="container mx-auto px-4 py-8">Loading...</div>
+    return <div className="container mx-auto px-4 py-8">Loading...</div>;
   }
 
-  const currentQuestionData = questions[currentQuestion]
+  const currentQuestionData = questions[currentQuestion];
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -76,10 +116,12 @@ export default function SkinQuiz() {
       <Card className="max-w-2xl mx-auto">
         <CardContent className="p-6">
           <div className="mb-6">
-            <h2 className="text-xl font-semibold mb-4">{currentQuestionData.question}</h2>
+            <h2 className="text-xl font-semibold mb-4">
+              {currentQuestionData.question}
+            </h2>
             <RadioGroup
               onValueChange={handleAnswer}
-              value={answers[currentQuestion] || ''}
+              value={answers[currentQuestion] || ""}
               className="space-y-3"
             >
               {currentQuestionData.options.map((option) => (
@@ -95,7 +137,9 @@ export default function SkinQuiz() {
             disabled={!answers[currentQuestion]}
             className="w-full"
           >
-            {currentQuestion === questions.length - 1 ? 'See Results' : 'Next Question'}
+            {currentQuestion === questions.length - 1
+              ? "See Results"
+              : "Next Question"}
           </Button>
         </CardContent>
       </Card>
@@ -103,5 +147,5 @@ export default function SkinQuiz() {
         Question {currentQuestion + 1} of {questions.length}
       </div>
     </div>
-  )
+  );
 }

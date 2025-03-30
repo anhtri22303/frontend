@@ -72,7 +72,6 @@ export default function Header() {
       { href: "/", label: "Home" },
       { href: "/shop", label: "Shop" },
       { href: "/skin-quiz", label: "Skin Quiz" },
-      { href: "/routines", label: "Routines" },
       { href: "/about", label: "About" },
     ]
   }
@@ -180,7 +179,7 @@ export default function Header() {
                   <Link href="/orders">Orders</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/wishlist">Wishlist</Link>
+                  <Link href="/routines">Routines</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>

@@ -41,7 +41,7 @@ export const createOrder = async (orderData: Omit<Order, 'orderID'>) => {
 // Get orders by customer ID
 export const fetchOrdersByCustomer = async (customerID: string) => {
   try {
-    const response = await axiosInstance.get(`/orders/manager/${customerID}`)
+    const response = await axiosInstance.get(`/orders/manager/customer/${customerID}`)
     return response.data
   } catch (error) {
     console.error("Error fetching customer orders:", error)
