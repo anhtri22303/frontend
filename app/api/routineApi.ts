@@ -70,7 +70,7 @@ export const fetchRoutinesByCategory = async (category: string) => {
   try {
     const response = await axiosInstance.get(`/skin-care-routines/category/${category}`)
     console.log("Get routines by category success")
-    return response.data
+    return response.data.data
   } catch (error) {
     console.error("Error fetching routines by category:", error)
     throw error

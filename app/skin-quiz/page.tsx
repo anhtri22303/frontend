@@ -17,18 +17,18 @@ const questions: QuizQuestion[] = [
   {
     id: 1,
     question: 'What is your skin type?',
-    options: ['Oily', 'Dry', 'Combination', 'Normal', 'Sensitive']
+    options: ['Dry', 'Oily', 'Combination', 'Sensitive', 'Normal']
   },
-  {
-    id: 2,
-    question: 'What kind of skincare routine do you prefer?',
-    options: ['Basic (3 steps)', 'Moderate (4-5 steps)', 'Advanced (6+ steps)']
-  },
-  {
-    id: 3,
-    question: 'When do you typically do your skincare routine?',
-    options: ['Morning', 'Night', 'Both morning and night']
-  }
+  // {
+  //   id: 2,
+  //   question: 'What kind of skincare routine do you prefer?',
+  //   options: ['Basic (3 steps)', 'Moderate (4-5 steps)', 'Advanced (6+ steps)']
+  // },
+  // {
+  //   id: 3,
+  //   question: 'When do you typically do your skincare routine?',
+  //   options: ['Morning', 'Night', 'Both morning and night']
+  // }
 ]
 
 export default function SkinQuiz() {
@@ -57,8 +57,8 @@ export default function SkinQuiz() {
       // Quiz completed, navigate to results with answers
       const queryParams = new URLSearchParams({
         skinType: answers[0] || '',
-        routinePreference: answers[1] || '',
-        timeOfDay: answers[2] || ''
+        // routinePreference: answers[1] || '',
+        // timeOfDay: answers[2] || ''
       })
       router.push(`/skin-quiz/results?${queryParams.toString()}`)
     }

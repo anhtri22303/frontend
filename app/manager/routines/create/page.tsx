@@ -23,7 +23,7 @@ export default function CreateRoutinePage() {
     setIsLoading(true)
     try {
       await createRoutine(formData)
-      router.push("/staff/routines")
+      router.push("/manager/routines")
     } catch (error) {
       console.error("Failed to create routine:", error)
     } finally {

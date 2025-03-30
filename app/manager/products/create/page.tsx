@@ -10,7 +10,6 @@ import { createProduct } from "@/app/api/productApi"
 
 export default function CreateProductPage() {
   const [newProduct, setNewProduct] = useState({
-    productID: "",
     productName: "",
     description: "",
     price: 0,
@@ -23,7 +22,7 @@ export default function CreateProductPage() {
   const handleCreateProduct = async () => {
     try {
       await createProduct(newProduct)
-      router.push("/staff/products")
+      router.push("/manager/products")
     } catch (error) {
       console.error("Error creating product:", error)
     }
@@ -33,15 +32,6 @@ export default function CreateProductPage() {
     <div className="container py-8">
       <h1 className="text-3xl font-bold mb-6">Create New Product</h1>
       <div className="space-y-4 max-w-2xl">
-        <div>
-          <label className="text-sm font-medium mb-1 block">Product ID</label>
-          <Input
-            placeholder="Enter product ID"
-            value={newProduct.productID}
-            onChange={(e: { target: { value: any } }) => setNewProduct({ ...newProduct, productID: e.target.value })}
-          />
-        </div>
-
         <div>
           <label className="text-sm font-medium mb-1 block">Product Name</label>
           <Input
@@ -114,7 +104,7 @@ export default function CreateProductPage() {
       </div>
 
       <div className="mt-6 flex gap-4">
-        <Button variant="outline" onClick={() => router.push("/staff/products")}>
+        <Button variant="outline" onClick={() => router.push("/manager/products")}>
           Cancel
         </Button>
         <Button onClick={handleCreateProduct}>Create Product</Button>

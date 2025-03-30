@@ -86,18 +86,15 @@ export default function RootLayout({
     if (!userRole || userRole === "CUSTOMER") return null
 
     const links = userRole === "MANAGER" ? managerLinks : staffLinks
-    const basePath = userRole === "MANAGER" ? "/manager" : "/staff"
 
     return (
       <>
-        <div
-          className={`fixed inset-0 z-50 bg-background/80 backdrop-blur-sm lg:hidden ${
-            sidebarOpen ? "block" : "hidden"
-          }`}
-          onClick={toggleSidebar}
-        />
         <aside
-          className="fixed left-0 top-0 z-40 h-screen w-72 border-r bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+          className={cn(
+            "fixed left-0 top-0 z-40 h-screen w-72 border-r bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
+            sidebarOpen ? "translate-x-0" : "-translate-x-full",
+            "transition-transform duration-300"
+          )}
         >
           <div className="flex h-16 items-center border-b px-6">
             <h1 className="text-3xl font-semibold tracking-tight">
@@ -142,7 +139,7 @@ export default function RootLayout({
         <AuthProvider>
           <div className="flex min-h-screen">
             {userRole && userRole !== "CUSTOMER" && renderSidebar()}
-            <div className={`flex-1 ${userRole && userRole !== "CUSTOMER" ? "lg:pl-72" : ""}`}>
+            <div className={`flex-1 ${userRole && userRole !== "CUSTOMER" && sidebarOpen ? "pl-72" : ""}`}>
               <div className="flex min-h-screen flex-col">
                 <Header />
                 <main className="flex-1">
@@ -151,10 +148,10 @@ export default function RootLayout({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="mb-4 lg:hidden fixed top-3 left-3 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+                        className="fixed top-3 left-3 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
                         onClick={toggleSidebar}
                       >
-                        <Menu className="h-6 w-6" />
+                        {sidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
                       </Button>
                     )}
                     {children}

@@ -12,19 +12,17 @@ export const fetchProducts = async () => {
   }
 }
 
-interface ProductCreate {
-  productID: string
+// Create new product
+export const createProduct = async (productData: {
   productName: string
   description: string
   price: number
   category: string
   rating: number
   image_url: string
-}
-
-export const createProduct = async (product: ProductCreate) => {
+}) => {
   try {
-    const response = await axiosInstance.post("/products", product)
+    const response = await axiosInstance.post("/products", productData)
     console.log("Create success")
     return response.data
   } catch (error) {
@@ -33,13 +31,9 @@ export const createProduct = async (product: ProductCreate) => {
   }
 }
 
-export const updateProduct = async (id: string, product: FormData) => {
+export const updateProduct = async (id: string, product: { name: string, description: string, category: string, price: string, rating: number, image_url: string }) => {
   try {
-    const response = await axiosInstance.put(`/products/${id}`, product, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+    const response = await axiosInstance.put(`/products/${id}`, product);
     console.log("Update success");
     return response.data;
   } catch (error) {

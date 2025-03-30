@@ -121,7 +121,7 @@ export default function ProductsPage() {
     <>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">Products</h1>
-        <Button onClick={() => router.push("/staff/products/create")}>
+        <Button onClick={() => router.push("/manager/products/create")}>
           <PlusCircle className="mr-2 h-4 w-4" />
           Add Product
         </Button>
@@ -163,7 +163,7 @@ export default function ProductsPage() {
 
       <div className="rounded-lg border shadow-sm">
         <div className="overflow-x-auto">
-          {products.length > 0 ? (
+          {Array.isArray(products) && products.length > 0 ? (
             <table className="w-full">
               <thead>
                 <tr className="border-b bg-muted/50">
