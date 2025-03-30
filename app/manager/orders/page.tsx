@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Search, MoreHorizontal, Filter, Download } from "lucide-react"
+import { Search, MoreHorizontal, Filter, Download, RotateCw } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,6 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 import { Order, fetchOrders, deleteOrder, fetchOrdersByCustomer, fetchOrdersByDate, fetchOrderByID, fetchOrdersByStatus } from "@/app/api/orderApi"
+import toast from "react-hot-toast"
 
 export default function OrdersPage() {
   const router = useRouter()
@@ -18,43 +19,53 @@ export default function OrdersPage() {
   const [orderDateSearch, setOrderDateSearch] = useState("")
   const [orderIdSearch, setOrderIdSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
     loadOrders()
   }, [])
 
   const loadOrders = async () => {
+    setIsLoading(true)
     try {
       const data = await fetchOrders()
-      setOrders(data)
+      setOrders(data || [])
     } catch (error) {
       console.error("Error loading orders:", error)
+      toast.error("Failed to load orders")
+    } finally {
+      setIsLoading(false)
     }
   }
 
   const handleSearch = async (type: string) => {
+    setIsLoading(true)
     try {
-      let data
+      let response
       switch (type) {
         case 'customer':
-          data = await fetchOrdersByCustomer(customerIdSearch)
+          response = await fetchOrdersByCustomer(customerIdSearch)
           break
         case 'date':
-          data = await fetchOrdersByDate(orderDateSearch)
+          response = await fetchOrdersByDate(orderDateSearch)
           break
         case 'order':
-          data = await fetchOrderByID(orderIdSearch)
+          response = await fetchOrderByID(orderIdSearch)
           break
         case 'status':
-          data = await fetchOrdersByStatus(statusFilter)
+          response = await fetchOrdersByStatus(statusFilter)
           break
         default:
           await loadOrders()
           return
       }
-      setOrders(Array.isArray(data) ? data : [data])
+      setOrders(response.data || [])
     } catch (error) {
       console.error("Error searching orders:", error)
+      toast.error("Failed to filter orders")
+      setOrders([])
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -62,9 +73,11 @@ export default function OrdersPage() {
     if (confirm("Are you sure you want to delete this order?")) {
       try {
         await deleteOrder(orderId)
+        toast.success("Order deleted successfully")
         loadOrders()
       } catch (error) {
         console.error("Error deleting order:", error)
+        toast.error("Failed to delete order")
       }
     }
   }
@@ -73,14 +86,33 @@ export default function OrdersPage() {
     router.push(`/manager/orders/${orderId}`)
   }
 
+  const handleResetFilters = () => {
+    setCustomerIdSearch("")
+    setOrderDateSearch("")
+    setOrderIdSearch("")
+    setStatusFilter("")
+    loadOrders()
+  }
+
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">Orders</h1>
+        <Button 
+          variant="outline" 
+          onClick={handleResetFilters}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <RotateCw className="h-4 w-4 animate-spin" />
+          ) : (
+            "Reset Filters"
+          )}
+        </Button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
-        <div className="flex gap-2">
+      <div className="flex gap-2">
           <Input
             placeholder="Search by Customer ID"
             value={customerIdSearch}
@@ -119,10 +151,10 @@ export default function OrdersPage() {
               <SelectValue placeholder="Filter by Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="PENDING">Pending</SelectItem>
-              <SelectItem value="PROCESSING">Processing</SelectItem>
-              <SelectItem value="COMPLETED">Completed</SelectItem>
-              <SelectItem value="CANCELLED">Cancelled</SelectItem>
+              <SelectItem value="PENDING">PENDING</SelectItem>
+              <SelectItem value="PROCESSING">PROCESSING</SelectItem>
+              <SelectItem value="COMPLETED">COMPLETED</SelectItem>
+              <SelectItem value="CANCELLED">CANCELLED</SelectItem>
             </SelectContent>
           </Select>
           <Button onClick={() => handleSearch('status')}>
@@ -144,9 +176,19 @@ export default function OrdersPage() {
             </tr>
           </thead>
           <tbody>
-            {orders.map((order) => (
-              <tr key={order.orderID} className="border-b">
-                <td className="p-4">{order.orderID}</td>
+            {isLoading ? (
+              <tr>
+                <td colSpan={6} className="p-4 text-center">
+                  <div className="flex justify-center items-center gap-2">
+                    <RotateCw className="h-4 w-4 animate-spin" />
+                    <span>Loading orders...</span>
+                  </div>
+                </td>
+              </tr>
+            ) : orders.length > 0 ? (
+              orders.map((order) => (
+                <tr key={order.orderID} className="border-b">
+                  <td className="p-4">{order.orderID}</td>
                 <td className="p-4">{order.customerID || 'N/A'}</td>
                 <td className="p-4">{new Date(order.orderDate).toLocaleDateString()}</td>
                 <td className="p-4">
@@ -177,8 +219,15 @@ export default function OrdersPage() {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={6} className="p-4 text-center text-muted-foreground">
+                  No orders found
+                </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>

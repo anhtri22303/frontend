@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { fetchOrderById, updateOrder } from "@/app/api/orderApi"
+import { fetchOrderByID, updateOrder } from "@/app/api/orderApi"
 
 export default function EditOrderPage({ params }: { params: { orderId: string } }) {
   const router = useRouter()
@@ -23,7 +23,7 @@ export default function EditOrderPage({ params }: { params: { orderId: string } 
 
   const loadOrder = async () => {
     try {
-      const data = await fetchOrderById(params.orderId)
+      const data = await fetchOrderByID(params.orderId)
       setOrder(data)
     } catch (error) {
       console.error("Error loading order:", error)
@@ -68,10 +68,10 @@ export default function EditOrderPage({ params }: { params: { orderId: string } 
               <SelectValue placeholder="Select status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Completed">Completed</SelectItem>
-              <SelectItem value="Processing">Processing</SelectItem>
-              <SelectItem value="Shipped">Shipped</SelectItem>
-              <SelectItem value="Cancelled">Cancelled</SelectItem>
+              <SelectItem value="COMPLETED">COMPLETED</SelectItem>
+              <SelectItem value="PENDING">PENDING</SelectItem>
+              <SelectItem value="SHIPPED">SHIPPED</SelectItem>
+              <SelectItem value="CANCELLED">CANCELLED</SelectItem>
             </SelectContent>
           </Select>
         </div>

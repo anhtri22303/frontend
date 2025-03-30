@@ -9,15 +9,15 @@ import { Input } from "@/components/ui/input"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-import { fetchOrders, deleteOrder, fetchOrdersByCustomer, fetchOrdersByDate, fetchOrderById, fetchOrdersByStatus } from "@/app/api/orderApi"
+import { fetchOrders, deleteOrder, fetchOrdersByCustomer, fetchOrdersByDate, fetchOrderByID, fetchOrdersByStatus } from "@/app/api/orderApi"
 
 interface Order {
-  id: string
+  orderID: string
   customerID: string
   orderDate: string
   status: string
   payment: string
-  amount: number
+  totalAmount: number
 }
 
 export default function OrdersPage() {
@@ -52,22 +52,22 @@ export default function OrdersPage() {
 
   const handleSearch = async (type: string) => {
     try {
-      let data
+      let response
       switch (type) {
         case 'customer':
-          data = await fetchOrdersByCustomer(customerIdSearch)
+          response = await fetchOrdersByCustomer(customerIdSearch)
           break
         case 'date':
-          data = await fetchOrdersByDate(orderDateSearch)
+          response = await fetchOrdersByDate(orderDateSearch)
           break
         case 'order':
-          data = await fetchOrderById(orderIdSearch)
+          response = await fetchOrderByID(orderIdSearch)
           break
         case 'status':
-          data = await fetchOrdersByStatus(statusFilter)
+          response = await fetchOrdersByStatus(statusFilter)
           break
       }
-      setOrders(Array.isArray(data) ? data : [data])
+      setOrders(response.data)
     } catch (error) {
       console.error("Error searching orders:", error)
     }
@@ -127,10 +127,10 @@ export default function OrdersPage() {
             <SelectValue placeholder="Filter by Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="Completed">Completed</SelectItem>
-            <SelectItem value="Processing">Processing</SelectItem>
-            <SelectItem value="Shipped">Shipped</SelectItem>
-            <SelectItem value="Cancelled">Cancelled</SelectItem>
+            <SelectItem value="COMPLETED">COMPLETED</SelectItem>
+            <SelectItem value="PENDING">PENDING</SelectItem>
+            <SelectItem value="SHIPPED">SHIPPED</SelectItem>
+            <SelectItem value="CANCELLED">CANCELLED</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -152,7 +152,7 @@ export default function OrdersPage() {
                       if (selectedOrders.length === orders.length) {
                         setSelectedOrders([])
                       } else {
-                        setSelectedOrders(orders.map((order) => order.id))
+                        setSelectedOrders(orders.map((order) => order.orderID))
                       }
                     }}
                     checked={selectedOrders.length === orders.length && orders.length > 0}
@@ -168,29 +168,30 @@ export default function OrdersPage() {
               </tr>
             </thead>
             <tbody>
-              {orders.map((order) => (
-                <tr key={order.id} className="border-b">
+            {orders.length > 0 ? (
+              orders.map((order) => (
+                <tr key={order.orderID} className="border-b">
                   <td className="px-4 py-3">
                     <input
                       type="checkbox"
                       className="h-4 w-4 rounded border-gray-300"
-                      checked={selectedOrders.includes(order.id)}
-                      onChange={() => toggleOrderSelection(order.id)}
+                      checked={selectedOrders.includes(order.orderID)}
+                      onChange={() => toggleOrderSelection(order.orderID)}
                     />
                   </td>
-                  <td className="px-4 py-3 text-sm font-medium">#{order.id}</td>
+                  <td className="px-4 py-3 text-sm font-medium">#{order.orderID}</td>
                   <td className="px-4 py-3 text-sm">{order.customerID}</td>
                   <td className="px-4 py-3 text-sm">{order.orderDate}</td>
                   <td className="px-4 py-3 text-sm">
                     <span
                       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        order.status === "Completed"
+                        order.status === "COMPLETED"
                           ? "bg-green-100 text-green-800"
-                          : order.status === "Processing"
+                          : order.status === "PENDING"
                             ? "bg-yellow-100 text-yellow-800"
-                            : order.status === "Shipped"
+                            : order.status === "SHIPPED"
                               ? "bg-blue-100 text-blue-800"
-                              : order.status === "Cancelled"
+                              : order.status === "CANCELLED"
                                 ? "bg-red-100 text-red-800"
                                 : "bg-purple-100 text-purple-800"
                       }`}
@@ -199,7 +200,7 @@ export default function OrdersPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-sm">{order.payment}</td>
-                  <td className="px-4 py-3 text-right text-sm font-medium">${order.amount.toFixed(2)}</td>
+                  <td className="px-4 py-3 text-right text-sm font-medium">${order.totalAmount.toFixed(2)}</td>
                   <td className="px-4 py-3 text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -209,20 +210,27 @@ export default function OrdersPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => router.push(`/staff/orders/${order.id}`)}>
+                        <DropdownMenuItem onClick={() => router.push(`/staff/orders/${order.orderID}`)}>
                           View Details
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => router.push(`/staff/orders/edit/${order.id}`)}>
+                        <DropdownMenuItem onClick={() => router.push(`/staff/orders/edit/${order.orderID}`)}>
                           Edit Order
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteOrder(order.id)}>
+                        <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteOrder(order.orderID)}>
                           Delete Order
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </td>
                 </tr>
-              ))}
+              ))
+            ) : (
+              <tr>
+                <td colSpan={8} className="px-4 py-3 text-center text-sm text-muted-foreground">
+                  No orders found.
+                </td>
+              </tr>
+            )}
             </tbody>
           </table>
         </div>
