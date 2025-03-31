@@ -1,5 +1,6 @@
 "use client"
 
+
 import React, { useState, useEffect } from "react"
 import { Inter } from "next/font/google"
 import { usePathname } from "next/navigation"
@@ -22,6 +23,7 @@ import {
   HelpCircle
 } from "lucide-react"
 
+
 import "./globals.css"
 import { Toaster } from "react-hot-toast"
 import { AuthProvider } from "@/components/auth/auth-provider"
@@ -30,13 +32,16 @@ import Header from "@/components/layout/header"
 import Footer from "@/components/layout/footer"
 import { cn } from "@/lib/utils"
 
+
 const inter = Inter({ subsets: ["latin"] })
+
 
 interface SidebarLink {
   href: string
   label: string
   icon: React.ReactNode
 }
+
 
 const managerLinks: SidebarLink[] = [
   { href: "/manager", label: "Dasboard", icon: <Database className="h-6 w-6" /> },
@@ -51,6 +56,7 @@ const managerLinks: SidebarLink[] = [
   // { href: "/manager/answers", label: "Answers", icon: <SaveIcon className="h-6 w-6" /> },
 ]
 
+
 const staffLinks: SidebarLink[] = [
   { href: "/staff", label: "Dasboard", icon: <Database className="h-6 w-6" /> },
   { href: "/staff/products", label: "Products", icon: <Package className="h-6 w-6" /> },
@@ -58,6 +64,7 @@ const staffLinks: SidebarLink[] = [
   { href: "/staff/promotions", label: "Promotions", icon: <BadgeDollarSign className="h-6 w-6" /> },
   { href: "/staff/quizzes", label: "Quiz", icon: <HelpCircle className="h-6 w-6" /> },
 ]
+
 
 export default function RootLayout({
   children,
@@ -69,6 +76,7 @@ export default function RootLayout({
   const [userRole, setUserRole] = useState<string | null>(null)
   const pathname = usePathname()
 
+
   useEffect(() => {
     const checkUserRole = () => {
       const role = localStorage.getItem("userRole")
@@ -76,22 +84,27 @@ export default function RootLayout({
       setShowFooter(!role || role === "CUSTOMER")
     }
 
+
     checkUserRole()
     window.addEventListener("storage", checkUserRole)
-    
+   
     return () => {
       window.removeEventListener("storage", checkUserRole)
     }
   }, [])
 
+
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen)
   }
 
+
   const renderSidebar = () => {
     if (!userRole || userRole === "CUSTOMER") return null
 
+
     const links = userRole === "MANAGER" ? managerLinks : staffLinks
+
 
     return (
       <>
@@ -139,13 +152,20 @@ export default function RootLayout({
     )
   }
 
+
   return (
     <html lang="en">
       <body className={inter.className}>
         <AuthProvider>
           <div className="flex min-h-screen">
             {userRole && userRole !== "CUSTOMER" && renderSidebar()}
-            <div className={`flex-1 ${userRole && userRole !== "CUSTOMER" && sidebarOpen ? "pl-72" : ""}`}>
+            <div
+              className={`flex-1 ${
+                userRole && userRole !== "CUSTOMER" && sidebarOpen
+                  ? "pl-72"
+                  : ""
+              }`}
+            >
               <div className="flex min-h-screen flex-col">
                 <Header />
                 <main className="flex-1">
@@ -154,10 +174,14 @@ export default function RootLayout({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="fixed top-3 left-3 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+                        className="fixed top-12 left-10 bottom-10 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
                         onClick={toggleSidebar}
                       >
-                        {sidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                        {sidebarOpen ? (
+                          <X className="h-6 w-6" />
+                        ) : (
+                          <Menu className="h-6 w-6" />
+                        )}
                       </Button>
                     )}
                     {children}
@@ -171,5 +195,5 @@ export default function RootLayout({
         </AuthProvider>
       </body>
     </html>
-  )
+  );
 }
