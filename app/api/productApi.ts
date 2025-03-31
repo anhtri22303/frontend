@@ -2,15 +2,15 @@ import axiosInstance from "@/lib/axiosInstance"
 
 export const fetchProducts = async () => {
   try {
-    const response = await axiosInstance.get("/products")
-    console.log("Get product success")
-    console.log("List product", response.data)
-    return response.data
+    const response = await axiosInstance.get("/products");
+    console.log("Get product success");
+    console.log("List product", response.data);
+    return response.data.data || []; // Lấy dữ liệu từ trường data
   } catch (error) {
-    console.error("Error fetching products:", error)
-    return []
+    console.error("Error fetching products:", error);
+    return [];
   }
-}
+};
 
 // Create new product
 export const createProduct = async (productData: {
@@ -18,6 +18,7 @@ export const createProduct = async (productData: {
   description: string
   price: number
   category: string
+  skinType: string
   rating: number
   image_url: string
 }) => {
@@ -29,9 +30,9 @@ export const createProduct = async (productData: {
     console.error("Error creating product:", error)
     throw error
   }
-}
+};
 
-export const updateProduct = async (id: string, product: { name: string, description: string, category: string, price: string, rating: number, image_url: string }) => {
+export const updateProduct = async (id: string, product: { name: string, description: string, category: string, price: string, rating: number, image_url: string , skinType: string}) => {
   try {
     const response = await axiosInstance.put(`/products/${id}`, product);
     console.log("Update success");
@@ -52,7 +53,7 @@ export const deleteProduct = async (id: string) => {
     console.error("Error deleting product:", error)
     throw error
   }
-}
+};
 
 export const fetchProductsByCategory = async (category: string) => {
   try {
@@ -63,7 +64,7 @@ export const fetchProductsByCategory = async (category: string) => {
     console.error("Error fetching products by category:", error)
     return []
   }
-}
+};
 
 export const fetchProductsByName = async (productName: string) => {
   try {
@@ -74,7 +75,7 @@ export const fetchProductsByName = async (productName: string) => {
     console.error("Error fetching products by name:", error)
     return []
   }
-}
+};
 
 export const fetchProductById = async (id: string) => {
   try {
@@ -85,4 +86,38 @@ export const fetchProductById = async (id: string) => {
     console.error("Error fetching product by ID:", error)
     return null
   }
-}
+};
+
+  export const fetchProductsBySkinType = async (skinType: string) => {
+    try {
+      const response = await axiosInstance.get(`/products/skinType/${skinType}`)
+      console.log("Get by skin type success")
+      return response.data
+    } catch (error) {
+      console.error("Error fetching products by skin type:", error)
+      return []
+    }
+  };
+
+  export const fetchProductsByFilters = async (filters: {
+    categories?: string;
+    skinTypes?: string;
+    minPrice?: number;
+    maxPrice?: number;
+  }) => {
+    try {
+      const response = await axiosInstance.get("/products/filter", {
+        params: filters,
+      });
+      console.log("Get by filters success", response.data);
+      // Kiểm tra status và lấy dữ liệu từ trường data
+      if (response.data.status === 200) {
+        return response.data.data || [];
+      } else {
+        return []; // Trả về mảng rỗng nếu không tìm thấy sản phẩm
+      }
+    } catch (error) {
+      console.error("Error fetching products by filters:", error);
+      return [];
+    }
+  };

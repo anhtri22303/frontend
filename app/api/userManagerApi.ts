@@ -1,7 +1,7 @@
 import axiosInstance from "@/lib/axiosInstance"
 
 interface User {
-  id: string
+  userID: string
   name: string
   email: string
   phone: string
@@ -45,9 +45,9 @@ export const createUser = async (userData: Omit<User, 'id' | 'loyalPoints'>) => 
 }
 
 // Get user by ID
-export const fetchUserById = async (userId: string) => {
+export const fetchUserById = async (userID: string) => {
   try {
-    const response = await axiosInstance.get(`/manager/users/${userId}`)
+    const response = await axiosInstance.get(`/manager/users/${userID}`)
     console.log("GET user by ID success", response.data)
     return response.data
   } catch (error) {

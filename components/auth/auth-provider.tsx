@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation"
 import { login as loginApi, loginWithGoogle as loginWithGoogleApi, signUp as signUpApi } from "@/app/api/authApi"
 
 type User = {
-  id: string
+  userID: string
   username: string
   fullName: string | null
   image?: string
@@ -53,7 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const jwtToken = localStorage.getItem("jwtToken")
     if (jwtToken) {
       const userData = {
-        id: localStorage.getItem("userID") || "",
+        userID: localStorage.getItem("userID") || "",
         username: localStorage.getItem("userEmail") || "",
         fullName: localStorage.getItem("userName"),
         role: localStorage.getItem("userRole") || "",
@@ -75,7 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (response.data) {
         const userData = response.data.data  // Access the nested data object
         setUser({
-          id: userData.userID,
+          userID: userData.userID,
           username: userData.email,
           fullName: userData.fullName,
           role: userData.role,

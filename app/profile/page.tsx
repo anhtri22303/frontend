@@ -28,11 +28,11 @@ export default function ProfilePage() {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      if (!user?.id) return
+      if (!user?.userID) return
 
       try {
         setIsLoading(true)
-        const response = await fetchUserById(user.id)
+        const response = await fetchUserById(user.userID)
         if (response?.data) {  
           setFormData({
             fullName: response.data.fullName || "",
@@ -52,18 +52,18 @@ export default function ProfilePage() {
     }
 
     fetchUserData()
-  }, [user?.id])
+  }, [user?.userID])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!user?.id) return
+    if (!user?.userID) return
 
     setIsLoading(true)
     setError("")
     setSuccess("")
     
     try {
-      const response = await updateCustomer(user.id, formData)
+      const response = await updateCustomer(user.userID, formData)
       if (response?.data) {
         updateUser(response.data)
         setSuccess("Profile updated successfully!")
