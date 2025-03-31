@@ -1,117 +1,256 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { fetchRoutines, fetchRoutinesByCategory, searchRoutinesByName } from "@/app/api/routineApi"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Package, ShoppingCart, HelpCircle, Tag, Search, PlusCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { fetchProducts } from "@/app/api/productApi";
+import { fetchQuizzes } from "@/app/api/quizApi";
+import { fetchPromotions } from "@/app/api/promotionApi";
+import { fetchOrders } from "@/app/api/orderApi";
 
-interface Routine {
-  routineID: string
-  category: string
-  routineName: string
-  routineDescription: string
+// Interfaces for data
+interface Product {
+  productID: string;
+  productName: string;
+  category: string;
+  price: number;
 }
 
-export default function RoutineList() {
-  const router = useRouter()
-  const [routines, setRoutines] = useState<Routine[]>([])
-  const [searchName, setSearchName] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
+interface Quiz {
+  questionId: string;
+  quizText: string;
+}
+
+interface Promotion {
+  productID: string;
+  discount: number;
+  startDate: string;
+  endDate: string;
+}
+
+interface Order {
+  orderID: string
+  customerID: string | null
+  orderDate: string
+  status: string
+  totalAmount: number
+}
+
+
+export default function StaffDashboard() {
+  const router = useRouter();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [promotions, setPromotions] = useState<Promotion[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    loadRoutines()
-  }, [])
+    loadDashboardData();
+  }, []);
 
-  const loadRoutines = async () => {
-    setIsLoading(true)
+  const loadDashboardData = async () => {
+    setIsLoading(true);
     try {
-      const data = await fetchRoutines()
-      setRoutines(data)
+      const [productsData, quizzesData, promotionsData, ordersData] = await Promise.all([
+        fetchProducts(),
+        fetchQuizzes(),
+        fetchPromotions(),
+        fetchOrders(),
+      ]);
+      setProducts(productsData || []);
+      console.log("Products:", productsData);
+      setQuizzes(quizzesData || []);
+      setPromotions(promotionsData || []);
+      setOrders(ordersData || []);
     } catch (error) {
-      console.error("Failed to load routines:", error)
+      console.error("Error loading dashboard data:", error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
-  const handleCategoryChange = async (category: string) => {
-    setSelectedCategory(category)
-    if (category !== "ALL") {  // Change this condition
-      try {
-        const data = await fetchRoutinesByCategory(category)
-        setRoutines(data)
-      } catch (error) {
-        console.error("Failed to fetch routines by category:", error)
-      }
-    } else {
-      loadRoutines()
-    }
-  }
+  const handleSearch = () => {
+    // Placeholder for search functionality
+    // In a real implementation, this could filter products, quizzes, etc.
+    console.log("Searching for:", searchQuery);
+  };
 
-  const handleSearch = async () => {
-    if (!searchName.trim()) {
-      loadRoutines()
-      return
-    }
-    try {
-      const data = await searchRoutinesByName(searchName)
-      setRoutines(data)
-    } catch (error) {
-      console.error("Failed to search routines:", error)
-    }
-  }
+  const activePromotions = promotions.filter((promo) => {
+    const currentDate = new Date().toISOString().split("T")[0];
+    return promo.startDate <= currentDate && promo.endDate >= currentDate;
+  });
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Skincare Routines</h1>
-        <Button onClick={() => router.push('/staff/routines/create')}>
-          Create New Routine
-        </Button>
-      </div>
-
-      <div className="grid gap-4 mb-6 md:grid-cols-3">
-        <div className="relative">
+    <div className="container mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">Staff Dashboard</h1>
+        <div className="relative w-full max-w-sm">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Search by name..."
-            value={searchName}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchName(e.target.value)}
-            onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === "Enter" && handleSearch()}
+            placeholder="Search products, quizzes..."
+            className="pl-8 w-full"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
           />
         </div>
-        <Select value={selectedCategory} onValueChange={handleCategoryChange}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select category" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ALL">All Categories</SelectItem>  {/* Change empty string to "ALL" */}
-            <SelectItem value="DRY">Dry</SelectItem>
-            <SelectItem value="OILY">Oily</SelectItem>
-            <SelectItem value="COMBINATION">Combination</SelectItem>
-            <SelectItem value="SENSITIVE">Sensitive</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {routines.map((routine) => (
-          <Card key={routine.routineID}>
-            <CardHeader>
-              <CardTitle>{routine.routineName}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-2">{routine.routineDescription}</p>
-              <p className="text-sm">Category: {routine.category}</p>
-            </CardContent>
-          </Card>
-        ))}
+      {/* Overview Stats */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{products.length}</div>
+            <Button
+              variant="link"
+              className="p-0 text-sm text-muted-foreground"
+              onClick={() => router.push("/staff/products")}
+            >
+              View all products
+            </Button>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Quizzes</CardTitle>
+            <HelpCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{quizzes.length}</div>
+            <Button
+              variant="link"
+              className="p-0 text-sm text-muted-foreground"
+              onClick={() => router.push("/staff/quizzes")}
+            >
+              View all quizzes
+            </Button>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Promotions</CardTitle>
+            <Tag className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{activePromotions.length}</div>
+            <Button
+              variant="link"
+              className="p-0 text-sm text-muted-foreground"
+              onClick={() => router.push("/staff/promotions")}
+            >
+              View all promotions
+            </Button>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Recent Orders</CardTitle>
+            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{orders.length}</div>
+            <Button
+              variant="link"
+              className="p-0 text-sm text-muted-foreground"
+              onClick={() => router.push("/staff/orders")}
+            >
+              View all orders
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="mb-6">
+        <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
+        <div className="flex gap-4">
+          <Button onClick={() => router.push("/staff/products/create")}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add Product
+          </Button>
+          <Button onClick={() => router.push("/staff/quizzes/create")}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Create Quiz
+          </Button>
+          <Button onClick={() => router.push("/staff/promotions/create")}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add Promotion
+          </Button>
+        </div>
+      </div>
+
+      {/* Recent Activity */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Recent Products */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Products</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {products.length > 0 ? (
+              <ul className="space-y-4">
+                {products.slice(0, 5).map((product) => (
+                  <li key={product.productID} className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">{product.productName}</p>
+                      <p className="text-sm text-muted-foreground">{product.category}</p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => router.push(`/staff/products/${product.productID}/edit`)}
+                    >
+                      Edit
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>No recent products available.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Recent Quizzes */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Quizzes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {quizzes.length > 0 ? (
+              <ul className="space-y-4">
+                {quizzes.slice(0, 5).map((quiz) => (
+                  <li key={quiz.questionId} className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">{quiz.quizText}</p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => router.push(`/staff/quizzes/${quiz.questionId}/edit`)}
+                    >
+                      Edit
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>No recent quizzes available.</p>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
-  )
+  );
 }
-

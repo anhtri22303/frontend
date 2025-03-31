@@ -127,7 +127,9 @@ export default function CreateRoutinePage() {
                   <div className="mt-4 max-h-64 overflow-y-auto border-t pt-4">
                     {allProducts.map((product) => (
                       <div key={product.productID} className="flex items-center justify-between py-2">
-                        <span>{product.productID}</span>
+                        <span>
+                          {product.productName} ({product.productID})
+                        </span>
                         <Button
                           type="button"
                           size="sm"

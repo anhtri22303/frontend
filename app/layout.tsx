@@ -18,7 +18,8 @@ import {
   Database,
   RouteIcon,
   QuoteIcon,
-  SaveIcon
+  SaveIcon,
+  HelpCircle
 } from "lucide-react"
 
 import "./globals.css"
@@ -51,10 +52,11 @@ const managerLinks: SidebarLink[] = [
 ]
 
 const staffLinks: SidebarLink[] = [
-  { href: "/staff", label: "Routines", icon: <RouteIcon className="h-6 w-6" /> },
+  { href: "/staff", label: "Dasboard", icon: <Database className="h-6 w-6" /> },
   { href: "/staff/products", label: "Products", icon: <Package className="h-6 w-6" /> },
   { href: "/staff/orders", label: "Orders", icon: <ShoppingCart className="h-6 w-6" /> },
   { href: "/staff/promotions", label: "Promotions", icon: <BadgeDollarSign className="h-6 w-6" /> },
+  { href: "/staff/quizzes", label: "Quiz", icon: <HelpCircle className="h-6 w-6" /> },
 ]
 
 export default function RootLayout({

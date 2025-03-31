@@ -8,14 +8,28 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { fetchProducts, deleteProduct, fetchProductsByCategory, fetchProductsByName } from "@/app/api/productApi"
+import { fetchPromotions } from "@/app/api/promotionApi"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 // Update the Product interface
 interface Product {
-  id: string
-  name: string
+  productID: string
+  productName: string
   category: string
-  price: string
+  price: number
+  rating: number
+  imageFile: null
+  imagePreview: string
+  skinType: string
+  promotion?: Promotion
+  discountedPrice?: number
+}
+
+interface Promotion {
+  productID: string
+  discount: number
+  startDate: string
+  endDate: string
 }
 
 export default function ProductsPage() {
@@ -25,7 +39,7 @@ export default function ProductsPage() {
   const [selectedCategory, setSelectedCategory] = useState("")
   const router = useRouter()
 
-  const categories = ["DRY", "OILY", "COMBINATION", "SENSITIVE", "NORMAL"] // Add your actual categories here
+  const categories = ["Cleanser", "Toner", "Serum", "Moisturizer", "Sunscreen", "Mask"] // Add your actual categories here
 
   useEffect(() => {
     loadProducts()
@@ -33,10 +47,29 @@ export default function ProductsPage() {
 
   const loadProducts = async () => {
     try {
-      const data = await fetchProducts()
-      setProducts(data)
+      const products = await fetchProducts() // Lấy danh sách sản phẩm
+      console.log("Fetched Products:", products)
+      const promotions = await fetchPromotions() // Lấy danh sách promotion
+
+      // Kết hợp sản phẩm với promotion
+      const productsWithPromotions: Product[] = products.map((product: Product): Product => {
+        console.log("Product ID:", product.productID)
+        const currentDate = new Date().toISOString().split("T")[0] // Lấy ngày hiện tại
+        const promotion: Promotion | undefined = promotions.find((promo: Promotion) => {
+          return promo.productID === product.productID &&
+                 promo.startDate <= currentDate &&
+                 promo.endDate >= currentDate
+        })
+        const discountedPrice: number | undefined = promotion
+          ? parseFloat((product.price * (1 - promotion.discount / 100)).toFixed(2)) // Tính giá sau khi giảm
+          : product.price
+        return { ...product, promotion, discountedPrice }
+      })
+
+      console.log("Products with Promotions:", productsWithPromotions)
+      setProducts(productsWithPromotions)
     } catch (error) {
-      console.error("Error fetching products:", error)
+      console.error("Error loading products with promotions:", error)
     }
   }
 
@@ -90,7 +123,7 @@ export default function ProductsPage() {
     <>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">Products</h1>
-        <Button onClick={() => router.push("/staff/products/create")}>
+        <Button onClick={() => router.push("/manager/products/create")}>
           <PlusCircle className="mr-2 h-4 w-4" />
           Add Product
         </Button>
@@ -132,7 +165,7 @@ export default function ProductsPage() {
 
       <div className="rounded-lg border shadow-sm">
         <div className="overflow-x-auto">
-          {products.length > 0 ? (
+          {Array.isArray(products) && products.length > 0 ? (
             <table className="w-full">
               <thead>
                 <tr className="border-b bg-muted/50">
@@ -144,7 +177,7 @@ export default function ProductsPage() {
                         if (selectedProducts.length === products.length) {
                           setSelectedProducts([])
                         } else {
-                          setSelectedProducts(products.map((product) => product.id))
+                          setSelectedProducts(products.map((product) => product.productID))
                         }
                       }}
                       checked={selectedProducts.length === products.length && products.length > 0}
@@ -153,34 +186,42 @@ export default function ProductsPage() {
                   <th className="px-4 py-3 text-left text-sm font-medium">Product</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Category</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Price</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium">Promotion</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium">Rating</th> {/* Thêm cột Rating */}
                   <th className="px-4 py-3 text-right text-sm font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {products.map((product) => (
-                  <tr key={product.id} className="border-b">
+                  <tr key={product.productID} className="border-b">
                     <td className="px-4 py-3">
                       <input
                         type="checkbox"
                         className="h-4 w-4 rounded border-gray-300"
-                        checked={selectedProducts.includes(product.id)}
-                        onChange={() => toggleProductSelection(product.id)}
+                        checked={selectedProducts.includes(product.productID)}
+                        onChange={() => toggleProductSelection(product.productID)}
                       />
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <Image
-                          src={`/placeholder.svg?height=48&width=48`}
+                          src={product.imageFile || "/public/assets/products/lipstick.png"} // Sử dụng image_url hoặc ảnh mặc định
                           width={48}
                           height={48}
                           className="rounded-md object-cover"
-                          alt={`${product.name} thumbnail`}
+                          alt={`${product.productName}`}
                         />
-                        <div className="font-medium">{product.name}</div>
+                        <div className="font-medium">{product.productName}</div>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm">{product.category}</td>
                     <td className="px-4 py-3 text-sm">{product.price}</td>
+                    <td className="px-4 py-3 text-sm">
+                      {product.promotion
+                        ? `${product.discountedPrice} (${product.promotion.discount}% OFF)`
+                        : "No Promotion"}
+                    </td>
+                    <td className="px-4 py-3 text-sm">{product.rating || "N/A"}</td> {/* Hiển thị Rating */}
                     <td className="px-4 py-3 text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -190,12 +231,12 @@ export default function ProductsPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => router.push(`/staff/products/edit/${product.id}`)}>
+                          <DropdownMenuItem onClick={() => router.push(`/manager/products/${product.productID}/edit`)}>
                             Edit
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             className="text-red-600"
-                            onClick={() => handleDeleteProduct(product.id)}
+                            onClick={() => handleDeleteProduct(product.productID)}
                           >
                             Delete
                           </DropdownMenuItem>
