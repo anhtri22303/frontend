@@ -14,11 +14,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 // Update the Product interface
 interface Product {
   productID: string
-  name: string
+  productName: string
   category: string
   price: number
   rating: number
-  image_url: string | null
+  imageFile: null
+  imagePreview: string
+  skinType: string
   promotion?: Promotion
   discountedPrice?: number
 }
@@ -37,7 +39,7 @@ export default function ProductsPage() {
   const [selectedCategory, setSelectedCategory] = useState("")
   const router = useRouter()
 
-  const categories = ["DRY", "OILY", "COMBINATION", "SENSITIVE", "NORMAL"] // Add your actual categories here
+  const categories = ["Cleanser", "Toner", "Serum", "Moisturizer", "Sunscreen", "Mask"] // Add your actual categories here
 
   useEffect(() => {
     loadProducts()
@@ -203,13 +205,13 @@ export default function ProductsPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <Image
-                          src={product.image_url || "/public/assets/products/lipstick.png"} // Sử dụng image_url hoặc ảnh mặc định
+                          src={product.imageFile || "/public/assets/products/lipstick.png"} // Sử dụng image_url hoặc ảnh mặc định
                           width={48}
                           height={48}
                           className="rounded-md object-cover"
-                          alt={`${product.name}`}
+                          alt={`${product.productName}`}
                         />
-                        <div className="font-medium">{product.name}</div>
+                        <div className="font-medium">{product.productName}</div>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm">{product.category}</td>

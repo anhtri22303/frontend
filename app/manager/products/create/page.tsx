@@ -1,32 +1,55 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { createProduct } from "@/app/api/productApi"
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { createProduct } from "@/app/api/productApi";
+import { fetchPromotions } from "@/app/api/promotionApi";
+import Image from "next/image";
 
 export default function CreateProductPage() {
   const [newProduct, setNewProduct] = useState({
     productName: "",
     description: "",
     price: 0,
-    category: "DRY",
+    category: "Cleanser",
+    skinType: "Dry",
     rating: 0,
-    image_url: ""
-  })
-  const router = useRouter()
+    imageFile: null as File | null,
+    imagePreview: "",
+
+  });
+
+  const router = useRouter();
 
   const handleCreateProduct = async () => {
     try {
-      await createProduct(newProduct)
-      router.push("/manager/products")
+      await createProduct(newProduct);
+      router.push("/manager/products");
     } catch (error) {
-      console.error("Error creating product:", error)
+      console.error("Error creating product:", error);
     }
-  }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setNewProduct({
+        ...newProduct,
+        imageFile: file,
+        imagePreview: URL.createObjectURL(file),
+      });
+    }
+  };
 
   return (
     <div className="container py-8">
@@ -37,7 +60,9 @@ export default function CreateProductPage() {
           <Input
             placeholder="Enter product name"
             value={newProduct.productName}
-            onChange={(e: { target: { value: any } }) => setNewProduct({ ...newProduct, productName: e.target.value })}
+            onChange={(e) =>
+              setNewProduct({ ...newProduct, productName: e.target.value })
+            }
           />
         </div>
 
@@ -46,18 +71,22 @@ export default function CreateProductPage() {
           <Textarea
             placeholder="Enter product description"
             value={newProduct.description}
-            onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+            onChange={(e) =>
+              setNewProduct({ ...newProduct, description: e.target.value })
+            }
             className="min-h-[100px]"
           />
         </div>
 
         <div>
-          <label className="text-sm font-medium mb-1 block">Price</label>
+          <label className="text-sm font-medium mb-1 block">Price (USD)</label>
           <Input
             type="number"
             placeholder="Enter price"
             value={newProduct.price}
-            onChange={(e: { target: { value: any } }) => setNewProduct({ ...newProduct, price: Number(e.target.value) })}
+            onChange={(e) =>
+              setNewProduct({ ...newProduct, price: Number(e.target.value) })
+            }
           />
         </div>
 
@@ -65,17 +94,41 @@ export default function CreateProductPage() {
           <label className="text-sm font-medium mb-1 block">Category</label>
           <Select
             value={newProduct.category}
-            onValueChange={(value) => setNewProduct({ ...newProduct, category: value })}
+            onValueChange={(value) =>
+              setNewProduct({ ...newProduct, category: value })
+            }
           >
             <SelectTrigger>
               <SelectValue placeholder="Select category" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="DRY">DRY</SelectItem>
-              <SelectItem value="OILY">OILY</SelectItem>
-              <SelectItem value="COMBINATION">COMBINATION</SelectItem>
-              <SelectItem value="SENSITIVE">SENSITIVE</SelectItem>
-              <SelectItem value="NORMAL">NORMAL</SelectItem>
+              <SelectItem value="Cleanser">Cleanser</SelectItem>
+              <SelectItem value="Toner">Toner</SelectItem>
+              <SelectItem value="Serum">Serum</SelectItem>
+              <SelectItem value="Moisturizer">Moisturizer</SelectItem>
+              <SelectItem value="Sunscreen">Sunscreen</SelectItem>
+              <SelectItem value="Mask">Mask</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <label className="text-sm font-medium mb-1 block">Skin Type</label>
+          <Select
+            value={newProduct.skinType}
+            onValueChange={(value) =>
+              setNewProduct({ ...newProduct, skinType: value })
+            }
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select skin type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Dry">Dry</SelectItem>
+              <SelectItem value="Oily">Oily</SelectItem>
+              <SelectItem value="Combination">Combination</SelectItem>
+              <SelectItem value="Sensitive">Sensitive</SelectItem>
+              <SelectItem value="Normal">Normal</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -86,20 +139,42 @@ export default function CreateProductPage() {
             type="number"
             placeholder="Enter rating"
             value={newProduct.rating}
-            onChange={(e: { target: { value: any } }) => setNewProduct({ ...newProduct, rating: Number(e.target.value) })}
+            onChange={(e) =>
+              setNewProduct({ ...newProduct, rating: Number(e.target.value) })
+            }
             min="0"
             max="5"
             step="0.1"
           />
         </div>
 
+        {/* --- Image Upload --- */}
         <div>
-          <label className="text-sm font-medium mb-1 block">Image URL</label>
-          <Input
-            placeholder="Enter image URL"
-            value={newProduct.image_url}
-            onChange={(e: { target: { value: any } }) => setNewProduct({ ...newProduct, image_url: e.target.value })}
-          />
+          <label className="text-sm font-medium mb-1 block">Product Image</label>
+          <div className="flex items-center gap-4">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="hidden"
+              id="fileUpload"
+            />
+            <label
+              htmlFor="fileUpload"
+              className="cursor-pointer px-4 py-2 bg-gray-200 rounded-md text-sm"
+            >
+              Choose File
+            </label>
+            {newProduct.imagePreview && (
+              <Image
+                src={newProduct.imagePreview}
+                width={80}
+                height={80}
+                alt="Preview"
+                className="rounded-md object-cover border"
+              />
+            )}
+          </div>
         </div>
       </div>
 
@@ -110,5 +185,5 @@ export default function CreateProductPage() {
         <Button onClick={handleCreateProduct}>Create Product</Button>
       </div>
     </div>
-  )
+  );
 }

@@ -44,9 +44,9 @@ export default function CustomerList() {
   return (
     <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">User Management</h1>
+        <h1 className="text-2xl font-bold">Customer Management</h1>
         <Button onClick={() => router.push('/manager/users/create')}>
-          Create New User
+          Create New Customer
         </Button>
       </div>
 

@@ -5,16 +5,15 @@ export interface Promotion {
   promotionName: string
   productID: string
   discount: number
-  startDate: string
-  endDate: string
+  startDate?: string
+  endDate?: string
 }
 
 export const fetchPromotions = async () => {
   try {
     const response = await axiosInstance.get("/promotions")
-    console.log("Get promotion success");
-    console.log("response", response.data)
-    return response.data
+    console.log("Get promotion success", response.data.data);
+    return response.data.data || [];
   } catch (error) {
     console.error("Error fetching promotions:", error)
     throw error

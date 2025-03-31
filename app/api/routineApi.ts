@@ -2,7 +2,7 @@ import axiosInstance from "@/lib/axiosInstance"
 
 interface SkinCareRoutine {
   routineID: string
-  category: string
+  skinType: string
   routineName: string
   routineDescription: string
 }
@@ -66,9 +66,9 @@ export const deleteRoutine = async (id: string) => {
 }
 
 // Get routines by category
-export const fetchRoutinesByCategory = async (category: string) => {
+export const fetchRoutinesBySkinType = async (skinType: string) => {
   try {
-    const response = await axiosInstance.get(`/skin-care-routines/category/${category}`)
+    const response = await axiosInstance.get(`/skin-care-routines/skinType/${skinType}`)
     console.log("Get routines by category success")
     return response.data.data
   } catch (error) {
