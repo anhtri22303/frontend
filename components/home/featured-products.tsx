@@ -14,10 +14,10 @@ interface Product {
   productName: string;
   price: number;
   image_url: string;
-  category: string;
+  category?: string;
   rating: number;
   skinType: string;
-  isNew: boolean;
+  isNew?: boolean;
 }
 
 
@@ -33,11 +33,7 @@ export function FeaturedProducts() {
       try {
         const response = await fetchProducts();
         console.log("Products data:", response);
-
-
-        // Trích xuất mảng `data` từ `response`
-        const productsData = Array.isArray(response.data) ? response.data : [];
-        setProducts(productsData);
+        setProducts(response || []);
       } catch (error) {
         console.error("Error fetching products:", error);
       } finally {
