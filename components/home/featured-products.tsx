@@ -1,43 +1,68 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from "react"
-import Link from "next/link"
-import Image from "next/image"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { fetchProducts } from "@/app/api/productApi"
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { fetchProducts } from "@/app/api/productApi";
 
 interface Product {
-  productID: string
-  productName: string
-  price: number
-  image_url: string
-  category: string
-  rating: number
-  skinType: string
-  isNew: boolean
+  productID: string;
+  productName: string;
+  price: number;
+  image_url: string;
+  category: string;
+  rating: number;
+  skinType: string;
+  isNew: boolean;
 }
 
 export function FeaturedProducts() {
-  const [products, setProducts] = useState<Product[]>([])
-  const [loading, setLoading] = useState(true)
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const productsPerPage = 4; // Số sản phẩm hiển thị trên mỗi trang
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const data = await fetchProducts()
-        console.log("Products data:", data)
-        setProducts(data)
-      } catch (error) {
-        console.error("Error fetching products:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
+        const response = await fetchProducts();
+        console.log("Products data:", response);
 
-    fetchData()
-  }, [])
+        // Trích xuất dữ liệu từ response
+        const productsData = response; // Dữ liệu trả về là mảng sản phẩm
+        setProducts(productsData); // Gán dữ liệu vào state products
+
+        console.log("Products state:", productsData); // Kiểm tra giá trị của products
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Tính toán các sản phẩm hiển thị dựa trên trang hiện tại
+  const indexOfLastProduct = currentPage * productsPerPage;
+  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+  const currentProducts = products.slice(indexOfFirstProduct, indexOfLastProduct);
+
+  // Hàm chuyển sang trang trước
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  // Hàm chuyển sang trang tiếp theo
+  const handleNextPage = () => {
+    if (indexOfLastProduct < products.length) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
 
   if (loading) {
     return (
@@ -45,7 +70,7 @@ export function FeaturedProducts() {
         <h2 className="text-3xl font-bold tracking-tight text-center mb-4">Featured Products</h2>
         <p className="text-center">Loading products...</p>
       </section>
-    )
+    );
   }
 
   return (
@@ -55,38 +80,39 @@ export function FeaturedProducts() {
           <h2 className="text-3xl font-bold tracking-tight">Featured Products</h2>
           <p className="text-muted-foreground mt-2">Our most popular skincare solutions loved by customers</p>
         </div>
-        <Button asChild variant="outline" className="mt-4 md:mt-0">
-          <Link href="/shop">View All Products</Link>
-        </Button>
+        <Link href="/shop" className="mt-4 md:mt-0 text-primary hover:underline">
+          View All Products
+        </Link>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {products.map((product) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {currentProducts.map((product) => (
           <Card key={product.productID} className="overflow-hidden group">
-            <div className="relative aspect-square">
-              <Image
-                src={product.image_url || "/placeholder.svg"}
-                alt={product.productName}
-                fill
-                className="object-cover transition-transform group-hover:scale-105"
-              />
-              {product.isNew && (
-                <Badge className="absolute top-2 right-2" variant="secondary">
-                  New
-                </Badge>
-              )}
-            </div>
+            <Link href={`/shop/product/${product.productID}`} className="block">
+              <div className="relative aspect-square">
+                <Image
+                  src={product.image_url || "/placeholder.svg"}
+                  alt={product.productName}
+                  fill
+                  className="object-cover transition-transform group-hover:scale-105"
+                />
+                {product.isNew && (
+                  <Badge className="absolute top-2 right-2" variant="secondary">
+                    New
+                  </Badge>
+                )}
+              </div>
+            </Link>
             <CardContent className="pt-4">
               <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="font-medium">{product.productName}</h3>
-                  <p className="text-sm text-muted-foreground">ID: {product.productID}</p>
+                  <h3 className="font-medium truncate w-full">{product.productName}</h3>
+                  <p className="text-sm text-muted-foreground">{product.category || "N/A"}</p>
                 </div>
                 <p className="font-semibold">${product.price.toFixed(2)}</p>
               </div>
               <div className="mt-2 text-sm">
-                <p>Category: {product.category}</p>
-                <p>For {product.skinType} skin</p>
+                <p className="text-muted-foreground">For {product.skinType} skin</p>
                 <div className="flex items-center mt-1">
                   <span>Rating: {product.rating}/5</span>
                   <div className="ml-2 flex">
@@ -94,7 +120,7 @@ export function FeaturedProducts() {
                       <svg
                         key={i}
                         className={`w-4 h-4 ${
-                          i < product.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                          i < product.rating ? "text-yellow-400 fill-current" : "text-gray-300"
                         }`}
                         viewBox="0 0 20 20"
                       >
@@ -105,12 +131,30 @@ export function FeaturedProducts() {
                 </div>
               </div>
             </CardContent>
-            <CardFooter>
-              <Button className="w-full">Add to Cart</Button>
-            </CardFooter>
           </Card>
         ))}
       </div>
+
+      {/* Pagination Controls */}
+      <div className="flex items-center justify-between mt-6">
+        <button
+          className="p-2 border rounded-md hover:bg-gray-100 disabled:opacity-50"
+          onClick={handlePrevPage}
+          disabled={currentPage === 1}
+        >
+          Previous
+        </button>
+        <span className="text-sm text-muted-foreground">
+          Page {currentPage} of {Math.ceil(products.length / productsPerPage)}
+        </span>
+        <button
+          className="p-2 border rounded-md hover:bg-gray-100 disabled:opacity-50"
+          onClick={handleNextPage}
+          disabled={indexOfLastProduct >= products.length}
+        >
+          Next
+        </button>
+      </div>
     </section>
-  )
+  );
 }

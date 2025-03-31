@@ -1,35 +1,64 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { createRoutine } from "@/app/api/routineApi"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { createRoutine } from "@/app/api/routineApi";
+import { fetchProducts } from "@/app/api/productApi";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function CreateRoutinePage() {
-  const router = useRouter()
+  const router = useRouter();
   const [formData, setFormData] = useState({
-    category: "",
+    skinType: "",
     routineName: "",
-    routineDescription: ""
-  })
-  const [isLoading, setIsLoading] = useState(false)
+    routineDescription: "",
+  });
+  const [products, setProducts] = useState<string[]>([]);
+  const [allProducts, setAllProducts] = useState<any[]>([]);
+  const [isProductListOpen, setIsProductListOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchAllProducts = async () => {
+      try {
+        const response = await fetchProducts();
+        setAllProducts(response);
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      }
+    };
+
+    fetchAllProducts();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
+    e.preventDefault();
+    console.log("Submitting form...");
+    setIsLoading(true);
     try {
-      await createRoutine(formData)
-      router.push("/manager/routines")
+      const requestBody = {
+        ...formData,
+        products,
+      };
+      console.log("Request Body:", requestBody);
+      await createRoutine(requestBody);
+      router.push("/manager/routines");
     } catch (error) {
-      console.error("Failed to create routine:", error)
+      console.error("Failed to create routine:", error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
+
+  const toggleProductSelection = (productID: string) => {
+    setProducts((prev) =>
+      prev.includes(productID) ? prev.filter((id) => id !== productID) : [...prev, productID]
+    );
+  };
 
   return (
     <div className="container mx-auto p-6">
@@ -40,18 +69,18 @@ export default function CreateRoutinePage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <label>Category</label>
+              <label>Skin type</label>
               <Select
-                value={formData.category}
-                onValueChange={(value) => setFormData({ ...formData, category: value })}
+                value={formData.skinType}
+                onValueChange={(value) => setFormData({ ...formData, skinType: value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="DRY">Dry</SelectItem>
-                  <SelectItem value="OILY">Oily</SelectItem>
-                  <SelectItem value="COMBINATION">Combination</SelectItem>
+                  <SelectItem value="Dry">Dry</SelectItem>
+                  <SelectItem value="Oily">Oily</SelectItem>
+                  <SelectItem value="Combination">Combination</SelectItem>
                   <SelectItem value="SENSITIVE">Sensitive</SelectItem>
                 </SelectContent>
               </Select>
@@ -60,9 +89,11 @@ export default function CreateRoutinePage() {
             <div className="space-y-2">
               <label>Routine Name</label>
               <Input
-                value={formData.routineName}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, routineName: e.target.value })}
-                placeholder="Enter routine name"
+              value={formData.routineName}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setFormData({ ...formData, routineName: e.target.value })
+              }
+              placeholder="Enter routine name"
               />
             </div>
 
@@ -75,8 +106,43 @@ export default function CreateRoutinePage() {
               />
             </div>
 
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => router.back()}>
+            <div className="space-y-2">
+              <label>List Product</label>
+              <div className="border p-4 rounded-md mb-6">
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {products.map((productID) => (
+                    <span key={productID} className="px-2 py-1 bg-primary text-white rounded-md text-sm">
+                      {productID}
+                    </span>
+                  ))}
+                </div>
+
+                <Button type="button" variant="outline" onClick={() => setIsProductListOpen((prev) => !prev)}>
+                  {isProductListOpen ? "Close List" : "Select Products"}
+                </Button>
+
+                {isProductListOpen && (
+                  <div className="mt-4 max-h-64 overflow-y-auto border-t pt-4">
+                    {allProducts.map((product) => (
+                      <div key={product.productID} className="flex items-center justify-between py-2">
+                        <span>{product.productID}</span>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={products.includes(product.productID) ? "secondary" : "outline"}
+                          onClick={() => toggleProductSelection(product.productID)}
+                        >
+                          {products.includes(product.productID) ? "Selected" : "Select"}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-2 mt-6">
+              <Button type="button" variant="outline" onClick={() => router.back()}>
                 Cancel
               </Button>
               <Button type="submit" disabled={isLoading}>
@@ -87,5 +153,5 @@ export default function CreateRoutinePage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

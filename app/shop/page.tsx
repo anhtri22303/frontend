@@ -8,6 +8,8 @@ import { Slider } from "@/components/ui/slider";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { fetchProducts, fetchProductsByFilters } from "@/app/api/productApi";
+import { addToCart } from "@/app/api/cartApi";
+import toast from "react-hot-toast";
 
 interface Product {
   productID: string;
@@ -28,6 +30,7 @@ export default function ProductsPage() {
   const [selectedSkinTypes, setSelectedSkinTypes] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]); // Giá trị mặc định
   const [maxPrice, setMaxPrice] = useState(1000); // Giá trị mặc định
+  const [isLoading, setIsLoading] = useState(false);
 
   const categories = ["Cleanser", "Toner", "Serum", "Moisturizer", "Mask", "Sunscreen"];
   const skinTypes = ["Dry", "Oily", "Combination", "Normal", "Sensitive"];
@@ -95,6 +98,25 @@ export default function ProductsPage() {
 
   const handlePriceChange = (newPriceRange: [number, number]) => {
     setPriceRange(newPriceRange);
+  };
+
+  const handleAddToCart = async (productID: string) => {
+    setIsLoading(true);
+    try {
+      const userID = localStorage.getItem("userID"); // Lấy userID từ localStorage
+      if (!userID) {
+        toast.error("User not logged in!");
+        return;
+      }
+
+      await addToCart(userID, productID); // Gọi API với userID và productID
+      toast.success("Product added to cart!");
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      toast.error("Failed to add product to cart.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -165,37 +187,46 @@ export default function ProductsPage() {
                   )}
                 </div>
                 <CardContent className="pt-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-medium">{product.productName}</h3>
-                      <p className="text-sm text-muted-foreground">ID: {product.productID}</p>
-                    </div>
-                    <p className="font-semibold">${product.price.toFixed(2)}</p>
-                  </div>
+                  {/* Tên sản phẩm */}
+                  <h3 className="font-medium truncate w-full">{product.productName}</h3>
+
+                  {/* Giá sản phẩm */}
+                  <p className="font-semibold mt-2">${product.price.toFixed(2)}</p>
+
+                  {/* Category */}
                   <div className="mt-2 text-sm">
-                    <p>Category: {product.category || "N/A"}</p>
-                    <p>For {product.skinType ? product.skinType : "All"} skin</p>
-                    <div className="flex items-center mt-1">
-                      <span>Rating: {product.rating}/5</span>
-                      <div className="ml-2 flex">
-                        {[...Array(5)].map((_, i) => (
-                          <svg
-                            key={i}
-                            className={`w-4 h-4 ${
-                              i < product.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
-                            }`}
-                            viewBox="0 0 20 20"
-                          >
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                          </svg>
-                        ))}
-                      </div>
+                    <p className="text-muted-foreground">{product.category || "N/A"}</p>
+                  </div>
+
+                  {/* Skin Type */}
+                  <div className="mt-2 text-sm">
+                    <p className="block">Skin Type:</p>
+                    <p className="text-muted-foreground">{product.skinType || "All"}</p>
+                  </div>
+
+                  {/* Rating */}
+                  <div className="flex items-center mt-2">
+                    <span>Rating: {product.rating}/5</span>
+                    <div className="ml-2 flex">
+                      {[...Array(5)].map((_, i) => (
+                        <svg
+                          key={i}
+                          className={`w-4 h-4 ${
+                            i < product.rating ? "text-yellow-400 fill-current" : "text-gray-300"
+                          }`}
+                          viewBox="0 0 20 20"
+                        >
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                      ))}
                     </div>
                   </div>
                 </CardContent>
               </Link>
               <CardFooter>
-                <Button className="w-full">Add to Cart</Button>
+                <Button className="w-full" onClick={() => handleAddToCart(product.productID)} disabled={isLoading}>
+                  {isLoading ? "Adding..." : "Add to Cart"}
+                </Button>
               </CardFooter>
             </Card>
           ))

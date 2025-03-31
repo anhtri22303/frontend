@@ -22,7 +22,7 @@ import {
 } from "lucide-react"
 
 import "./globals.css"
-import { Toaster } from "@/components/ui/toaster"
+import { Toaster } from "react-hot-toast"
 import { AuthProvider } from "@/components/auth/auth-provider"
 import { Button } from "@/components/ui/button"
 import Header from "@/components/layout/header"
@@ -165,7 +165,7 @@ export default function RootLayout({
               </div>
             </div>
           </div>
-          <Toaster />
+          <Toaster position="top-right" reverseOrder={false} />
         </AuthProvider>
       </body>
     </html>
