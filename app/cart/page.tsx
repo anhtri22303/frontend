@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation"
 import { fetchCartByUserId, updateCartItem, removeFromCart } from "@/app/api/cartApi"
 import stripePromise from '@/lib/stripe-client'
 import { createCustomerOrder } from "@/app/api/orderCustomerApi"
+import toast from "react-hot-toast"
 
 interface CartItem {
   userID: string
@@ -52,6 +53,7 @@ export default function CartPage() {
       if (response && response.items) {
         setCartItems(response.items)
       }
+      console.log("Cart items loaded:", response.items)
     } catch (error) {
       console.error("Error loading cart items:", error)
     } finally {
@@ -60,37 +62,40 @@ export default function CartPage() {
   }
 
   const handleUpdateQuantity = async (productID: string, newQuantity: number) => {
-    if (newQuantity < 1) return
+    if (newQuantity < 1) return;
 
     try {
-      await updateCartItem(userID!, productID, newQuantity)
-      setCartItems(prev =>
-        prev.map(item =>
+      await updateCartItem(userID!, productID, newQuantity);
+      setCartItems((prev) =>
+        prev.map((item) =>
           item.productID === productID ? { ...item, quantity: newQuantity } : item
         )
-      )
+      );
+      toast.success("Quantity updated successfully!");
     } catch (error) {
-      console.error("Error updating quantity:", error)
-      alert("Failed to update quantity")
+      console.error("Error updating quantity:", error);
+      toast.error("Failed to update quantity.");
     }
-  }
+  };
 
   const handleRemoveItem = async (productID: string) => {
     try {
-      await removeFromCart(userID!, productID)
-      setCartItems(prev => prev.filter(item => item.productID !== productID))
+      await removeFromCart(userID!, productID);
+      setCartItems((prev) => prev.filter((item) => item.productID !== productID));
+      toast.success("Item removed from cart!");
     } catch (error) {
-      console.error("Error removing item:", error)
-      alert("Failed to remove item")
+      console.error("Error removing item:", error);
+      toast.error("Failed to remove item.");
     }
-  }
+  };
 
   const handleCheckout = async () => {
     try {
       setIsProcessing(true);
       const userID = localStorage.getItem("userID");
       if (!userID) {
-        throw new Error("User ID not found. Please log in.");
+        toast.error("User ID not found. Please log in.");
+        return;
       }
 
       const orderData = {
@@ -98,45 +103,45 @@ export default function CartPage() {
         orderDate: new Date().toISOString(),
         status: "PENDING",
         totalAmount: total,
-        orderDetails: cartItems.map(item => ({
+        orderDetails: cartItems.map((item) => ({
           productID: item.productID,
           quantity: item.quantity,
-          price: item.totalAmount
-        }))
+          price: item.totalAmount,
+        })),
       };
 
       console.log("Creating order with data:", orderData);
       const orderResponse = await createCustomerOrder(userID, orderData);
       console.log("Order created response:", orderResponse);
-      
+
       if (!orderResponse?.data) {
         throw new Error("Invalid response from API");
       }
-      
+
       if (!orderResponse.data.orderID) {
         throw new Error("Order ID is undefined. Check API response.");
       }
-      
+      toast.success("Order created successfully!");
+
       sessionStorage.setItem("orderID", orderResponse.data.orderID);
 
-  
       const stripe = await stripePromise;
       if (!stripe) {
         console.error("Stripe failed to initialize.");
         return;
       }
-  
+
       console.log("Sending request to /api/stripe", {
         totalAmount: orderData.totalAmount,
         orderID: orderResponse.data.orderID,
       });
-  
+
       const response = await fetch("/api/stripe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           totalAmount: orderResponse.data.totalAmount,
-          orderID: orderResponse.data.orderID
+          orderID: orderResponse.data.orderID,
         }),
       });
 
@@ -144,25 +149,26 @@ export default function CartPage() {
         const errorData = await response.json();
         throw new Error(errorData.error || "Payment failed");
       }
-  
+
       const data = await response.json();
       if (!data.sessionId) {
         throw new Error("Invalid response from server");
       }
-  
+
       const result = await stripe.redirectToCheckout({ sessionId: data.sessionId });
-  
+
       if (result.error) {
         throw new Error(result.error.message);
       }
+
+      toast.success("Checkout successful!");
     } catch (error: any) {
       console.error("Checkout error:", error);
-      alert(error.message || "Payment failed. Please try again.");
+      toast.error(error.message || "Payment failed. Please try again.");
     } finally {
       setIsProcessing(false);
     }
   };
-  
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.totalAmount * item.quantity, 0)
   const shipping = subtotal > 50 ? 0 : 5.99

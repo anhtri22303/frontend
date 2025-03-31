@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,14 +15,18 @@ import {
   Star,
   ChevronLeft,
   ChevronRight,
+  Minus,
+  Plus,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { fetchProductById, fetchProducts } from "@/app/api/productApi";
 import { fetchFeedbacks, Feedback } from "@/app/api/feedbackApi";
 import { addToCart } from "@/app/api/cartApi";
+import { toast } from "react-hot-toast";
 
 export default function ProductPage() {
   const params = useParams();
+  const router = useRouter(); // Sử dụng useRouter để điều hướng
   console.log("Params:", params); // Kiểm tra giá trị params
   const productID = params?.productID; // Sử dụng params.productID thay vì params.id
   console.log("Product ID:", productID);
@@ -33,6 +37,7 @@ export default function ProductPage() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [quantity, setQuantity] = useState(1)
   const productsPerPage = 4;
 
   useEffect(() => {
@@ -81,11 +86,17 @@ export default function ProductPage() {
   const handleAddToCart = async () => {
     setIsLoading(true);
     try {
-      await addToCart("userID", productID); // Replace "userID" with the actual user ID
-      alert("Product added to cart!");
+      const userID = localStorage.getItem("userID"); // Lấy userID từ localStorage
+      if (!userID) {
+        toast.error("User not logged in!");
+        return;
+      }
+
+      await addToCart(userID, productID); // Gọi API với userID và productID
+      toast.success("Product added to cart!");
     } catch (error) {
       console.error("Error adding to cart:", error);
-      alert("Failed to add product to cart.");
+      toast.error("Failed to add product to cart.");
     } finally {
       setIsLoading(false);
     }
@@ -113,12 +124,31 @@ export default function ProductPage() {
     }
   };
 
+  const incrementQuantity = () => {
+    setQuantity((prev) => prev + 1)
+  }
+
+  const decrementQuantity = () => {
+    if (quantity > 1) {
+      setQuantity((prev) => prev - 1)
+    }
+  }
+
   if (!product) {
     return <div>Loading...</div>;
   }
 
   return (
     <div className="container py-8">
+      {/* Nút Back */}
+      <button
+        onClick={() => router.back()}
+        className="mb-4 flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"
+      >
+        <ChevronLeft className="h-4 w-4" />
+        Back
+      </button>
+
       <div className="grid md:grid-cols-2 gap-8 mb-16">
         {/* Product Images */}
         <div className="space-y-4">
@@ -130,24 +160,6 @@ export default function ProductPage() {
               className="object-cover"
             />
           </div>
-          {/* <div className="flex gap-4 overflow-auto pb-2">
-            {product.images?.map((image: string, index: number) => (
-              <button
-                key={index}
-                className={`relative aspect-square w-20 rounded-md overflow-hidden border ${
-                  selectedImage === index ? "ring-2 ring-primary" : ""
-                }`}
-                onClick={() => setSelectedImage(index)}
-              >
-                <Image
-                  src={image || "/placeholder.svg"}
-                  alt={`${product.productName} thumbnail ${index + 1}`}
-                  fill
-                  className="object-cover"
-                />
-              </button>
-            ))}
-          </div> */}
         </div>
 
         {/* Product Details */}
@@ -199,6 +211,17 @@ export default function ProductPage() {
           <div className="text-2xl font-bold">${product.price}</div>
 
           <p className="text-muted-foreground text-sm">{product.description}</p>
+          
+            <div className="flex items-center border rounded-md">
+              <Button variant="ghost" size="icon" onClick={decrementQuantity} disabled={quantity <= 1}>
+                <Minus className="h-4 w-4" />
+              </Button>
+              <span className="w-12 text-center">{quantity}</span>
+              <Button variant="ghost" size="icon" onClick={incrementQuantity}>
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+
 
           <div className="flex items-center gap-2 mt-auto">
             <Button
@@ -321,6 +344,10 @@ export default function ProductPage() {
                   </Link>
                   <p className="text-sm text-muted-foreground">
                     {relatedProduct.category}
+                  </p>
+                  {/* Hiển thị Skin Type */}
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Skin Type: {relatedProduct.skinType || "N/A"}
                   </p>
                   <p className="font-semibold mt-2">${relatedProduct.price}</p>
                 </CardContent>

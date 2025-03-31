@@ -3,15 +3,8 @@ import axiosInstance from "@/lib/axiosInstance";
 export const fetchProducts = async () => {
   try {
     const response = await axiosInstance.get("/products");
-    console.log("Get product success");
-    console.log("List product", response.data);
-    if (response && response.data) {
-      if (response.data.status === 200 && response.data.data) {
-        return Array.isArray(response.data.data) ? response.data.data : [];
-      }
-      return [];
-    }
-    return [];
+    console.log("Get product success", response.data);
+    return response.data || [];
   } catch (error) {
     console.error("Error fetching products:", error);
     return [];
