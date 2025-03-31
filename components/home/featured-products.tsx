@@ -32,8 +32,8 @@ export function FeaturedProducts() {
     const fetchData = async () => {
       try {
         const response = await fetchProducts();
-        console.log("Products data:", response);
-        setProducts(response || []);
+        console.log("Products data:", response.data);
+        setProducts(response.data || []);
       } catch (error) {
         console.error("Error fetching products:", error);
       } finally {

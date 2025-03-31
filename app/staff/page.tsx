@@ -60,7 +60,7 @@ export default function StaffDashboard() {
   const fetchProductsData = async () => {
     try {
       const productsData = await fetchProducts();
-      setProducts(productsData || []);
+      setProducts(productsData.data || []);
     } catch (error) {
       console.error("Error fetching products:", error);
     }
@@ -71,7 +71,7 @@ export default function StaffDashboard() {
   const fetchQuizzesData = async () => {
     try {
       const quizzesData = await fetchQuizzes();
-      setQuizzes(quizzesData || []);
+      setQuizzes(quizzesData.data || []);
     } catch (error) {
       console.error("Error fetching quizzes:", error);
     }
@@ -82,7 +82,7 @@ export default function StaffDashboard() {
   const fetchPromotionsData = async () => {
     try {
       const promotionsData = await fetchPromotions();
-      setPromotions(promotionsData|| []);
+      setPromotions(promotionsData.data || []);
     } catch (error) {
       console.error("Error fetching promotions:", error);
     }
@@ -93,7 +93,7 @@ export default function StaffDashboard() {
   const fetchOrdersData = async () => {
     try {
       const ordersData = await fetchOrders();
-      setOrders(ordersData || []);
+      setOrders(ordersData.data || []);
     } catch (error) {
       console.error("Error fetching orders:", error);
     }
