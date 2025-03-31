@@ -1,5 +1,6 @@
 "use client";
 
+
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Package, ShoppingCart, HelpCircle, Tag, Search, PlusCircle } from "lucide-react";
@@ -11,6 +12,7 @@ import { fetchQuizzes } from "@/app/api/quizApi";
 import { fetchPromotions } from "@/app/api/promotionApi";
 import { fetchOrders } from "@/app/api/orderApi";
 
+
 // Interfaces for data
 interface Product {
   productID: string;
@@ -19,10 +21,12 @@ interface Product {
   price: number;
 }
 
+
 interface Quiz {
   questionId: string;
   quizText: string;
 }
+
 
 interface Promotion {
   productID: string;
@@ -30,6 +34,7 @@ interface Promotion {
   startDate: string;
   endDate: string;
 }
+
 
 interface Order {
   orderID: string
@@ -40,6 +45,8 @@ interface Order {
 }
 
 
+
+
 export default function StaffDashboard() {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
@@ -47,32 +54,76 @@ export default function StaffDashboard() {
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    loadDashboardData();
-  }, []);
 
-  const loadDashboardData = async () => {
-    setIsLoading(true);
+  // Fetch products
+  const fetchProductsData = async () => {
     try {
-      const [productsData, quizzesData, promotionsData, ordersData] = await Promise.all([
-        fetchProducts(),
-        fetchQuizzes(),
-        fetchPromotions(),
-        fetchOrders(),
-      ]);
-      setProducts(productsData || []);
-      console.log("Products:", productsData);
-      setQuizzes(quizzesData || []);
-      setPromotions(promotionsData || []);
-      setOrders(ordersData || []);
+      const productsData = await fetchProducts();
+      setProducts(productsData?.data || []);
+      console.log("Products:", productsData?.data || []);
     } catch (error) {
-      console.error("Error loading dashboard data:", error);
-    } finally {
-      setIsLoading(false);
+      console.error("Error fetching products:", error);
     }
   };
+
+
+  // Fetch quizzes
+  const fetchQuizzesData = async () => {
+    try {
+      const quizzesData = await fetchQuizzes();
+      setQuizzes(quizzesData || []);
+      console.log("Quizzes:", quizzesData || []);
+    } catch (error) {
+      console.error("Error fetching quizzes:", error);
+    }
+  };
+
+
+  // Fetch promotions
+  const fetchPromotionsData = async () => {
+    try {
+      const promotionsData = await fetchPromotions();
+      setPromotions(promotionsData?.data || []);
+      console.log("Promotions:", promotionsData?.data || []);
+    } catch (error) {
+      console.error("Error fetching promotions:", error);
+    }
+  };
+
+
+  // Fetch orders
+  const fetchOrdersData = async () => {
+    try {
+      const ordersData = await fetchOrders();
+      setOrders(ordersData?.data || []);
+      console.log("Orders:", ordersData?.data || []);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+    }
+  };
+
+
+  // Call APIs separately
+  useEffect(() => {
+    fetchProductsData();
+  }, []);
+
+
+  useEffect(() => {
+    fetchQuizzesData();
+  }, []);
+
+
+  useEffect(() => {
+    fetchPromotionsData();
+  }, []);
+
+
+  useEffect(() => {
+    fetchOrdersData();
+  }, []);
+
 
   const handleSearch = () => {
     // Placeholder for search functionality
@@ -80,10 +131,12 @@ export default function StaffDashboard() {
     console.log("Searching for:", searchQuery);
   };
 
+
   const activePromotions = promotions.filter((promo) => {
     const currentDate = new Date().toISOString().split("T")[0];
     return promo.startDate <= currentDate && promo.endDate >= currentDate;
   });
+
 
   return (
     <div className="container mx-auto">
@@ -97,11 +150,12 @@ export default function StaffDashboard() {
             placeholder="Search products, quizzes..."
             className="pl-8 w-full"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+            onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === "Enter" && handleSearch()}
           />
         </div>
       </div>
+
 
       {/* Overview Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
@@ -171,6 +225,7 @@ export default function StaffDashboard() {
         </Card>
       </div>
 
+
       {/* Quick Actions */}
       <div className="mb-6">
         <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
@@ -189,6 +244,7 @@ export default function StaffDashboard() {
           </Button>
         </div>
       </div>
+
 
       {/* Recent Activity */}
       <div className="grid gap-6 md:grid-cols-2">
@@ -221,6 +277,7 @@ export default function StaffDashboard() {
             )}
           </CardContent>
         </Card>
+
 
         {/* Recent Quizzes */}
         <Card>
