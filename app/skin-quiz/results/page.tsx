@@ -2,16 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { fetchRoutinesByCategory } from "@/app/api/routineApi";
-import { fetchProductsByCategory } from "@/app/api/productApi";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { fetchRoutinesBySkinType } from "@/app/api/routineApi";
 import { Button } from "@/components/ui/button";
+import { addToCart } from "@/app/api/cartApi";
+import toast from "react-hot-toast";
 
 interface Routine {
   routineID: string;
   category?: string;
   routineName: string;
   routineDescription: string;
+  productDTOS?: Product[];
 }
 
 interface Product {
@@ -20,21 +22,18 @@ interface Product {
   description: string;
   price: number;
   image_url: string;
-  skinType: string; // Đổi từ skinType thành skinType (đã chuẩn hóa)
-  isNew?: boolean;
   category?: string;
   rating?: number;
 }
 
 export default function QuizResults() {
   const searchParams = useSearchParams();
-  const skinTypes = searchParams.get("skinTypes")?.split(",") || [];
-  const categories = searchParams.get("categories")?.split(",") || [];
+  const skinType = searchParams.get("skinType");
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const skinType = searchParams.get("skinType");
+  const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -45,17 +44,12 @@ export default function QuizResults() {
         }
 
         // Fetch routines for the given skin type
-        const routineResults = await fetchRoutinesByCategory(skinType.toUpperCase());
-        // Kiểm tra dữ liệu trả về từ API
-        const filteredRoutines = routineResults.data?.filter(
-          (routine: Routine) => routine.category?.toUpperCase() === skinType.toUpperCase()
-        ) || [];
-        setRoutines(filteredRoutines);
+        const routineResults = await fetchRoutinesBySkinType(skinType);
+        setRoutines(routineResults || []);
 
-        // Fetch products for the given skin type
-        const productResults = await fetchProductsByCategory(skinType.toUpperCase());
-        // Kiểm tra dữ liệu trả về từ API
-        setProducts(productResults.data || []);
+        // Extract products from routines
+        const allProducts = routineResults.flatMap((routine) => routine.productDTOS || []);
+        setProducts(allProducts);
       } catch (error) {
         console.error("Error fetching data:", error);
         setRoutines([]);
@@ -68,6 +62,34 @@ export default function QuizResults() {
     fetchData();
   }, [skinType]);
 
+  const handleQuantityChange = (productId: string, value: string) => {
+    const newQuantity = parseInt(value) || 1;
+    setQuantities((prev) => ({
+      ...prev,
+      [productId]: Math.max(1, newQuantity),
+    }));
+  };
+
+  const handleAddToCart = async (productId: string) => {
+    setIsLoading(true);
+    try {
+      const userId = localStorage.getItem("userID");
+      if (!userId) {
+        toast.error("User not logged in!");
+        return;
+      }
+
+      const quantity = quantities[productId] || 1;
+      await addToCart(userId, productId, quantity);
+      toast.success("Product added to cart!");
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      toast.error("Failed to add product to cart.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -79,44 +101,6 @@ export default function QuizResults() {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold text-center mb-8">Your Quiz Results</h1>
-
-      {/* Hiển thị Skin Types */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">Your Skin Type</h2>
-        <div className="flex gap-2">
-          {skinTypes.length > 0 ? (
-            skinTypes.map((type) => (
-              <span
-                key={type}
-                className="px-3 py-1 text-sm border rounded-md text-muted-foreground"
-              >
-                {type}
-              </span>
-            ))
-          ) : (
-            <span className="text-sm text-muted-foreground">No skin type selected</span>
-          )}
-        </div>
-      </div>
-
-      {/* Hiển thị Categories */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">Your Preferred Categories</h2>
-        <div className="flex gap-2">
-          {categories.length > 0 ? (
-            categories.map((category) => (
-              <span
-                key={category}
-                className="px-3 py-1 text-sm border rounded-md text-muted-foreground"
-              >
-                {category}
-              </span>
-            ))
-          ) : (
-            <span className="text-sm text-muted-foreground">No categories selected</span>
-          )}
-        </div>
-      </div>
 
       {/* Routines Section */}
       <div className="mb-8">
@@ -145,44 +129,70 @@ export default function QuizResults() {
       <div className="mb-8">
         <h2 className="text-xl font-semibold mb-4">Recommended Products</h2>
         {products.length > 0 ? (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {products.map((product) => (
-              <Card
-                key={product.productID}
-                className="shadow-lg hover:shadow-xl transition-shadow duration-300"
-              >
-                <div className="relative">
+              <Card key={product.productID} className="overflow-hidden group">
+                <div className="relative aspect-square">
                   <img
                     src={product.image_url || "/placeholder.svg"}
                     alt={product.productName}
-                    className="w-full h-48 object-cover rounded-t-lg"
+                    className="object-cover transition-transform group-hover:scale-105 w-full h-full"
                   />
-                  <div className="absolute top-2 right-2 bg-white text-gray-800 text-xs font-semibold px-2 py-1 rounded">
-                    ${product.price.toFixed(2)}
-                  </div>
                 </div>
-                <CardContent className="p-4">
-                  <h3 className="text-lg font-bold text-gray-800 truncate">
-                    {product.productName}
-                  </h3>
-                  <p className="text-sm text-gray-600 mt-2 line-clamp-2">
-                    {product.description}
-                  </p>
-                  <p className="text-sm text-gray-600 mt-1">
-                    For {product.skinType || "All"} skin
-                  </p>
-                  {product.rating && (
-                    <p className="text-sm text-gray-600 mt-1">
-                      Rating: {product.rating}/5
-                    </p>
-                  )}
-                  <Button
-                    variant="outline"
-                    className="mt-4 w-full text-sm font-medium text-blue-600 border-blue-600 hover:bg-blue-50"
-                  >
-                    View Details
-                  </Button>
+                <CardContent className="pt-4">
+                  <h3 className="font-medium truncate w-full">{product.productName}</h3>
+                  <div className="mt-2">
+                    <p className="font-semibold">${product.price.toFixed(2)}</p>
+                  </div>
+                  <div className="mt-2 text-sm">
+                    <p className="text-muted-foreground">{product.category || "N/A"}</p>
+                  </div>
+                  <div className="flex items-center mt-2">
+                    <span>Rating: {product.rating}/5</span>
+                    <div className="ml-2 flex">
+                      {[...Array(5)].map((_, i) => (
+                        <svg
+                          key={i}
+                          className={`w-4 h-4 ${
+                            i < product.rating
+                              ? "text-yellow-400 fill-current"
+                              : "text-gray-300"
+                          }`}
+                          viewBox="0 0 20 20"
+                        >
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                      ))}
+                    </div>
+                  </div>
                 </CardContent>
+                <CardFooter className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2 w-full">
+                    <label
+                      htmlFor={`quantity-${product.productID}`}
+                      className="text-sm"
+                    >
+                      Qty:
+                    </label>
+                    <input
+                      id={`quantity-${product.productID}`}
+                      type="number"
+                      min="1"
+                      value={quantities[product.productID] || 1}
+                      onChange={(e) =>
+                        handleQuantityChange(product.productID, e.target.value)
+                      }
+                      className="w-16"
+                    />
+                  </div>
+                  <Button
+                    className="w-full"
+                    onClick={() => handleAddToCart(product.productID)}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Adding..." : "Add to Cart"}
+                  </Button>
+                </CardFooter>
               </Card>
             ))}
           </div>
