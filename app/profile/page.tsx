@@ -11,8 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { updateCustomer } from "@/app/api/customerApi";
-import { fetchUserById } from "@/app/api/userManagerApi";
+import { updateCustomer, fetchCustomerByID } from "@/app/api/customerApi";
 import toast from "react-hot-toast";
 
 export default function ProfilePage() {
@@ -31,7 +30,7 @@ export default function ProfilePage() {
 
       try {
         setIsLoading(true);
-        const response = await fetchUserById(user.userID);
+        const response = await fetchCustomerByID(user.userID);
         console.log("User data:", response);
         if (response) {
           setFullName(response.fullName || "");
