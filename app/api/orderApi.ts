@@ -53,7 +53,7 @@ export const fetchOrdersByCustomer = async (customerID: string) => {
 // Get orders by date
 export const fetchOrdersByDate = async (orderDate: string) => {
   try {
-    const response = await axiosInstance.get(`/orders/staff/${orderDate}`)
+    const response = await axiosInstance.get(`/orders/staff/date/${orderDate}`)
     return response.data
   } catch (error) {
     console.error("Error fetching orders by date:", error)

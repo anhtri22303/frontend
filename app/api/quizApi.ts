@@ -12,7 +12,7 @@ interface AnswerOptionRequest {
 
 interface CreateQuizData {
   quizText: string;
-  answerOptionRequests: AnswerOptionRequest[];
+  answerOptionDTOS: AnswerOptionRequest[];
 }
 
 interface QuizResponse {
@@ -50,7 +50,8 @@ export const fetchQuizzes = async (): Promise<Quiz[]> => {
 export const fetchQuizById = async (questionId: string): Promise<QuizResponse> => {
   try {
     const response = await axiosInstance.get(`/quizzes/${questionId}`);
-    return response.data.data;
+    console.log("Get question success", response.data);
+    return response.data;
   } catch (error) {
     console.error(`Error fetching quiz with id ${questionId}:`, error);
     throw error;
@@ -59,7 +60,9 @@ export const fetchQuizById = async (questionId: string): Promise<QuizResponse> =
 
 export const updateQuiz = async (questionId: string, quizData: CreateQuizData): Promise<QuizResponse> => {
   try {
+    console.log("2",quizData);
     const response = await axiosInstance.put(`/quizzes/${questionId}`, quizData);
+    console.log("3",response.data.data);
     return response.data.data;
   } catch (error) {
     console.error(`Error updating quiz with id ${questionId}:`, error);

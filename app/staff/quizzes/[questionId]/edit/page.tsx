@@ -14,9 +14,10 @@ import {
 } from "@/components/ui/select";
 import { X } from "lucide-react";
 import { fetchQuizById, updateQuiz } from "@/app/api/quizApi";
+import { fetchAnswerOptions } from "@/app/api/answerApi";
 
 interface AnswerOption {
-  optionId?: string;
+  optionID?: string;
   optionText: string;
   skinType: string;
 }
@@ -31,9 +32,7 @@ export default function EditQuizPage() {
   const router = useRouter();
   const { questionId } = useParams();
   const [quizText, setQuizText] = useState("");
-  const [options, setOptions] = useState<AnswerOption[]>([
-    { optionText: "", skinType: "Dry" },
-  ]);
+  const [options, setOptions] = useState<AnswerOption[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,23 +49,33 @@ export default function EditQuizPage() {
   const loadQuizData = async (id: string) => {
     setIsFetching(true);
     try {
+      // Fetch quiz details
       const quizData = await fetchQuizById(id);
-      console.log("Fetch quiz data success:", quizData);
-
-      if (!quizData || !quizData.quizText) {
+      
+      if (!quizData.data || !quizData.data.quizText) {
         throw new Error("Invalid quiz data");
       }
 
-      setQuizText(quizData.quizText);
-      const newOptions =
-        quizData.answerOptionDTOs && quizData.answerOptionDTOs.length > 0
-          ? quizData.answerOptionDTOs
-          : [{ optionText: "", skinType: "Dry" }];
+      setQuizText(quizData.data.quizText);
+
+      // Fetch all answer options
+      const answerOptions = await fetchAnswerOptions(id);
+      console.log("option", answerOptions);
+      
+      // Nếu không có answer options, khởi tạo với một option mặc định
+      const newOptions = answerOptions.length > 0 
+        ? answerOptions.map(option => ({
+            optionID: option.optionID,
+            optionText: option.optionText,
+            skinType: option.skinType
+          }))
+        : [{ optionText: "", skinType: "Dry" }];
+      
       setOptions(newOptions);
-      console.log("Updated options state:", newOptions); // Log để kiểm tra
+      
     } catch (error) {
-      console.error("Failed to load quiz:", error);
-      setError("Failed to load quiz. Please try again.");
+      console.error("Failed to load quiz data:", error);
+      setError("Failed to load quiz data. Please try again.");
     } finally {
       setIsFetching(false);
     }
@@ -94,36 +103,35 @@ export default function EditQuizPage() {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+
     try {
+      // Validation
       if (!quizText.trim()) {
-        alert("Please enter a question.");
-        setIsLoading(false);
-        return;
+        throw new Error("Please enter a question.");
       }
       if (options.length === 0) {
-        alert("Please add at least one answer option.");
-        setIsLoading(false);
-        return;
+        throw new Error("Please add at least one answer option.");
       }
       if (options.some((option) => !option.optionText.trim())) {
-        alert("Please fill in all answer options.");
-        setIsLoading(false);
-        return;
+        throw new Error("Please fill in all answer options.");
       }
 
       const quizData = {
+        questionId,
         quizText,
-        answerOptionRequests: options.map(option => ({
+        answerOptionDTOS: options.map(option => ({
+          optionID: option.optionID,
           optionText: option.optionText,
           skinType: option.skinType,
         })),
       };
-
+      console.log("1",quizData);
       await updateQuiz(questionId as string, quizData);
       router.push("/staff/quizzes");
-    } catch (error) {
+      
+    } catch (error: any) {
       console.error("Failed to update quiz:", error);
-      setError("Failed to update quiz. Please try again.");
+      setError(error.message || "Failed to update quiz. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -146,7 +154,7 @@ export default function EditQuizPage() {
       </div>
     );
   }
-  console.log("Rendering options:", options);
+
   return (
     <div className="container mx-auto p-6">
       <Card>
@@ -156,26 +164,24 @@ export default function EditQuizPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <label>Question</label>
+              <label className="text-sm font-medium">Question</label>
               <Input
                 value={quizText}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setQuizText(e.target.value)
-                }
+                onChange={(e) => setQuizText(e.target.value)}
                 placeholder="Enter quiz question"
               />
             </div>
 
             <div className="space-y-2">
-              <label>Answers</label>
+              <label className="text-sm font-medium">Answer Options</label>
               {options.map((option, index) => (
                 <div
-                  key={option.optionId || `new-${index}`} // Sử dụng optionId nếu có, nếu không thì dùng index
+                  key={option.optionID || `option-${index}`}
                   className="flex items-center space-x-2"
                 >
                   <Input
                     value={option.optionText}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    onChange={(e) =>
                       handleOptionChange(index, "optionText", e.target.value)
                     }
                     placeholder={`Answer ${index + 1}`}
@@ -212,10 +218,11 @@ export default function EditQuizPage() {
               ))}
               <Button
                 type="button"
+                variant="outline"
                 onClick={handleAddOption}
                 className="mt-2"
               >
-                + Add Answer
+                + Add Answer Option
               </Button>
             </div>
 

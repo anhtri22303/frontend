@@ -1,7 +1,7 @@
 import axiosInstance from "@/lib/axiosInstance";
 
 interface AnswerOption {
-  optionId: string;
+  optionID: string;
   questionId: string;
   optionText: string;
   skinType: string;
@@ -10,8 +10,8 @@ interface AnswerOption {
 export const fetchAnswerOptions = async (questionId: string): Promise<AnswerOption[]> => {
   try {
     const response = await axiosInstance.get(`/answer-options/question/${questionId}`);
-    console.log("Fetch answer data success", response.data);
-    return response.data;
+    console.log("Fetch answer data success", response.data.data);
+    return response.data.data;
   } catch (error) {
     console.error("Error fetching answer options:", error);
     throw error;
