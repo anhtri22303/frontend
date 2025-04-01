@@ -74,7 +74,7 @@ export default function UserListPage() {
                 <td className="px-6 py-4">{user.phone || 'N/A'}</td>
                 <td className="px-6 py-4">{user.role}</td>
                 <td className="px-6 py-4">
-                  <Button variant="outline" size="sm" onClick={() => router.push(`/manager/users/${user.userID}`)}>
+                  <Button variant="outline" size="sm" onClick={() => router.push(`/manager/users/${user.userID}/edit`)}>
                     Edit
                   </Button>
                 </td>

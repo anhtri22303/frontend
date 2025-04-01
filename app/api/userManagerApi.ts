@@ -47,8 +47,8 @@ export const createUser = async (userData: Omit<User, 'id' | 'loyalPoints'>) => 
 // Get user by ID
 export const fetchUserById = async (userID: string) => {
   try {
-    const response = await axiosInstance.get(`/user/${userID}`)
-    console.log("GET user by ID success", response.data)
+    const response = await axiosInstance.get(`/manager/users/${userID}`)
+    console.log("GET user by ID success", response.data.data)
     return response.data.data
   } catch (error) {
     console.error("Error fetching user:", error)
@@ -59,7 +59,7 @@ export const fetchUserById = async (userID: string) => {
 // Update user
 export const updateUser = async (userId: string, userData: Partial<User>) => {
   try {
-    const response = await axiosInstance.put(`/user/${userId}`, userData)
+    const response = await axiosInstance.put(`/manager/users/${userId}`, userData)
     return response.data
   } catch (error) {
     console.error("Error updating user:", error)
