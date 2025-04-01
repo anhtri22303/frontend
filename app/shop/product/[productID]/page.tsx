@@ -198,7 +198,7 @@ export default function ProductPage() {
           <div>
             <h3 className="text-xl font-bold text-black">Skin Type</h3>
             <div className="flex gap-2 mt-1">
-              {product.skinType.split(",").map((type, index) => (
+              {(product.skinType || "All").split(",").map((type, index) => (
                 <span
                   key={index}
                   className="px-2 py-1 text-sm border rounded-md text-muted-foreground"
