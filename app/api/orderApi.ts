@@ -65,7 +65,8 @@ export const fetchOrdersByDate = async (orderDate: string) => {
 export const fetchOrderByID = async (orderID: string) => {
   try {
     const response = await axiosInstance.get(`/orders/staff/${orderID}`)
-    return response.data
+    console.log("Order Success: ", response.data.data);
+    return response.data.data
   } catch (error) {
     console.error("Error fetching order:", error)
     throw error

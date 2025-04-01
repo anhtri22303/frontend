@@ -26,6 +26,16 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
   const loadOrderDetails = async () => {
     try {
       const data = await fetchOrderByID(params.orderId)
+      // Log the data to debug
+      console.log("Fetched order:", data);
+      // If totalAmount is missing, calculate it from orderDetails
+      if (data && !data.totalAmount && data.orderDetails) {
+        const calculatedTotal = data.orderDetails.reduce(
+          (sum, detail) => sum + detail.quantity * detail.totalAmount,
+          0
+        );
+        data.totalAmount = calculatedTotal;
+      }
       setOrder(data)
     } catch (error) {
       console.error("Error loading order details:", error)
@@ -94,13 +104,13 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
                   <tr key={detail.productID} className="border-b">
                     <td className="p-4">{detail.productID}</td>
                     <td className="p-4">{detail.quantity}</td>
-                    <td className="p-4">${detail.price.toFixed(2)}</td>
-                    <td className="p-4">${(detail.quantity * detail.price).toFixed(2)}</td>
+                    <td className="p-4">${detail.totalAmount.toFixed(2)}</td>
+                    <td className="p-4">${(detail.quantity * detail.totalAmount).toFixed(2)}</td>
                   </tr>
                 ))}
                 <tr>
                   <td colSpan={3} className="p-4 text-right font-medium">Total Amount:</td>
-                  <td className="p-4 font-medium">${order.totalAmount.toFixed(2)}</td>
+                  <td className="p-4 font-medium">${order.totalAmount ? order.totalAmount.toFixed(2) : '0.00'}</td>
                 </tr>
               </tbody>
             </table>
