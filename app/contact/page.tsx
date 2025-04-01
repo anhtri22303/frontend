@@ -1,173 +1,154 @@
 'use client';
 
-import { useState } from 'react';
-import { Mail, Phone, MapPin, Clock } from 'lucide-react';
-
-interface ContactFormData {
-  name: string;
-  email: string;
-  subject: string;
-  message: string;
-}
+import { Mail, Phone, MapPin, Clock, HelpCircle, Instagram, Facebook, Twitter } from 'lucide-react';
+import Link from 'next/link';
 
 export default function ContactPage() {
-  const [formData, setFormData] = useState<ContactFormData>({
-    name: '',
-    email: '',
-    subject: '',
-    message: '',
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Handle form submission logic here
-    console.log('Form submitted:', formData);
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Contact Us
-          </h1>
-          <p className="text-lg text-gray-600">
-            Get in touch with us for any questions or concerns
-          </p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Hero Section */}
+      <div className="bg-gradient-to-r from-pink-100 to-pink-50 py-16">
+        <div className="container mx-auto px-4">
+          <div className="text-center max-w-3xl mx-auto">
+            <h1 className="text-4xl font-bold text-gray-900 mb-6">
+              Get in Touch with Us
+            </h1>
+            <p className="text-lg text-gray-600">
+              We're here to help and answer any questions you might have. 
+              We look forward to hearing from you.
+            </p>
+          </div>
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Contact Information */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-6">
-              Contact Information
-            </h2>
-            
-            <div className="space-y-6">
-              <div className="flex items-start">
-                <Mail className="h-6 w-6 text-gray-500 mt-1 mr-3" />
-                <div>
-                  <h3 className="font-medium text-gray-900">Email</h3>
-                  <p className="text-gray-600">support@skincare.com</p>
-                </div>
+      {/* Contact Options Grid */}
+      <div className="container mx-auto px-4 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          {/* Email Support */}
+          <div className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="bg-pink-100 p-3 rounded-lg">
+                <Mail className="h-6 w-6 text-pink-600" />
               </div>
+              <h2 className="text-xl font-semibold text-gray-900">Email Us</h2>
+            </div>
+            <p className="text-gray-600 mb-4">
+              Send us an email and we'll get back to you within 24 hours.
+            </p>
+            <a href="mailto:support@glowcorner.com" 
+               className="text-pink-600 hover:text-pink-700 font-medium">
+              support@glowcorner.com
+            </a>
+          </div>
 
-              <div className="flex items-start">
-                <Phone className="h-6 w-6 text-gray-500 mt-1 mr-3" />
-                <div>
-                  <h3 className="font-medium text-gray-900">Phone</h3>
-                  <p className="text-gray-600">(555) 123-4567</p>
-                </div>
+          {/* Phone Support */}
+          <div className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="bg-pink-100 p-3 rounded-lg">
+                <Phone className="h-6 w-6 text-pink-600" />
               </div>
+              <h2 className="text-xl font-semibold text-gray-900">Call Us</h2>
+            </div>
+            <p className="text-gray-600 mb-4">
+              Speak directly with our customer service team.
+            </p>
+            <a href="tel:+15551234567" 
+               className="text-pink-600 hover:text-pink-700 font-medium">
+              (555) 123-4567
+            </a>
+          </div>
 
-              <div className="flex items-start">
-                <MapPin className="h-6 w-6 text-gray-500 mt-1 mr-3" />
-                <div>
-                  <h3 className="font-medium text-gray-900">Address</h3>
-                  <p className="text-gray-600">
-                    123 Skincare Street<br />
-                    Beauty District<br />
-                    City, State 12345
-                  </p>
-                </div>
+          {/* Help Center */}
+          <div className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="bg-pink-100 p-3 rounded-lg">
+                <HelpCircle className="h-6 w-6 text-pink-600" />
               </div>
+              <h2 className="text-xl font-semibold text-gray-900">Help Center</h2>
+            </div>
+            <p className="text-gray-600 mb-4">
+              Find answers to common questions in our help center and FAQs.
+            </p>
+            <Link 
+              href="/faqs" 
+              className="text-pink-600 hover:text-pink-700 font-medium inline-flex items-center"
+            >
+              Visit Help Center
+              <span className="ml-2">→</span>
+            </Link>
+          </div>
+        </div>
+      </div>
 
-              <div className="flex items-start">
-                <Clock className="h-6 w-6 text-gray-500 mt-1 mr-3" />
-                <div>
-                  <h3 className="font-medium text-gray-900">Business Hours</h3>
-                  <p className="text-gray-600">
-                    Monday - Friday: 9:00 AM - 6:00 PM<br />
-                    Saturday: 10:00 AM - 4:00 PM<br />
-                    Sunday: Closed
-                  </p>
+      {/* Additional Information */}
+      <div className="bg-white py-16">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12">
+            {/* Business Hours */}
+            <div>
+              <div className="flex items-center gap-4 mb-6">
+                <div className="bg-pink-100 p-3 rounded-lg">
+                  <Clock className="h-6 w-6 text-pink-600" />
                 </div>
+                <h2 className="text-2xl font-semibold text-gray-900">Business Hours</h2>
+              </div>
+              <div className="space-y-3 text-gray-600">
+                <p>Monday - Friday: 9:00 AM - 6:00 PM</p>
+                <p>Saturday: 10:00 AM - 4:00 PM</p>
+                <p>Sunday: Closed</p>
+                <p className="mt-4 text-sm">
+                  * All times are in EST
+                </p>
+              </div>
+            </div>
+
+            {/* Location */}
+            <div>
+              <div className="flex items-center gap-4 mb-6">
+                <div className="bg-pink-100 p-3 rounded-lg">
+                  <MapPin className="h-6 w-6 text-pink-600" />
+                </div>
+                <h2 className="text-2xl font-semibold text-gray-900">Visit Us</h2>
+              </div>
+              <div className="space-y-3 text-gray-600">
+                <p>123 Skincare Street</p>
+                <p>Beauty District</p>
+                <p>City, State 12345</p>
+                <p className="mt-4">
+                  <a 
+                    href="https://maps.google.com" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-pink-600 hover:text-pink-700 font-medium"
+                  >
+                    Get Directions →
+                  </a>
+                </p>
               </div>
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* Contact Form */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-6">
-              Send us a Message
-            </h2>
-
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                  Name
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label htmlFor="subject" className="block text-sm font-medium text-gray-700">
-                  Subject
-                </label>
-                <input
-                  type="text"
-                  id="subject"
-                  name="subject"
-                  value={formData.subject}
-                  onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label htmlFor="message" className="block text-sm font-medium text-gray-700">
-                  Message
-                </label>
-                <textarea
-                  id="message"
-                  name="message"
-                  value={formData.message}
-                  onChange={handleChange}
-                  rows={4}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              >
-                Send Message
-              </button>
-            </form>
+      {/* Social Media */}
+      <div className="container mx-auto px-4 py-16">
+        <div className="text-center max-w-2xl mx-auto">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-6">
+            Connect With Us
+          </h2>
+          <div className="flex justify-center gap-6">
+            <Link href="#" className="text-gray-600 hover:text-pink-600 transition-colors">
+              <Instagram className="h-6 w-6" />
+              <span className="sr-only">Instagram</span>
+            </Link>
+            <Link href="#" className="text-gray-600 hover:text-pink-600 transition-colors">
+              <Facebook className="h-6 w-6" />
+              <span className="sr-only">Facebook</span>
+            </Link>
+            <Link href="#" className="text-gray-600 hover:text-pink-600 transition-colors">
+              <Twitter className="h-6 w-6" />
+              <span className="sr-only">Twitter</span>
+            </Link>
           </div>
         </div>
       </div>
