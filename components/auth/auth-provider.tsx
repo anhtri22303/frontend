@@ -91,6 +91,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem("userRole", userData.role)
         localStorage.setItem("userEmail", userData.email)
         localStorage.setItem("userName", userData.fullName || "")
+        localStorage.setItem("userAddress", userData.address || "")
+        localStorage.setItem("userPhone", userData.phone || "")
       }
     } catch (error) {
       console.error("Login failed:", error)
@@ -119,6 +121,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("userRole")
     localStorage.removeItem("userEmail")
     localStorage.removeItem("userName")
+    localStorage.removeItem("userAddress")
+    localStorage.removeItem("fullName")
+    localStorage.removeItem("userPhone")
     document.cookie = "jwtToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT"
     router.push("/login")
     console.log("User logged out");

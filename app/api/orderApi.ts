@@ -74,13 +74,14 @@ export const fetchOrderByID = async (orderID: string) => {
 // Update order
 export const updateOrder = async (orderID: string, orderData: Partial<Order>) => {
   try {
-    const response = await axiosInstance.put(`/orders/manager/${orderID}`, orderData)
-    return response.data
+    const response = await axiosInstance.put(`/orders/manager/${orderID}`, orderData);
+    console.log("Order updated successfully:", response.data);
+    return response.data;
   } catch (error) {
-    console.error("Error updating order:", error)
-    throw error
+    console.error("Error updating order:", error);
+    throw error;
   }
-}
+};
 
 // Delete order
 export const deleteOrder = async (orderID: string) => {

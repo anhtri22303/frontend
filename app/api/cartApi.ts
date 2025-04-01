@@ -39,14 +39,20 @@ export const fetchCartItem = async (userId: string, productID: string) => {
 // Update cart item quantity
 export const updateCartItem = async (userId: string, productID: string, quantity: number) => {
   try {
-    const response = await axiosInstance.put(`/cart/${userId}/${productID}`, { quantity })
-    console.log("Update cart item success")
-    return response.data
+    const response = await axiosInstance.put(
+      `/cart/${userId}/${productID}`,
+      null, // Không có body
+      {
+        params: { quantity }, // Gửi quantity dưới dạng query parameter
+      }
+    );
+    console.log("Update cart item success");
+    return response.data;
   } catch (error) {
-    console.error("Error updating cart item:", error)
-    throw error
+    console.error("Error updating cart item:", error);
+    throw error;
   }
-}
+};
 
 export const addToCart = async (userId: string, productId: string, quantity: number) => {
   try {
@@ -86,11 +92,15 @@ export const clearCart = async (userId: string) => {
 // Remove item from cart
 export const removeFromCart = async (userId: string, productID: string) => {
   try {
-    const response = await axiosInstance.delete(`/cart/${userId}/remove/${productID}`)
-    console.log("Remove from cart success")
-    return response.data
+    const response = await axiosInstance.delete(`/cart/${userId}/remove/${productID}`);
+    if (response.status === 204 || response.status === 200) {
+      console.log("Remove from cart success");
+      return response.data;
+    } else {
+      throw new Error(`Unexpected response status: ${response.status}`);
+    }
   } catch (error) {
-    console.error("Error removing item from cart:", error)
-    throw error
+    console.error("Error removing item from cart:", error);
+    throw error;
   }
-}
+};

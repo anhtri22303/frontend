@@ -1,109 +1,145 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { updateCustomer } from "@/app/api/customerApi"
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { updateCustomer } from "@/app/api/customerApi";
+import toast from "react-hot-toast";
 
 export default function InformCustomerPage() {
-  const router = useRouter()
-  const [formData, setFormData] = useState({
-    name: "",  // Changed from fullName to match Customer interface
-    email: "",
-    phone: "",
-    address: "",
-    skinType: "NORMAL"  // Added required field with default value
-  })
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }))
-  }
+  // Giả lập dữ liệu người dùng từ localStorage hoặc API
+  useEffect(() => {
+    const storedFullName = localStorage.getItem("fullName") || "";
+    const storedEmail = localStorage.getItem("userEmail") || "";
+    const storedPhone = localStorage.getItem("userPhone") || "";
+    const storedAddress = localStorage.getItem("userAddress") || "";
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const userID = localStorage.getItem("userID")
+    setFullName(storedFullName);
+    setEmail(storedEmail);
+    setPhone(storedPhone);
+    setAddress(storedAddress);
+  }, []);
+
+  const handleSave = async () => {
+    // Kiểm tra các trường không được để trống
+    if (!fullName || !email || !phone || !address) {
+      toast.error("All fields are required!");
+      return;
+    }
+
+    setIsLoading(true);
 
     try {
-      const response = await updateCustomer(userID! ,formData)
+      const userId = localStorage.getItem("userID");
+      if (!userId) {
+        toast.error("User ID not found!");
+        return;
+      }
+
+      const response = await updateCustomer(userId, {
+        fullName,
+        email,
+        phone,
+        address,
+      });
+
       if (response) {
-        alert("Customer information saved successfully!")
-        router.push("/cart") // Changed to redirect back to cart
+        toast.success("Information updated successfully!");
+        // // Cập nhật localStorage nếu cần
+        localStorage.setItem("fullName", fullName);
+        localStorage.setItem("userEmail", email);
+        localStorage.setItem("userPhone", phone);
+        localStorage.setItem("userAddress", address);
+        router.push("/cart"); // Điều hướng quay lại trang cart
       } else {
-        alert("Failed to save customer information")
+        toast.error("Failed to update information.");
       }
     } catch (error) {
-      console.error("Error creating customer:", error)
-      alert("An error occurred while saving customer information")
+      console.error("Error updating customer information:", error);
+      toast.error("An error occurred while updating information.");
+    } finally {
+      setIsLoading(false);
     }
-  }
+  };
+
+  const handleCancel = () => {
+    router.push("/cart"); // Điều hướng quay lại trang cart
+  };
 
   return (
-    <div className="container mx-auto p-6 max-w-md">
-      <h1 className="text-2xl font-bold mb-6">Customer Information</h1>
-      
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="name">Full Name</Label>
+    <div className="container mx-auto py-8 max-w-lg">
+      <h1 className="text-2xl font-bold mb-6 text-center">Customer Information</h1>
+      <div className="space-y-4">
+        <div>
+          <Label htmlFor="fullName">Full Name</Label>
           <Input
-            id="name"
-            name="name"  // Changed from fullName to name
-            value={formData.name}
-            onChange={handleChange}
-            required
+            id="fullName"
+            type="text"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
             placeholder="Enter your full name"
+            required
           />
         </div>
-
-        <div className="space-y-2">
+        <div>
           <Label htmlFor="email">Email</Label>
           <Input
             id="email"
-            name="email"
             type="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             placeholder="Enter your email"
+            required
           />
         </div>
-
-        <div className="space-y-2">
+        <div>
           <Label htmlFor="phone">Phone</Label>
           <Input
             id="phone"
-            name="phone"
-            value={formData.phone}
-            onChange={handleChange}
-            required
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
             placeholder="Enter your phone number"
+            required
           />
         </div>
-
-        <div className="space-y-2">
+        <div>
           <Label htmlFor="address">Address</Label>
           <Input
             id="address"
-            name="address"
-            value={formData.address}
-            onChange={handleChange}
-            required
+            type="text"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
             placeholder="Enter your address"
+            required
           />
         </div>
-
-        <Button 
-          type="submit" 
-          className="w-full"
-        >
-          Save Information
-        </Button>
-      </form>
+        <div className="flex gap-4 mt-4">
+          <Button
+            className="flex-1"
+            onClick={handleSave}
+            disabled={isLoading}
+          >
+            {isLoading ? "Saving..." : "Save Information"}
+          </Button>
+          <Button
+            className="flex-1"
+            variant="outline"
+            onClick={handleCancel}
+          >
+            Cancel
+          </Button>
+        </div>
+      </div>
     </div>
-  )
+  );
 }
