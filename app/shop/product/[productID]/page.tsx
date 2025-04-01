@@ -59,7 +59,6 @@ export default function ProductPage() {
       } else {
         console.error("Invalid productID:", productID);
       }
-      setProduct(response.data);
     } catch (error) {
       console.error("Error fetching product:", error);
     }
@@ -92,7 +91,7 @@ export default function ProductPage() {
         return;
       }
 
-      await addToCart(userID, productID); // Gọi API với userID và productID
+      await addToCart(userID, productID, quantity); // Gọi API với userID và productID
       toast.success("Product added to cart!");
     } catch (error) {
       console.error("Error adding to cart:", error);

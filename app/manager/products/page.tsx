@@ -48,11 +48,11 @@ export default function ProductsPage() {
   const loadProducts = async () => {
     try {
       const products = await fetchProducts() // Lấy danh sách sản phẩm
-      console.log("Fetched Products:", products)
+      console.log("Fetched Products:", products.data)
       const promotions = await fetchPromotions() // Lấy danh sách promotion
 
       // Kết hợp sản phẩm với promotion
-      const productsWithPromotions: Product[] = products.map((product: Product): Product => {
+      const productsWithPromotions: Product[] = products.data.map((product: Product): Product => {
         console.log("Product ID:", product.productID)
         const currentDate = new Date().toISOString().split("T")[0] // Lấy ngày hiện tại
         const promotion: Promotion | undefined = promotions.find((promo: Promotion) => {
