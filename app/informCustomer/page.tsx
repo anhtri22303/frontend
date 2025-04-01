@@ -51,7 +51,6 @@ export default function InformCustomerPage() {
             address: response.address || "",
           });
           localStorage.setItem("userAddress", response.address || "");
-          toast.success("User data loaded successfully!");
         } else {
           toast.error("Failed to load user data.");
         }
@@ -104,6 +103,8 @@ export default function InformCustomerPage() {
       return;
     }
 
+    console.log("Payload sent to API:", formData); // Log dữ liệu trước khi gửi
+
     setIsLoading(true);
     try {
       const userId = localStorage.getItem("userID");
@@ -112,10 +113,17 @@ export default function InformCustomerPage() {
         return;
       }
 
-      const response = await updateCustomer(userId, formData);
+      const formDataToSend = new FormData();
+      formDataToSend.append("fullName", formData.fullName);
+      formDataToSend.append("email", formData.email);
+      formDataToSend.append("phone", formData.phone);
+      formDataToSend.append("address", formData.address);
+
+      const response = await updateCustomer(userId, formDataToSend);
 
       if (response) {
         toast.success("Information updated successfully!");
+        console.log("Information updated:", response);
         localStorage.setItem("userAddress", formData.address);
         router.push("/cart");
       } else {
