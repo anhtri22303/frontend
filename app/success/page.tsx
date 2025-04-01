@@ -67,14 +67,14 @@ export default function SuccessPage() {
         toast.error("Order ID not found.");
         return;
       }
-  
-      // // Gọi API updateOrder để cập nhật trạng thái đơn hàng
-      // await updateOrder(orderID, { status: "COMPLETED" });
-      // toast.success("Order status updated to COMPLETED!");
-  
+
+      // Gọi API updateOrder với status là một chuỗi
+      await updateOrder(orderID, "COMPLETED");
+      toast.success("Order status updated to COMPLETED!");
+
       // Xóa orderID khỏi sessionStorage
       sessionStorage.removeItem("orderID");
-  
+
       // Chuyển hướng đến trang shop
       router.push("/shop");
     } catch (error) {

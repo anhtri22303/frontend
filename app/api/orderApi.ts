@@ -74,9 +74,14 @@ export const fetchOrderByID = async (orderID: string) => {
 }
 
 // Update order
-export const updateOrder = async (orderID: string, orderData: Partial<Order>) => {
+export const updateOrder = async (orderID: string, status: string) => {
+  console.log("Status", status);
   try {
-    const response = await axiosInstance.put(`/orders/staff/${orderID}`, orderData);
+    const response = await axiosInstance.put(`/orders/staff/${orderID}`, { status }, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
     console.log("Order updated successfully:", response.data);
     return response.data;
   } catch (error) {
