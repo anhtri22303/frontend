@@ -26,7 +26,7 @@ export default function AboutPage() {
       <section className="relative h-[500px] flex items-center justify-center text-center px-4">
         <div className="absolute inset-0 overflow-hidden">
           <Image
-            src="/images/about-hero.jpg"
+            src="/assets/Home/2.png"
             alt="Beauty Products"
             fill
             className="object-cover"

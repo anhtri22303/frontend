@@ -269,7 +269,15 @@ export default function ProductPage() {
 
         <TabsContent value="reviews" className="pt-6">
           <div className="space-y-8">
-            <h3 className="text-lg font-semibold">Customer Reviews</h3>
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold">Customer Reviews</h3>
+              <Button
+                onClick={() => router.push(`/shop/product/${productID}/create`)}
+                variant="outline"
+              >
+                Create Feedback
+              </Button>
+            </div>
             <div className="space-y-6">
               {feedbacks.map((feedback) => (
                 <div key={feedback.feedbackID} className="space-y-2">
@@ -280,7 +288,9 @@ export default function ProductPage() {
                     </Avatar>
                     <div>
                       <div className="font-medium">{feedback.customerID}</div>
-                      <div className="text-sm text-muted-foreground">{feedback.feedbackDate}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {feedback.feedbackDate}
+                      </div>
                     </div>
                   </div>
                   <div className="flex">
@@ -288,7 +298,9 @@ export default function ProductPage() {
                       <Star
                         key={i}
                         className={`h-4 w-4 ${
-                          i < feedback.rating ? "text-primary fill-primary" : "text-muted"
+                          i < feedback.rating
+                            ? "text-primary fill-primary"
+                            : "text-muted"
                         }`}
                       />
                     ))}

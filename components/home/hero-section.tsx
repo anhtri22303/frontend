@@ -7,7 +7,7 @@ export function HeroSection() {
       <div
         className="absolute inset-0 bg-cover bg-center"
         style={{
-          backgroundImage: "url('/placeholder.svg?height=600&width=1200')",
+          backgroundImage: `url("/assets/Home/3.png")`, // Sử dụng url() và đường dẫn tương đối từ thư mục public
           opacity: 0.2,
         }}
       />
@@ -16,8 +16,8 @@ export function HeroSection() {
           Discover Your Perfect Skincare Routine
         </h1>
         <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl">
-          Personalized recommendations based on your unique skin type. Take our quiz and find products that work for
-          you.
+          Personalized recommendations based on your unique skin type. Take our
+          quiz and find products that work for you.
         </p>
         <div className="mt-10 flex flex-col sm:flex-row gap-4">
           <Button asChild size="lg">
@@ -29,6 +29,6 @@ export function HeroSection() {
         </div>
       </div>
     </section>
-  )
+  );
 }
 
