@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { fetchOrderDetailsByUserID, updateOrder } from "@/app/api/orderApi";
+import { updateOrder } from "@/app/api/orderApi";
+import { fetchOrderDetailsByUserID } from "@/app/api/orderCustomerApi";
 import toast from "react-hot-toast";
 
 interface OrderInfo {
@@ -59,28 +60,28 @@ export default function SuccessPage() {
     }
   };
 
-  const handleContinueShopping = async () => {
-    try {
-      const orderID = orderInfo.orderID;
-      if (!orderID) {
-        toast.error("Order ID not found.");
-        return;
-      }
-  
-      // Gọi API updateOrder để cập nhật trạng thái đơn hàng
-      await updateOrder(orderID, { status: "COMPLETED" });
-      toast.success("Order status updated to COMPLETED!");
-  
-      // Xóa orderID khỏi sessionStorage
-      sessionStorage.removeItem("orderID");
-  
-      // Chuyển hướng đến trang shop
-      router.push("/shop");
-    } catch (error) {
-      console.error("Error updating order status:", error);
-      toast.error("Failed to update order status. Please try again.");
+const handleContinueShopping = async () => {
+  try {
+    const orderID = orderInfo.orderID;
+    if (!orderID) {
+      toast.error("Order ID not found.");
+      return;
     }
-  };
+
+    // Gọi API updateOrder để cập nhật trạng thái đơn hàng
+    await updateOrder(orderID, { status: "COMPLETED" });
+    toast.success("Order status updated to COMPLETED!");
+
+    // Xóa orderID khỏi sessionStorage
+    sessionStorage.removeItem("orderID");
+
+    // Chuyển hướng đến trang shop
+    router.push("/shop");
+  } catch (error) {
+    console.error("Error updating order status:", error);
+    toast.error("Failed to update order status. Please try again.");
+  }
+};
 
   if (loading) return <div className="text-center py-12">Loading...</div>;
 
