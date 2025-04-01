@@ -29,8 +29,8 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
   const loadOrderDetails = async () => {
     try {
       const response = await fetchOrderByID(params.orderId);
-      console.log("Order data:", response.data); // Kiểm tra dữ liệu trả về
-      setOrder(response.data);
+      console.log("Order data:", response); // Kiểm tra dữ liệu trả về
+      setOrder(response);
     } catch (error) {
       console.error("Error loading order details:", error);
     }
