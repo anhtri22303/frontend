@@ -8,9 +8,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { updateCustomer, fetchCustomerByID } from "@/app/api/customerApi";
 import toast from "react-hot-toast";
 
@@ -22,6 +35,8 @@ export default function ProfilePage() {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [skinType, setSkinType] = useState("");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -38,6 +53,7 @@ export default function ProfilePage() {
           setPhone(response.phone || "");
           setAddress(response.address || "");
           setSkinType(response.skinType || "");
+          setAvatarPreview(response.avatar_url || "");
         }
       } catch (err) {
         console.error("Error fetching user data:", err);
@@ -50,20 +66,42 @@ export default function ProfilePage() {
     fetchUserData();
   }, [user?.userID]);
 
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    if (file) {
+      setAvatarFile(file);
+      setAvatarPreview(URL.createObjectURL(file));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user?.userID) return;
-
+  
     setIsLoading(true);
-
+  
     try {
-      const response = await updateCustomer(user.userID, {
+      const formData = new FormData();
+      // Gửi dữ liệu user dưới dạng chuỗi JSON trong key "user"
+      const userData = {
         fullName,
         email,
         phone,
         address,
         skinType,
-      });
+      };
+      formData.append("user", JSON.stringify(userData));
+      if (avatarFile) {
+        formData.append("image", avatarFile);
+      }
+  
+      console.log("1 - FormData entries:");
+      for (const [key, value] of formData.entries()) {
+        console.log(`${key}:`, value);
+      }
+  
+      const response = await updateCustomer(user.userID, formData);
+      console.log("2", response.data);
       if (response?.data) {
         updateUser(response.data);
         toast.success("Profile updated successfully!");
@@ -71,7 +109,7 @@ export default function ProfilePage() {
         toast.error("Failed to update profile.");
       }
     } catch (err) {
-      console.error("Update error:", err);
+      console.error("Update error:", err.response?.data || err.message);
       toast.error("An error occurred while updating profile.");
     } finally {
       setIsLoading(false);
@@ -96,12 +134,28 @@ export default function ProfilePage() {
           </CardHeader>
           <CardContent className="flex flex-col items-center">
             <Avatar className="w-32 h-32">
-              <AvatarImage src={user.image || "/placeholder.svg?height=128&width=128"} alt={user.username} />
+              <AvatarImage
+                src={avatarPreview || user.avatar_url || "/placeholder.svg?height=128&width=128"}
+                alt={user.username}
+              />
               <AvatarFallback>{user?.username?.charAt(0) || "?"}</AvatarFallback>
             </Avatar>
-            <Button className="mt-4" disabled>
-              Change Picture
-            </Button>
+            <div className="mt-4 flex flex-col items-center gap-2">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarChange}
+                className="hidden"
+                id="avatarUpload"
+                disabled={isLoading}
+              />
+              <label
+                htmlFor="avatarUpload"
+                className="cursor-pointer px-4 py-2 bg-gray-200 rounded-md text-sm"
+              >
+                Choose File
+              </label>
+            </div>
           </CardContent>
         </Card>
         <Card className="md:col-span-2">

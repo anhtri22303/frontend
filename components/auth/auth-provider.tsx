@@ -11,7 +11,7 @@ type User = {
   userID: string
   username: string
   fullName: string | null
-  image?: string
+  avatar_url?: string
   role: string
   email: string
   phone?: string

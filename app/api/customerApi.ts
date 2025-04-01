@@ -36,13 +36,14 @@ export const fetchCustomerByID = async (userID: string) => {
 };
 
 // Update customer profile by ID
-export const updateCustomer = async (
-  userId: string,
-  customerData: Partial<Customer>
-) => {
+export const updateCustomer = async (userId: string, formData: FormData) => {
   try {
-    const response = await axiosInstance.put(`/user/${userId}`, customerData);
-    console.log("Update customer success")
+    const response = await axiosInstance.put(`/user/${userId}`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    console.log("Update customer success");
     return response.data;
   } catch (error) {
     console.error("Error updating customer:", error);

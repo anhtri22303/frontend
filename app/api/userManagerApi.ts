@@ -57,15 +57,20 @@ export const fetchUserById = async (userID: string) => {
 }
 
 // Update user
-export const updateUser = async (userId: string, userData: Partial<User>) => {
+export const updateUser = async (userId: string, formData: FormData) => {
   try {
-    const response = await axiosInstance.put(`/manager/users/${userId}`, userData)
-    return response.data
+    const response = await axiosInstance.put(`/manager/users/${userId}`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    console.log("Update user success", response.data);
+    return response.data;
   } catch (error) {
-    console.error("Error updating user:", error)
-    return null
+    console.error("Error updating user:", error);
+    throw error;
   }
-}
+};
 
 // Delete user
 export const deleteUser = async (userId: string) => {
