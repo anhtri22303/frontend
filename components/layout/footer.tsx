@@ -77,7 +77,7 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/track-order" className="text-muted-foreground hover:text-primary">
+                <Link href="/orders" className="text-muted-foreground hover:text-primary">
                   Track Order
                 </Link>
               </li>
