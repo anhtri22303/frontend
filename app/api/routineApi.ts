@@ -66,16 +66,16 @@ export const deleteRoutine = async (id: string) => {
 }
 
 // Get routines by category
-export const fetchRoutinesBySkinType = async (skinType: string) => {
+export const fetchRoutinesBySkinType = async (skinType) => {
   try {
-    const response = await axiosInstance.get(`/skin-care-routines/skinType/${skinType}`)
-    console.log("Get routines by category success")
-    return response.data.data
+    const response = await axiosInstance.get(`/skin-care-routines/skinType/${skinType}`);
+    console.log("Get routines by skin type success");
+    return response.data.data;
   } catch (error) {
-    console.error("Error fetching routines by category:", error)
-    throw error
+    console.error("Error fetching routines by skin type:", error);
+    throw error;
   }
-}
+};
 
 // Search routines by name
 export const searchRoutinesByName = async (name: string) => {

@@ -29,44 +29,33 @@ export default function RoutinesPage() {
   useEffect(() => {
     const fetchUserRoutines = async () => {
       if (!user) {
-        router.push("/login?redirect=/routines")
-        return
+        router.push("/login?redirect=/routines");
+        return;
       }
-
+  
       try {
-        const userID = localStorage.getItem("userID")
+        const userID = localStorage.getItem("userID");
         if (!userID) {
-          router.push("/login?redirect=/routines")
-          return
+          router.push("/login?redirect=/routines");
+          return;
         }
-
-        // Get user's skin type and preferences from localStorage if they completed the quiz
-        const skinType = localStorage.getItem("userSkinType")
-        const routinePreference = localStorage.getItem("userRoutinePreference")
-
-        if (skinType && routinePreference) {
-          // Convert routine preference to category format
-          let routineCategory = "basic"
-          if (routinePreference === "Moderate (4-5 steps)") {
-            routineCategory = "moderate"
-          } else if (routinePreference === "Advanced (6+ steps)") {
-            routineCategory = "advanced"
-          }
-
-          // Fetch routines based on skin type and preference
-          const routines = await fetchRoutinesBySkinType(`${skinType.toLowerCase()}-${routineCategory}`)
-          setUserRoutines(routines)
+  
+        const skinType = localStorage.getItem("userSkinType"); // Ví dụ: "Oily"
+        if (skinType) {
+          // Chỉ gửi skinType, không nối với routineCategory
+          const routines = await fetchRoutinesBySkinType(skinType); // Gửi "Oily"
+          setUserRoutines(routines);
         }
         
-        setLoading(false)
+        setLoading(false);
       } catch (error) {
-        console.error("Error fetching routines:", error)
-        setLoading(false)
+        console.error("Error fetching routines:", error);
+        setLoading(false);
       }
-    }
-
-    fetchUserRoutines()
-  }, [user, router])
+    };
+  
+    fetchUserRoutines();
+  }, [user, router]);
 
   if (loading) {
     return <div className="container py-12">Loading...</div>
