@@ -5,8 +5,7 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { fetchCartByUserId, updateCartItem, removeFromCart } from "@/app/api/cartApi"
-import stripePromise from '@/lib/stripe-client'
-import { createCustomerOrder } from "@/app/api/orderCustomerApi"
+import { fetchProductById } from "@/app/api/productApi"
 import toast from "react-hot-toast"
 
 interface CartItem {
@@ -14,14 +13,11 @@ interface CartItem {
   productID: string
   quantity: number
   totalAmount: number
+  discountedTotalAmount?: number
   name?: string
   image?: string
-}
-
-interface Cart {
-  userID: string
-  items: CartItem[]
-  total: number
+  price: number; // Giá gốc
+  discountedPrice?: number; // Giá sau khi giảm (nếu có)
 }
 
 export default function CartPage() {
@@ -48,30 +44,42 @@ export default function CartPage() {
 
   const loadCartItems = async () => {
     try {
-      setLoading(true)
-      const response = await fetchCartByUserId(userID!)
+      setLoading(true);
+      const response = await fetchCartByUserId(userID!);
+  
       if (response && response.items) {
-        setCartItems(response.items)
+        const cartItemsWithDetails = await Promise.all(
+          response.items.map(async (item) => {
+            const productDetails = await fetchProductById(item.productID);
+            const productData = productDetails?.data; // Truy cập thuộc tính `data`
+  
+            return {
+              ...item,
+              price: productData?.price || 0, // Giá gốc từ API sản phẩm
+              discountedPrice: productData?.discountedPrice || null, // Giá giảm từ API sản phẩm
+              name: productData?.productName || `Product ${item.productID}`, // Tên sản phẩm
+              image: productData?.image_url || "/placeholder.svg", // Hình ảnh sản phẩm
+            };
+          })
+        );
+  
+        setCartItems(cartItemsWithDetails);
       }
-      console.log("Cart items loaded:", response.items)
+      console.log("Cart items loaded:", response.items);
     } catch (error) {
-      console.error("Error loading cart items:", error)
+      console.error("Error loading cart items:", error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleUpdateQuantity = async (productID: string, newQuantity: number) => {
-    if (newQuantity < 1) return;
+    if (newQuantity < 1) return; // Không cho phép số lượng nhỏ hơn 1
 
     try {
-      await updateCartItem(userID!, productID, newQuantity);
-      setCartItems((prev) =>
-        prev.map((item) =>
-          item.productID === productID ? { ...item, quantity: newQuantity } : item
-        )
-      );
+      await updateCartItem(userID!, productID, newQuantity); // Gọi API cập nhật số lượng
       toast.success("Quantity updated successfully!");
+      await loadCartItems(); // Tải lại danh sách giỏ hàng
     } catch (error) {
       console.error("Error updating quantity:", error);
       toast.error("Failed to update quantity.");
@@ -81,8 +89,9 @@ export default function CartPage() {
   const handleRemoveItem = async (productID: string) => {
     try {
       await removeFromCart(userID!, productID);
-      setCartItems((prev) => prev.filter((item) => item.productID !== productID));
+      console.log("Item removed from cart");
       toast.success("Item removed from cart!");
+      await loadCartItems();
     } catch (error) {
       console.error("Error removing item:", error);
       toast.error("Failed to remove item.");
@@ -170,7 +179,12 @@ export default function CartPage() {
     }
   };
 
-  const subtotal = cartItems.reduce((sum, item) => sum + item.totalAmount * item.quantity, 0)
+  const subtotal = cartItems.reduce(
+    (sum, item) =>
+      sum +
+      (item.discountedPrice ? item.discountedPrice : item.price) * item.quantity,
+    0
+  );
   const shipping = subtotal > 50 ? 0 : 5.99
   const total = subtotal + shipping
 
@@ -182,7 +196,10 @@ export default function CartPage() {
         <div className="md:col-span-2 space-y-6">
           {cartItems.length > 0 ? (
             cartItems.map((item) => (
-              <div key={item.productID} className="flex items-center space-x-4 border-b pb-4">
+              <div
+                key={item.productID}
+                className="flex items-center space-x-4 border-b pb-4"
+              >
                 <Image
                   src={item.image || "/placeholder.svg"}
                   alt={item.name || `Product ${item.productID}`}
@@ -191,27 +208,51 @@ export default function CartPage() {
                   className="rounded-md"
                 />
                 <div className="flex-grow">
-                  <h3 className="font-semibold">{item.name || `Product ${item.productID}`}</h3>
-                  <p className="text-sm text-gray-500">${item.totalAmount.toFixed(2)}</p>
+                  <h3 className="font-semibold">
+                    {item.name || `Product ${item.productID}`}
+                  </h3>
+                  <div className="mt-1">
+                    {item.discountedPrice ? (
+                      <div className="flex items-center gap-2">
+                        <p className="text-red-500 font-semibold">
+                          ${item.discountedPrice?.toFixed(2) || "0.00"}
+                        </p>
+                        <p className="text-gray-500 line-through">
+                          ${item.price?.toFixed(2) || "0.00"}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="font-semibold">
+                        ${item.price?.toFixed(2) || "0.00"}
+                      </p>
+                    )}
+                  </div>
                   <div className="flex items-center mt-2">
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      onClick={() => handleUpdateQuantity(item.productID, item.quantity - 1)}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        handleUpdateQuantity(item.productID, item.quantity - 1)
+                      }
                     >
                       -
                     </Button>
                     <span className="mx-2">{item.quantity}</span>
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      onClick={() => handleUpdateQuantity(item.productID, item.quantity + 1)}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        handleUpdateQuantity(item.productID, item.quantity + 1)
+                      }
                     >
                       +
                     </Button>
                   </div>
                 </div>
-                <Button variant="ghost" onClick={() => handleRemoveItem(item.productID)}>
+                <Button
+                  variant="ghost"
+                  onClick={() => handleRemoveItem(item.productID)}
+                >
                   Remove
                 </Button>
               </div>
@@ -219,7 +260,9 @@ export default function CartPage() {
           ) : (
             <div className="text-center py-12">
               <p className="text-xl mb-4">Your cart is empty</p>
-              <Button onClick={() => window.location.href = '/shop'}>Continue Shopping</Button>
+              <Button onClick={() => (window.location.href = "/shop")}>
+                Continue Shopping
+              </Button>
             </div>
           )}
         </div>
@@ -238,18 +281,18 @@ export default function CartPage() {
           </div>
 
           <div className="mt-6 space-y-3">
-            <Button 
-              onClick={() => router.push('/informCustomer')}
+            <Button
+              onClick={() => router.push("/informCustomer")}
               className="w-full"
             >
               Enter Information
             </Button>
-            <Button 
-              onClick={handleCheckout} 
+            <Button
+              onClick={handleCheckout}
               disabled={isProcessing}
               className="w-full"
             >
-              {isProcessing ? 'Processing...' : 'Proceed to Checkout'}
+              {isProcessing ? "Processing..." : "Proceed to Checkout"}
             </Button>
           </div>
         </div>

@@ -45,19 +45,9 @@ export default function ProductsPage() {
       const data = await fetchProducts();
       setProducts(data);
       setFilteredProducts(data);
-      if (data && data.length > 0) {
-        const maxProductPrice = Math.max(...data.map((product: Product) => product.price));
-        setMaxPrice(maxProductPrice);
-        setPriceRange([0, maxProductPrice]);
-        const initialQuantities = data.reduce((acc: { [key: string]: number }, product: Product) => {
-          acc[product.productID] = 1;
-          return acc;
-        }, {});
-        setQuantities(initialQuantities);
-      } else {
-        setMaxPrice(1000);
-        setPriceRange([0, 1000]);
-      }
+      const maxProductPrice: number = Math.max(...data.map((product: Product) => product.price));
+      setMaxPrice(maxProductPrice);
+      setPriceRange([0, maxProductPrice]);
     } catch (error) {
       console.error("Error fetching products:", error);
       setMaxPrice(1000);
@@ -71,9 +61,9 @@ export default function ProductsPage() {
         categories: selectedCategories.length > 0 ? selectedCategories.join(",") : undefined,
         skinTypes: selectedSkinTypes.length > 0 ? selectedSkinTypes.join(",") : undefined,
         minPrice: priceRange[0],
-        maxPrice: priceRange[1] === Infinity ? undefined : priceRange[1],
+        maxPrice: priceRange[1],
       };
-
+  
       const data = await fetchProductsByFilters(filters);
       setFilteredProducts(data);
     } catch (error) {
@@ -102,6 +92,10 @@ export default function ProductsPage() {
 
   const handlePriceChange = (newPriceRange: [number, number]) => {
     setPriceRange(newPriceRange);
+    const filteredByPrice = products.filter(
+      (product) => product.price >= newPriceRange[0] && product.price <= newPriceRange[1]
+    );
+    setFilteredProducts(filteredByPrice);
   };
 
   const handleQuantityChange = (productId: string, value: string) => {
@@ -194,20 +188,44 @@ export default function ProductsPage() {
                         className="object-cover transition-transform group-hover:scale-105"
                       />
                       {product.isNew && (
-                        <Badge className="absolute top-2 right-2" variant="secondary">
+                        <Badge
+                          className="absolute top-2 right-2"
+                          variant="secondary"
+                        >
                           New
                         </Badge>
                       )}
                     </div>
                     <CardContent className="pt-4">
-                      <h3 className="font-medium truncate w-full">{product.productName}</h3>
-                      <p className="font-semibold mt-2">${product.price.toFixed(2)}</p>
+                      <h3 className="font-medium truncate w-full">
+                        {product.productName}
+                      </h3>
+                      <div className="mt-2">
+                        {product.discountedPrice ? (
+                          <div className="flex items-center gap-2">
+                            <p className="text-red-500 font-semibold">
+                              ${product.discountedPrice.toFixed(2)}
+                            </p>
+                            <p className="text-gray-500 line-through">
+                              ${product.price.toFixed(2)}
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="font-semibold">
+                            ${product.price.toFixed(2)}
+                          </p>
+                        )}
+                      </div>
                       <div className="mt-2 text-sm">
-                        <p className="text-muted-foreground">{product.category || "N/A"}</p>
+                        <p className="text-muted-foreground">
+                          {product.category || "N/A"}
+                        </p>
                       </div>
                       <div className="mt-2 text-sm">
                         <p className="block">Skin Type:</p>
-                        <p className="text-muted-foreground">{product.skinType || "All"}</p>
+                        <p className="text-muted-foreground">
+                          {product.skinType || "All"}
+                        </p>
                       </div>
                       <div className="flex items-center mt-2">
                         <span>Rating: {product.rating}/5</span>
@@ -216,7 +234,9 @@ export default function ProductsPage() {
                             <svg
                               key={i}
                               className={`w-4 h-4 ${
-                                i < product.rating ? "text-yellow-400 fill-current" : "text-gray-300"
+                                i < product.rating
+                                  ? "text-yellow-400 fill-current"
+                                  : "text-gray-300"
                               }`}
                               viewBox="0 0 20 20"
                             >
@@ -229,7 +249,10 @@ export default function ProductsPage() {
                   </Link>
                   <CardFooter className="flex flex-col gap-2">
                     <div className="flex items-center gap-2 w-full">
-                      <label htmlFor={`quantity-${product.productID}`} className="text-sm">
+                      <label
+                        htmlFor={`quantity-${product.productID}`}
+                        className="text-sm"
+                      >
                         Qty:
                       </label>
                       <input
@@ -237,7 +260,12 @@ export default function ProductsPage() {
                         type="number"
                         min="1"
                         value={quantities[product.productID] || 1}
-                        onChange={(e) => handleQuantityChange(product.productID, e.target.value)}
+                        onChange={(e) =>
+                          handleQuantityChange(
+                            product.productID,
+                            e.target.value
+                          )
+                        }
                         className="w-16"
                       />
                     </div>
@@ -253,8 +281,12 @@ export default function ProductsPage() {
               ))
             ) : (
               <div className="text-center col-span-full py-12">
-                <h3 className="text-2xl font-bold text-gray-700">No Products Found</h3>
-                <p className="text-md text-gray-500 mt-2">Try adjusting your filters to find more products.</p>
+                <h3 className="text-2xl font-bold text-gray-700">
+                  No Products Found
+                </h3>
+                <p className="text-md text-gray-500 mt-2">
+                  Try adjusting your filters to find more products.
+                </p>
               </div>
             )}
           </div>

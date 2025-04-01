@@ -39,14 +39,20 @@ export const fetchCartItem = async (userId: string, productID: string) => {
 // Update cart item quantity
 export const updateCartItem = async (userId: string, productID: string, quantity: number) => {
   try {
-    const response = await axiosInstance.put(`/cart/${userId}/${productID}`, { quantity })
-    console.log("Update cart item success")
-    return response.data
+    const response = await axiosInstance.put(
+      `/cart/${userId}/${productID}`,
+      null, // Không có body
+      {
+        params: { quantity }, // Gửi quantity dưới dạng query parameter
+      }
+    );
+    console.log("Update cart item success");
+    return response.data;
   } catch (error) {
-    console.error("Error updating cart item:", error)
-    throw error
+    console.error("Error updating cart item:", error);
+    throw error;
   }
-}
+};
 
 export const addToCart = async (userId: string, productId: string, quantity: number) => {
   try {

@@ -68,9 +68,11 @@ export default function ProductPage() {
   const loadRelatedProducts = async () => {
     try {
       const data = await fetchProducts();
-      setRelatedProducts(data);
+      console.log("Related Products Data:", data); // Kiểm tra dữ liệu trả về
+      setRelatedProducts(Array.isArray(data) ? data : []); // Đảm bảo luôn là mảng
     } catch (error) {
       console.error("Error fetching related products:", error);
+      setRelatedProducts([]); // Gán giá trị mặc định là mảng rỗng nếu lỗi
     }
   };
 
@@ -86,14 +88,15 @@ export default function ProductPage() {
   const handleAddToCart = async () => {
     setIsLoading(true);
     try {
-      const userID = localStorage.getItem("userID"); // Lấy userID từ localStorage
+      const userID = localStorage.getItem("userID");
       if (!userID) {
         toast.error("User not logged in!");
         return;
       }
-
-      await addToCart(userID, productID); // Gọi API với userID và productID
+  
+      await addToCart(userID, productID, quantity);
       toast.success("Product added to cart!");
+      console.log("add to cart", productID, quantity);
     } catch (error) {
       console.error("Error adding to cart:", error);
       toast.error("Failed to add product to cart.");
@@ -105,10 +108,9 @@ export default function ProductPage() {
   // Tính toán các sản phẩm hiển thị dựa trên trang hiện tại
   const indexOfLastProduct = currentPage * productsPerPage;
   const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
-  const currentProducts = relatedProducts.slice(
-    indexOfFirstProduct,
-    indexOfLastProduct
-  );
+  const currentProducts = Array.isArray(relatedProducts)
+  ? relatedProducts.slice(indexOfFirstProduct, indexOfLastProduct)
+  : [];
 
   // Hàm chuyển sang trang trước
   const handlePrevPage = () => {
@@ -208,20 +210,37 @@ export default function ProductPage() {
             </div>
           </div>
 
-          <div className="text-2xl font-bold">${product.price}</div>
+          <div className="text-2xl font-bold">
+            {product.discountedPrice ? (
+              <div className="flex items-center gap-2">
+                <p className="text-red-500">
+                  ${product.discountedPrice.toFixed(2)}
+                </p>
+                <p className="text-gray-500 line-through">
+                  ${product.price.toFixed(2)}
+                </p>
+              </div>
+            ) : (
+              <p>${product.price.toFixed(2)}</p>
+            )}
+          </div>
 
           <p className="text-muted-foreground text-sm">{product.description}</p>
-          
-            <div className="flex items-center border rounded-md">
-              <Button variant="ghost" size="icon" onClick={decrementQuantity} disabled={quantity <= 1}>
-                <Minus className="h-4 w-4" />
-              </Button>
-              <span className="w-12 text-center">{quantity}</span>
-              <Button variant="ghost" size="icon" onClick={incrementQuantity}>
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
 
+          <div className="flex items-center border rounded-md">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={decrementQuantity}
+              disabled={quantity <= 1}
+            >
+              <Minus className="h-4 w-4" />
+            </Button>
+            <span className="w-12 text-center">{quantity}</span>
+            <Button variant="ghost" size="icon" onClick={incrementQuantity}>
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
 
           <div className="flex items-center gap-2 mt-auto">
             <Button
