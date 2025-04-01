@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation"
 import { fetchCartByUserId, updateCartItem, removeFromCart } from "@/app/api/cartApi"
 import { fetchProductById } from "@/app/api/productApi"
 import toast from "react-hot-toast"
+import { createCustomerOrder } from "@/app/api/orderCustomerApi"
+import stripePromise from "@/lib/stripe-client"
 
 interface CartItem {
   userID: string
@@ -25,6 +27,7 @@ export default function CartPage() {
   const [userID, setUserID] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [address, setAddress] = useState("");
   const router = useRouter()
 
   useEffect(() => {
@@ -73,6 +76,32 @@ export default function CartPage() {
     }
   };
 
+  useEffect(() => {
+    const fetchCart = async () => {
+      try {
+        const userId = localStorage.getItem("userID");
+        if (!userId) {
+          toast.error("User ID not found!");
+          return;
+        }
+
+        const cartData = await fetchCartByUserId(userId);
+        setCartItems(cartData.items || []);
+
+        // Lấy thông tin address từ localStorage hoặc API
+        const storedAddress = localStorage.getItem("userAddress") || "";
+        setAddress(storedAddress);
+      } catch (error) {
+        console.error("Error fetching cart:", error);
+        toast.error("Failed to load cart.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCart();
+  }, []);
+
   const handleUpdateQuantity = async (productID: string, newQuantity: number) => {
     if (newQuantity < 1) return; // Không cho phép số lượng nhỏ hơn 1
 
@@ -111,7 +140,7 @@ export default function CartPage() {
         customerID: userID,
         orderDate: new Date().toISOString(),
         status: "PENDING",
-        totalAmount: total,
+        totalAmount: discountedTotalAmount, // Sử dụng discountedTotalAmount
         orderDetails: cartItems.map((item) => ({
           productID: item.productID,
           quantity: item.quantity,
@@ -141,7 +170,7 @@ export default function CartPage() {
       }
 
       console.log("Sending request to /api/stripe", {
-        totalAmount: orderData.totalAmount,
+        totalAmount: discountedTotalAmount, // Sử dụng discountedTotalAmount
         orderID: orderResponse.data.orderID,
       });
 
@@ -149,7 +178,7 @@ export default function CartPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          totalAmount: orderResponse.data.totalAmount,
+          totalAmount: discountedTotalAmount, // Sử dụng discountedTotalAmount
           orderID: orderResponse.data.orderID,
         }),
       });
@@ -179,14 +208,39 @@ export default function CartPage() {
     }
   };
 
+  const handleProceedToCheckout = () => {
+    if (!address) {
+      toast.error("Please add your address before proceeding to checkout.");
+      return;
+    }
+    router.push("/checkout");
+  };
+
   const subtotal = cartItems.reduce(
     (sum, item) =>
       sum +
       (item.discountedPrice ? item.discountedPrice : item.price) * item.quantity,
     0
   );
-  const shipping = subtotal > 50 ? 0 : 5.99
-  const total = subtotal + shipping
+
+  const totalAmount = cartItems.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
+
+  const discountedTotalAmount = cartItems.reduce(
+    (sum, item) =>
+      sum +
+      (item.discountedPrice ? item.discountedPrice : item.price) * item.quantity,
+    0
+  );
+
+  const shipping = subtotal > 50 ? 0 : 0;
+  const total = subtotal + shipping;
+
+  if (loading) {
+    return <p>Loading...</p>;
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -271,12 +325,16 @@ export default function CartPage() {
           <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
           <div className="space-y-2">
             <div className="flex justify-between">
-              <span>Subtotal</span>
-              <span>${subtotal.toFixed(2)}</span>
+              <span>Total Amount</span>
+              <span>${totalAmount.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Discounted Total</span>
+              <span>${discountedTotalAmount.toFixed(2)}</span>
             </div>
             <div className="flex justify-between font-semibold text-lg border-t pt-2">
-              <span>Total</span>
-              <span>${total.toFixed(2)}</span>
+              <span>Final Total</span>
+              <span>${discountedTotalAmount.toFixed(2)}</span>
             </div>
           </div>
 
@@ -294,6 +352,11 @@ export default function CartPage() {
             >
               {isProcessing ? "Processing..." : "Proceed to Checkout"}
             </Button>
+            {!address && (
+              <p className="text-sm text-red-500 mt-2">
+                Please add your address to proceed.
+              </p>
+            )}
           </div>
         </div>
       </div>

@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import type React from "react";
 import { useState } from "react";
@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { FcGoogle } from "react-icons/fc";
 import { login, loginWithGoogle } from "@/app/api/authApi";
+import toast from "react-hot-toast";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -20,64 +21,68 @@ export default function LoginPage() {
   const router = useRouter();
 
   const saveUserData = (userData: any) => {
-    localStorage.setItem("jwtToken", userData.jwtToken)
-    document.cookie = `jwtToken=${userData.jwtToken}; path=/; max-age=${7 * 24 * 60 * 60}`
-    localStorage.setItem("userID", userData.userID)  // Changed from userId to userID
-    localStorage.setItem("userRole", userData.role)
-    localStorage.setItem("userEmail", userData.email)
-    localStorage.setItem("fullName", userData.fullName || "")  // Handle null fullName
-  }
+    localStorage.setItem("jwtToken", userData.jwtToken);
+    document.cookie = `jwtToken=${userData.jwtToken}; path=/; max-age=${7 * 24 * 60 * 60}`;
+    localStorage.setItem("userID", userData.userID);
+    localStorage.setItem("userRole", userData.role);
+    localStorage.setItem("userEmail", userData.email);
+    localStorage.setItem("fullName", userData.fullName || "");
+    localStorage.setItem("userAddress", userData.address || "");
+    localStorage.setItem("userPhone", userData.phone || "");
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-  
+
     try {
       const response = await login({
         username,
         password,
       });
-  
+
       if (response.data) {
-        console.log("Login response data:", response.data);  // Added this line
-        saveUserData(response.data.data)
-        handleRedirect(response.data.data.role)
-        console.log("Login successful")
+        console.log("Login response data:", response.data);
+        saveUserData(response.data.data);
+        handleRedirect(response.data.data.role);
+
+        // Hiển thị thông báo thành công
+        toast.success("Login successful!");
       }
     } catch (err) {
-      setError("Invalid username or password")
-      console.error("Login error:", err)
+      setError("Invalid username or password");
+      console.error("Login error:", err);
+
+      // Hiển thị thông báo lỗi
+      toast.error("Invalid username or password");
     }
-  }
+  };
 
   const handleRedirect = (role: string) => {
     switch (role) {
       case "MANAGER":
-        router.push("/manager")
-        break
+        router.push("/manager");
+        break;
       case "STAFF":
-        router.push("/staff")
-        break
+        router.push("/staff");
+        break;
       case "CUSTOMER":
-        router.push("/")
-        break
+        router.push("/");
+        break;
       default:
-        router.push("/")
+        router.push("/");
     }
-  }
+  };
 
   const handleGoogleLogin = async () => {
     try {
       const response = await loginWithGoogle();
       if (response?.data) {
-        // Save user data from Google login
-        localStorage.setItem("jwtToken", response.data.jwtToken);
-        document.cookie = `jwtToken=${response.data.jwtToken}; path=/; max-age=${7 * 24 * 60 * 60}`;
-        localStorage.setItem("userID", response.data.userID);
-        localStorage.setItem("userRole", response.data.role);
-        localStorage.setItem("userEmail", response.data.email);
-        localStorage.setItem("fullName", response.data.fullName);
-  
+        saveUserData(response.data);
+
+        // Hiển thị thông báo thành công
+        toast.success("Google login successful!");
+
         // Điều hướng dựa trên role
         switch (response.data.role) {
           case "MANAGER":
@@ -94,12 +99,11 @@ export default function LoginPage() {
     } catch (err) {
       setError("Google login failed");
       console.error("Google login error:", err);
+
+      // Hiển thị thông báo lỗi
+      toast.error("Google login failed");
     }
   };
-
-  // if (isLoading) {
-  //   return <div>Loading...</div>;
-  // }
 
   return (
     <div className="container flex items-center justify-center min-h-[80vh] py-8">

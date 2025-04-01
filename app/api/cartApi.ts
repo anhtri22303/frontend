@@ -92,11 +92,15 @@ export const clearCart = async (userId: string) => {
 // Remove item from cart
 export const removeFromCart = async (userId: string, productID: string) => {
   try {
-    const response = await axiosInstance.delete(`/cart/${userId}/remove/${productID}`)
-    console.log("Remove from cart success")
-    return response.data
+    const response = await axiosInstance.delete(`/cart/${userId}/remove/${productID}`);
+    if (response.status === 204 || response.status === 200) {
+      console.log("Remove from cart success");
+      return response.data;
+    } else {
+      throw new Error(`Unexpected response status: ${response.status}`);
+    }
   } catch (error) {
-    console.error("Error removing item from cart:", error)
-    throw error
+    console.error("Error removing item from cart:", error);
+    throw error;
   }
-}
+};

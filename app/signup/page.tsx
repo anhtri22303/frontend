@@ -1,38 +1,49 @@
-"use client"
+"use client";
 
-import React, { useState } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
+import React, { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import toast from "react-hot-toast";
 
 export default function SignUpPage() {
-  const [username, setUsername] = useState("")
-  const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-  const [error, setError] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const [isChecked, setIsChecked] = useState(false)
-  const router = useRouter()
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isChecked, setIsChecked] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
-    
+    e.preventDefault();
+    setError("");
+
+    // Kiểm tra điều kiện password
+    const passwordRegex = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passwordRegex.test(password)) {
+      setError(
+        "Password must be at least 8 characters long, include an uppercase letter, a lowercase letter, a number, and a special character."
+      );
+      return;
+    }
+
     if (!isChecked) {
-      setError("You must agree to the Terms and Conditions.")
-      return
+      setError("You must agree to the Terms and Conditions.");
+      return;
     }
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match")
-      return
+      setError("Passwords do not match");
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
 
     try {
       const response = await fetch("http://localhost:8080/auth/signup", {
@@ -40,30 +51,36 @@ export default function SignUpPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ username, password }),
-      })
+        body: JSON.stringify({ username, email, password }),
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Sign up failed")
+        throw new Error(data.message || "Sign up failed");
       }
 
+      // Hiển thị thông báo thành công
+      toast.success("Sign up successful! Redirecting to login page...");
+
+      // Lưu token giả lập (nếu cần)
       const guestToken = {
         token: "guest-token-placeholder",
         role: "customer",
-        expires: Date.now() + 14 * 24 * 60 * 60 * 1000
+        expires: Date.now() + 14 * 24 * 60 * 60 * 1000,
       };
-      
+
       localStorage.setItem("authToken", JSON.stringify(guestToken));
-    
-      router.push("/login")
+
+      // Chuyển hướng đến trang đăng nhập
+      router.push("/login");
     } catch (err: any) {
-      setError(err.message)
+      setError(err.message);
+      toast.error(err.message || "Sign up failed");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="container flex items-center justify-center min-h-[80vh] py-8">
@@ -84,6 +101,17 @@ export default function SignUpPage() {
                 placeholder="johndoe"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="abc@gmail.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>
@@ -142,5 +170,5 @@ export default function SignUpPage() {
         </CardFooter>
       </Card>
     </div>
-  )
+  );
 }
