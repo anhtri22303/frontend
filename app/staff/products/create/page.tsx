@@ -13,8 +13,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { createProduct } from "@/app/api/productApi";
-import { fetchPromotions } from "@/app/api/promotionApi";
 import Image from "next/image";
+import { Plus, X } from "lucide-react"; // Thêm icon X để xóa
 
 export default function CreateProductPage() {
   const [newProduct, setNewProduct] = useState({
@@ -22,18 +22,23 @@ export default function CreateProductPage() {
     description: "",
     price: 0,
     category: "Cleanser",
-    skinType: "Dry",
+    skinTypes: ["Dry"] as string[], // Thay skinType bằng skinTypes là mảng
     rating: 0,
     imageFile: null as File | null,
     imagePreview: "",
-
   });
 
+  const [showSkinTypeSelect, setShowSkinTypeSelect] = useState(false); // Điều khiển hiển thị Select
   const router = useRouter();
 
   const handleCreateProduct = async () => {
     try {
-      await createProduct(newProduct);
+      // Chuẩn bị dữ liệu gửi lên, đảm bảo skinTypes là mảng
+      const productData = {
+        ...newProduct,
+        skinTypes: newProduct.skinTypes, // Gửi mảng skinTypes
+      };
+      await createProduct(productData);
       router.push("/staff/products");
     } catch (error) {
       console.error("Error creating product:", error);
@@ -49,6 +54,25 @@ export default function CreateProductPage() {
         imagePreview: URL.createObjectURL(file),
       });
     }
+  };
+
+  // Thêm skin type mới
+  const handleAddSkinType = (value: string) => {
+    if (!newProduct.skinTypes.includes(value)) {
+      setNewProduct({
+        ...newProduct,
+        skinTypes: [...newProduct.skinTypes, value],
+      });
+    }
+    setShowSkinTypeSelect(false); // Ẩn Select sau khi chọn
+  };
+
+  // Xóa skin type
+  const handleRemoveSkinType = (skinType: string) => {
+    setNewProduct({
+      ...newProduct,
+      skinTypes: newProduct.skinTypes.filter((type) => type !== skinType),
+    });
   };
 
   return (
@@ -113,24 +137,52 @@ export default function CreateProductPage() {
         </div>
 
         <div>
-          <label className="text-sm font-medium mb-1 block">Skin Type</label>
-          <Select
-            value={newProduct.skinType}
-            onValueChange={(value) =>
-              setNewProduct({ ...newProduct, skinType: value })
-            }
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select skin type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Dry">Dry</SelectItem>
-              <SelectItem value="Oily">Oily</SelectItem>
-              <SelectItem value="Combination">Combination</SelectItem>
-              <SelectItem value="Sensitive">Sensitive</SelectItem>
-              <SelectItem value="Normal">Normal</SelectItem>
-            </SelectContent>
-          </Select>
+          <label className="text-sm font-medium mb-1 block">Skin Types</label>
+          <div className="flex flex-wrap gap-2 mb-2">
+            {newProduct.skinTypes.map((type) => (
+              <div
+                key={type}
+                className="flex items-center bg-gray-100 px-2 py-1 rounded-md"
+              >
+                <span>{type}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="ml-1 p-0 h-4 w-4"
+                  onClick={() => handleRemoveSkinType(type)}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            ))}
+          </div>
+          {showSkinTypeSelect ? (
+            <Select
+              onValueChange={handleAddSkinType}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select skin type" />
+              </SelectTrigger>
+              <SelectContent>
+                {["Dry", "Oily", "Combination", "Sensitive", "Normal"]
+                  .filter((type) => !newProduct.skinTypes.includes(type)) // Lọc các loại đã chọn
+                  .map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowSkinTypeSelect(true)}
+              disabled={newProduct.skinTypes.length >= 5} // Vô hiệu hóa nếu đã chọn đủ 5
+            >
+              <Plus className="h-4 w-4 mr-1" /> Add Skin Type
+            </Button>
+          )}
         </div>
 
         <div>

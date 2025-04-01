@@ -2,10 +2,17 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Plus, X } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { fetchProductById, updateProduct } from "@/app/api/productApi";
 
 interface EditProductPageProps {
@@ -20,7 +27,7 @@ interface Product {
   description: string;
   price: number;
   category: string;
-  skinType: string;
+  skinTypes: string[]; // Thay skinType bằng skinTypes
   rating: number;
   imageFile: File | null;
   imagePreview: string;
@@ -31,13 +38,14 @@ export default function EditProductPage({ params }: EditProductPageProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSkinTypeSelect, setShowSkinTypeSelect] = useState(false); // Điều khiển hiển thị Select
   const [product, setProduct] = useState<Product>({
     productID: "",
     productName: "",
     description: "",
     price: 0,
     category: "",
-    skinType: "",
+    skinTypes: [],
     rating: 0,
     imageFile: null,
     imagePreview: "",
@@ -54,7 +62,7 @@ export default function EditProductPage({ params }: EditProductPageProps) {
             description: response.description || "",
             price: response.price || 0,
             category: response.category || "",
-            skinType: response.skinType || "",
+            skinTypes: response.skinTypes || (response.skinType ? [response.skinType] : []), // Hỗ trợ cả trường hợp backend trả skinType hoặc skinTypes
             rating: response.rating || 0,
             imageFile: null,
             imagePreview: response.image_url || "",
@@ -87,6 +95,25 @@ export default function EditProductPage({ params }: EditProductPageProps) {
     }));
   };
 
+  // Thêm skin type mới
+  const handleAddSkinType = (value: string) => {
+    if (!product.skinTypes.includes(value)) {
+      setProduct({
+        ...product,
+        skinTypes: [...product.skinTypes, value],
+      });
+    }
+    setShowSkinTypeSelect(false); // Ẩn Select sau khi chọn
+  };
+
+  // Xóa skin type
+  const handleRemoveSkinType = (skinType: string) => {
+    setProduct({
+      ...product,
+      skinTypes: product.skinTypes.filter((type) => type !== skinType),
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
@@ -99,7 +126,7 @@ export default function EditProductPage({ params }: EditProductPageProps) {
         description: product.description,
         price: product.price,
         category: product.category,
-        skinType: product.skinType,
+        skinTypes: product.skinTypes, // Gửi mảng skinTypes
         rating: product.rating,
       };
 
@@ -208,16 +235,51 @@ export default function EditProductPage({ params }: EditProductPageProps) {
         </div>
 
         <div>
-          <label className="text-sm font-medium mb-1 block">Skin Type</label>
-          <Input
-            required
-            value={product.skinType}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setProduct({ ...product, skinType: e.target.value })
-            }
-            placeholder="Enter skin type"
-            disabled={isSubmitting}
-          />
+          <label className="text-sm font-medium mb-1 block">Skin Types</label>
+          <div className="flex flex-wrap gap-2 mb-2">
+            {product.skinTypes.map((type) => (
+              <div
+                key={type}
+                className="flex items-center bg-gray-100 px-2 py-1 rounded-md"
+              >
+                <span>{type}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="ml-1 p-0 h-4 w-4"
+                  onClick={() => handleRemoveSkinType(type)}
+                  disabled={isSubmitting}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            ))}
+          </div>
+          {showSkinTypeSelect ? (
+            <Select onValueChange={handleAddSkinType} disabled={isSubmitting}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select skin type" />
+              </SelectTrigger>
+              <SelectContent>
+                {["Dry", "Oily", "Combination", "Sensitive", "Normal"]
+                  .filter((type) => !product.skinTypes.includes(type)) // Lọc các loại đã chọn
+                  .map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowSkinTypeSelect(true)}
+              disabled={isSubmitting || product.skinTypes.length >= 5} // Vô hiệu hóa nếu đã chọn đủ 5
+            >
+              <Plus className="h-4 w-4 mr-1" /> Add Skin Type
+            </Button>
+          )}
         </div>
 
         <div>
