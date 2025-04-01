@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { fetchProducts, fetchProductsByFilters } from "@/app/api/productApi";
 import { addToCart } from "@/app/api/cartApi";
 import toast from "react-hot-toast";
+import { useSearchParams } from "next/navigation";
 
 interface Product {
   productID: string;
@@ -32,13 +33,19 @@ export default function ProductsPage() {
   const [maxPrice, setMaxPrice] = useState(1000);
   const [isLoading, setIsLoading] = useState(false);
   const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
+  const searchParams = useSearchParams();
 
   const categories = ["Cleanser", "Toner", "Serum", "Moisturizer", "Mask", "Sunscreen"];
   const skinTypes = ["Dry", "Oily", "Combination", "Normal", "Sensitive"];
 
   useEffect(() => {
     loadProducts();
-  }, []);
+    // Check for category in URL params
+    const categoryParam = searchParams.get('category');
+    if (categoryParam) {
+      setSelectedCategories([categoryParam]);
+    }
+  }, [searchParams]);
 
   const loadProducts = async () => {
     try {
