@@ -71,7 +71,7 @@ export default function PromotionsPage() {
     <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Promotions</h1>
-        <Button onClick={() => router.push('/manager/promotions/create')}>
+        <Button onClick={() => router.push('/staff/promotions/create')}>
           Create New Promotion
         </Button>
       </div>
@@ -106,7 +106,7 @@ export default function PromotionsPage() {
               <div className="flex gap-2 mt-4">
                 <Button
                   variant="outline"
-                  onClick={() => router.push(`/manager/promotions/${promotion.promotionID}/edit`)}
+                  onClick={() => router.push(`/staff/promotions/${promotion.promotionID}/edit`)}
                 >
                   Update
                 </Button>

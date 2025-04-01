@@ -17,7 +17,7 @@ export default function CreateRoutinePage() {
     routineName: "",
     routineDescription: "",
   });
-  const [products, setProducts] = useState<string[]>([]);
+  const [productIDs, setProductIDs] = useState<string[]>([]); // Đổi tên từ products thành productIDs
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [isProductListOpen, setIsProductListOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -42,11 +42,11 @@ export default function CreateRoutinePage() {
     try {
       const requestBody = {
         ...formData,
-        products,
+        productIDs: productIDs, // Sử dụng productIDs thay vì products
       };
       console.log("Request Body:", requestBody);
       await createRoutine(requestBody);
-      router.push("/manager/routines");
+      router.push("/staff/routines");
     } catch (error) {
       console.error("Failed to create routine:", error);
     } finally {
@@ -55,7 +55,7 @@ export default function CreateRoutinePage() {
   };
 
   const toggleProductSelection = (productID: string) => {
-    setProducts((prev) =>
+    setProductIDs((prev) =>
       prev.includes(productID) ? prev.filter((id) => id !== productID) : [...prev, productID]
     );
   };
@@ -81,7 +81,8 @@ export default function CreateRoutinePage() {
                   <SelectItem value="Dry">Dry</SelectItem>
                   <SelectItem value="Oily">Oily</SelectItem>
                   <SelectItem value="Combination">Combination</SelectItem>
-                  <SelectItem value="SENSITIVE">Sensitive</SelectItem>
+                  <SelectItem value="Sensitive">Sensitive</SelectItem> 
+                  <SelectItem value="Normal">Normal</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -89,11 +90,11 @@ export default function CreateRoutinePage() {
             <div className="space-y-2">
               <label>Routine Name</label>
               <Input
-              value={formData.routineName}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setFormData({ ...formData, routineName: e.target.value })
-              }
-              placeholder="Enter routine name"
+                value={formData.routineName}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setFormData({ ...formData, routineName: e.target.value })
+                }
+                placeholder="Enter routine name"
               />
             </div>
 
@@ -112,7 +113,7 @@ export default function CreateRoutinePage() {
               <label>List Product</label>
               <div className="border p-4 rounded-md mb-6">
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {products.map((productID) => (
+                  {productIDs.map((productID) => (
                     <span key={productID} className="px-2 py-1 bg-primary text-white rounded-md text-sm">
                       {productID}
                     </span>
@@ -133,10 +134,10 @@ export default function CreateRoutinePage() {
                         <Button
                           type="button"
                           size="sm"
-                          variant={products.includes(product.productID) ? "secondary" : "outline"}
+                          variant={productIDs.includes(product.productID) ? "secondary" : "outline"}
                           onClick={() => toggleProductSelection(product.productID)}
                         >
-                          {products.includes(product.productID) ? "Selected" : "Select"}
+                          {productIDs.includes(product.productID) ? "Selected" : "Select"}
                         </Button>
                       </div>
                     ))}

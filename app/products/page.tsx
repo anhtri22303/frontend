@@ -18,7 +18,7 @@ export default function ProductListPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string>("")
 
-  const categories = ["DRY", "OILY", "COMBINATION", "SENSITIVE", "NORMAL", "All"]
+  const categories = ["Dry", "Oily", "Combination", "Sensitive", "Normal", "All"]
 
   useEffect(() => {
     loadProducts()

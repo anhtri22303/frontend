@@ -123,7 +123,7 @@ export default function ProductsPage() {
     <>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">Products</h1>
-        <Button onClick={() => router.push("/manager/products/create")}>
+        <Button onClick={() => router.push("/staff/products/create")}>
           <PlusCircle className="mr-2 h-4 w-4" />
           Add Product
         </Button>
@@ -205,7 +205,7 @@ export default function ProductsPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <Image
-                          src={product.imageFile || "/public/assets/products/lipstick.png"} // Sử dụng image_url hoặc ảnh mặc định
+                          src={product.imageFile || ""} 
                           width={48}
                           height={48}
                           className="rounded-md object-cover"
@@ -231,7 +231,7 @@ export default function ProductsPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => router.push(`/manager/products/${product.productID}/edit`)}>
+                          <DropdownMenuItem onClick={() => router.push(`/staff/products/${product.productID}/edit`)}>
                             Edit
                           </DropdownMenuItem>
                           <DropdownMenuItem

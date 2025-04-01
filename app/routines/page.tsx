@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PersonalizedRoutine } from "../../components/routines/personalized-routine"
 import { CustomRoutine } from "../../components/routines/custom-routine"
 import { RoutineProgress } from "../../components/routines/routine-progress"
-import { fetchRoutinesByCategory, fetchRoutineById } from "@/app/api/routineApi"
+import { fetchRoutinesBySkinType, fetchRoutineById } from "@/app/api/routineApi"
 
 interface SkinCareRoutine {
   routineID: string
@@ -54,7 +54,7 @@ export default function RoutinesPage() {
           }
 
           // Fetch routines based on skin type and preference
-          const routines = await fetchRoutinesByCategory(`${skinType.toLowerCase()}-${routineCategory}`)
+          const routines = await fetchRoutinesBySkinType(`${skinType.toLowerCase()}-${routineCategory}`)
           setUserRoutines(routines)
         }
         

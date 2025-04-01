@@ -35,14 +35,14 @@ export default function QuizzesPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    loadQuizzesAndAnswerOptions();
+    loadQuizzesAndAnswerOptions(questionId);
   }, []);
 
-  const loadQuizzesAndAnswerOptions = async () => {
+  const loadQuizzesAndAnswerOptions = async (questionId: string) => {
     setIsLoading(true);
     try {
       const quizzesData = await fetchQuizzes();
-      const answerOptionsData = await fetchAnswerOptions();
+      const answerOptionsData = await fetchAnswerOptions(questionId);
       setQuizzes(quizzesData);
       setAnswerOptions(answerOptionsData);
     } catch (error) {

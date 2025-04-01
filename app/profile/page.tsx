@@ -13,18 +13,16 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { updateCustomer } from "@/app/api/customerApi";
 import { fetchUserById } from "@/app/api/userManagerApi";
-import toast from "react-hot-toast"; // Import toast
+import toast from "react-hot-toast";
 
 export default function ProfilePage() {
   const { user, updateUser } = useAuth();
   const router = useRouter();
-  const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    phone: "",
-    address: "",
-    skinType: "",
-  });
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [skinType, setSkinType] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -34,14 +32,13 @@ export default function ProfilePage() {
       try {
         setIsLoading(true);
         const response = await fetchUserById(user.userID);
-        if (response?.data) {
-          setFormData({
-            fullName: response.data.fullName || "",
-            email: response.data.email || "",
-            phone: response.data.phone || "",
-            address: response.data.address || "",
-            skinType: response.data.skinType || "",
-          });
+        console.log("User data:", response);
+        if (response) {
+          setFullName(response.fullName || "");
+          setEmail(response.email || "");
+          setPhone(response.phone || "");
+          setAddress(response.address || "");
+          setSkinType(response.skinType || "");
         }
       } catch (err) {
         console.error("Error fetching user data:", err);
@@ -61,7 +58,13 @@ export default function ProfilePage() {
     setIsLoading(true);
 
     try {
-      const response = await updateCustomer(user.userID, formData);
+      const response = await updateCustomer(user.userID, {
+        fullName,
+        email,
+        phone,
+        address,
+        skinType,
+      });
       if (response?.data) {
         updateUser(response.data);
         toast.success("Profile updated successfully!");
@@ -82,7 +85,6 @@ export default function ProfilePage() {
 
   return (
     <div className="container py-8">
-      {/* Nút Back */}
       <Button variant="ghost" onClick={() => router.back()} className="mb-6">
         <span className="mr-2">←</span> Back
       </Button>
@@ -115,10 +117,8 @@ export default function ProfilePage() {
                   <Label htmlFor="fullName">Full Name</Label>
                   <Input
                     id="fullName"
-                    value={formData.fullName}
-                    onChange={(e: { target: { value: any } }) =>
-                      setFormData({ ...formData, fullName: e.target.value })
-                    }
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
                     disabled={isLoading}
                   />
                 </div>
@@ -128,10 +128,8 @@ export default function ProfilePage() {
                   <Input
                     id="email"
                     type="email"
-                    value={formData.email}
-                    onChange={(e: { target: { value: any } }) =>
-                      setFormData({ ...formData, email: e.target.value })
-                    }
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     disabled={isLoading}
                   />
                 </div>
@@ -140,10 +138,8 @@ export default function ProfilePage() {
                   <Label htmlFor="phone">Phone</Label>
                   <Input
                     id="phone"
-                    value={formData.phone}
-                    onChange={(e: { target: { value: any } }) =>
-                      setFormData({ ...formData, phone: e.target.value })
-                    }
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
                     disabled={isLoading}
                   />
                 </div>
@@ -152,8 +148,8 @@ export default function ProfilePage() {
                   <Label htmlFor="address">Address</Label>
                   <Textarea
                     id="address"
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
                     disabled={isLoading}
                   />
                 </div>
@@ -161,19 +157,19 @@ export default function ProfilePage() {
                 <div className="grid gap-2">
                   <Label htmlFor="skinType">Skin Type</Label>
                   <Select
-                    value={formData.skinType}
-                    onValueChange={(value) => setFormData({ ...formData, skinType: value })}
+                    value={skinType}
+                    onValueChange={setSkinType}
                     disabled={isLoading}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select skin type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="DRY">Dry</SelectItem>
-                      <SelectItem value="OILY">Oily</SelectItem>
-                      <SelectItem value="COMBINATION">Combination</SelectItem>
-                      <SelectItem value="NORMAL">Normal</SelectItem>
-                      <SelectItem value="SENSITIVE">Sensitive</SelectItem>
+                      <SelectItem value="Dry">Dry</SelectItem>
+                      <SelectItem value="Oily">Oily</SelectItem>
+                      <SelectItem value="Combination">Combination</SelectItem>
+                      <SelectItem value="Normal">Normal</SelectItem>
+                      <SelectItem value="Sensitive">Sensitive</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

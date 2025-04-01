@@ -34,7 +34,7 @@ export default function CreateProductPage() {
   const handleCreateProduct = async () => {
     try {
       await createProduct(newProduct);
-      router.push("/manager/products");
+      router.push("/staff/products");
     } catch (error) {
       console.error("Error creating product:", error);
     }
@@ -179,7 +179,7 @@ export default function CreateProductPage() {
       </div>
 
       <div className="mt-6 flex gap-4">
-        <Button variant="outline" onClick={() => router.push("/manager/products")}>
+        <Button variant="outline" onClick={() => router.push("/staff/products")}>
           Cancel
         </Button>
         <Button onClick={handleCreateProduct}>Create Product</Button>

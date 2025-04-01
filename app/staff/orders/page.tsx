@@ -95,7 +95,7 @@ export default function OrdersPage() {
   }
 
   const handleViewDetails = (orderId: string) => {
-    router.push(`/manager/orders/${orderId}`)
+    router.push(`/staff/orders/${orderId}`)
   }
 
   const handleResetFilters = () => {

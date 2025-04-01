@@ -89,7 +89,7 @@ export default function EditProductPage({ params }: EditProductPageProps) {
         description: "Product has been updated successfully",
         duration: 3000,
       });
-      router.push("/manager/products"); // Điều hướng về trang danh sách sản phẩm
+      router.push("/staff/products"); // Điều hướng về trang danh sách sản phẩm
     } catch (error) {
       console.error("Error updating product:", error);
       toast({
