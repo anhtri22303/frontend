@@ -139,7 +139,7 @@ export default function CartPage() {
       const orderData = {
         customerID: userID,
         orderDate: new Date().toISOString(),
-        status: "PENDING",
+        status: "COMPLETED",
         totalAmount: discountedTotalAmount, // Sử dụng discountedTotalAmount
         orderDetails: cartItems.map((item) => ({
           productID: item.productID,

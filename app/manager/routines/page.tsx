@@ -6,13 +6,8 @@ import { fetchRoutines, fetchRoutinesBySkinType, searchRoutinesByName } from "@/
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Edit2 } from "lucide-react"; // Import biểu tượng Edit
 
 interface Routine {
   routineID: string;
@@ -123,7 +118,17 @@ export default function RoutineList() {
       ) : routines.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {routines.map((routine) => (
-            <Card key={routine.routineID}>
+            <Card key={routine.routineID} className="relative">
+              {/* Nút Edit ở góc trên bên phải */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute top-2 right-2"
+                onClick={() => router.push(`/manager/routines/${routine.routineID}/edit`)}
+              >
+                <Edit2 className="h-4 w-4" />
+              </Button>
+
               <CardHeader>
                 <CardTitle>{routine.routineName}</CardTitle>
               </CardHeader>

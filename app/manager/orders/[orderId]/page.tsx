@@ -25,12 +25,13 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
 
   const loadOrderDetails = async () => {
     try {
-      const data = await fetchOrderByID(params.orderId)
-      setOrder(data)
+      const data = await fetchOrderByID(params.orderId);
+      console.log("Order data:", data); // Kiểm tra dữ liệu trả về
+      setOrder(data);
     } catch (error) {
-      console.error("Error loading order details:", error)
+      console.error("Error loading order details:", error);
     }
-  }
+  };
 
   if (!params.orderId) {
     return <div>Invalid Order ID</div>
@@ -57,20 +58,27 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Customer ID</p>
-              <p className="font-medium">{order.customerID || 'N/A'}</p>
+              <p className="font-medium">{order.customerID || "N/A"}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Order Date</p>
-              <p className="font-medium">{new Date(order.orderDate).toLocaleDateString()}</p>
+              <p className="font-medium">
+                {new Date(order.orderDate).toLocaleDateString()}
+              </p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Status</p>
-              <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                order.status === 'PROCESSING' ? 'bg-blue-100 text-blue-800' :
-                order.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
-                'bg-red-100 text-red-800'
-              }`}>
+              <span
+                className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+                  order.status === "PENDING"
+                    ? "bg-yellow-100 text-yellow-800"
+                    : order.status === "PROCESSING"
+                    ? "bg-blue-100 text-blue-800"
+                    : order.status === "COMPLETED"
+                    ? "bg-green-100 text-green-800"
+                    : "bg-red-100 text-red-800"
+                }`}
+              >
                 {order.status}
               </span>
             </div>
@@ -92,15 +100,23 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
               <tbody>
                 {order.orderDetails?.map((detail) => (
                   <tr key={detail.productID} className="border-b">
-                    <td className="p-4">{detail.productID}</td>
-                    <td className="p-4">{detail.quantity}</td>
-                    <td className="p-4">${detail.price.toFixed(2)}</td>
-                    <td className="p-4">${(detail.quantity * detail.price).toFixed(2)}</td>
-                  </tr>
+                  <td className="p-4">{detail.productID}</td>
+                  <td className="p-4">{detail.quantity}</td>
+                  <td className="p-4">
+                    ${detail.price ? detail.price.toFixed(2) : "0.00"}
+                  </td>
+                  <td className="p-4">
+                    ${detail.price ? (detail.quantity * detail.price).toFixed(2) : "0.00"}
+                  </td>
+                </tr>
                 ))}
                 <tr>
-                  <td colSpan={3} className="p-4 text-right font-medium">Total Amount:</td>
-                  <td className="p-4 font-medium">${order.totalAmount.toFixed(2)}</td>
+                  <td colSpan={3} className="p-4 text-right font-medium">
+                    Total Amount:
+                  </td>
+                  <td className="p-4 font-medium">
+                    ${order.totalAmount ? order.totalAmount.toFixed(2) : "0.00"}
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -108,5 +124,5 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }

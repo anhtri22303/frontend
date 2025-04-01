@@ -1,12 +1,12 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { Menu, ShoppingCart, User } from "lucide-react"
-import { useAuth } from "@/components/auth/auth-provider"
-import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Menu, ShoppingCart, User } from "lucide-react";
+import { useAuth } from "@/components/auth/auth-provider";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,58 +14,58 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface Route {
-  href: string
-  label: string
+  href: string;
+  label: string;
 }
 
 export default function Header() {
-  const { user, logout } = useAuth()
-  const pathname = usePathname()
-  const [cartCount, setCartCount] = useState(0)
-  const [userRole, setUserRole] = useState<string | null>(null)
+  const { user, logout } = useAuth();
+  const pathname = usePathname();
+  const [cartCount, setCartCount] = useState(0);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
-    const role = localStorage.getItem("userRole")
-    setUserRole(role)
+    const role = localStorage.getItem("userRole");
+    setUserRole(role);
 
-    const cart = JSON.parse(localStorage.getItem("cart") || "[]")
-    setCartCount(cart.length)
+    const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+    setCartCount(cart.length);
 
     const handleStorageChange = () => {
-      const cart = JSON.parse(localStorage.getItem("cart") || "[]")
-      setCartCount(cart.length)
-      const newRole = localStorage.getItem("userRole")
-      setUserRole(newRole)
-    }
+      const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+      setCartCount(cart.length);
+      const newRole = localStorage.getItem("userRole");
+      setUserRole(newRole);
+    };
 
-    window.addEventListener("storage", handleStorageChange)
+    window.addEventListener("storage", handleStorageChange);
     return () => {
-      window.removeEventListener("storage", handleStorageChange)
-    }
-  }, [])
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, []);
 
   const handleLogout = () => {
     // Gọi hàm logout từ useAuth
-    logout()
+    logout();
 
     // Xóa thông tin người dùng khỏi localStorage
-    localStorage.removeItem("userRole")
-    localStorage.removeItem("authToken") // Nếu bạn lưu token ở đây
+    localStorage.removeItem("userRole");
+    localStorage.removeItem("authToken"); // Nếu bạn lưu token ở đây
 
     // Chuyển hướng về trang login và reload trang
-    window.location.href = "/login"
-  }
+    window.location.href = "/login";
+  };
 
   const getRoutes = (): Route[] => {
     if (userRole === "MANAGER") {
-      return []  // Manager không có menu items
+      return []; // Manager không có menu items
     }
     if (userRole === "STAFF") {
-      return []  // Staff không có menu items
+      return []; // Staff không có menu items
     }
     // Customer hoặc chưa login
     return [
@@ -73,16 +73,16 @@ export default function Header() {
       { href: "/shop", label: "Shop" },
       { href: "/skin-quiz", label: "Skin Quiz" },
       { href: "/about", label: "About" },
-    ]
-  }
+    ];
+  };
 
   const getLogoLink = () => {
-    if (userRole === "MANAGER") return "/manager"
-    if (userRole === "STAFF") return "/staff"
-    return "/"
-  }
+    if (userRole === "MANAGER") return "/manager";
+    if (userRole === "STAFF") return "/staff";
+    return "/";
+  };
 
-  const routes = getRoutes()
+  const routes = getRoutes();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -155,15 +155,15 @@ export default function Header() {
                     <AvatarFallback className="text-lg">{(() => {
                       switch (user.role) {
                         case "MANAGER":
-                          return "M"
+                          return "M";
                         case "STAFF":
-                          return "S"
+                          return "S";
                         case "CUSTOMER":
-                          return "C"
+                          return "C";
                         case "BEAUTY_ADVISOR":
-                          return "B"
+                          return "B";
                         default:
-                          return "U"
+                          return "U";
                       }
                     })()}</AvatarFallback>
                   </Avatar>
@@ -175,12 +175,16 @@ export default function Header() {
                 <DropdownMenuItem asChild>
                   <Link href="/profile">Profile</Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/orders">Orders</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/routines">Routines</Link>
-                </DropdownMenuItem>
+                {userRole === "CUSTOMER" && (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link href="/orders">Orders</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/routines">Routines</Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
               </DropdownMenuContent>
@@ -196,5 +200,5 @@ export default function Header() {
         </div>
       </div>
     </header>
-  )
+  );
 }
