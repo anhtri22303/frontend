@@ -17,7 +17,7 @@ interface Order {
 // Get orders by customer ID
 export const fetchOrdersByUserID = async (userID: string) => {
   try {
-    const response = await axiosInstance.get(`/orders/${userID}`)
+    const response = await axiosInstance.get(`/orders/customer/${userID}`)
     return response.data
   } catch (error) {
     console.error("Error fetching orders:", error)
@@ -28,7 +28,7 @@ export const fetchOrdersByUserID = async (userID: string) => {
 // Create new order Customer
 export const createCustomerOrder = async (userID: string, orderData: Omit<Order, 'orderID'>) => {
   try {
-    const response = await axiosInstance.post(`/orders/${userID}`, {
+    const response = await axiosInstance.post(`/orders/customer/${userID}`, {
       customerID: orderData.customerID,
       orderDate: orderData.orderDate,
       status: orderData.status,
@@ -50,7 +50,7 @@ export const createCustomerOrder = async (userID: string, orderData: Omit<Order,
 // Get orders by order date
 export const fetchOrdersByDate = async (userID: string, orderDate: string) => {
   try {
-    const response = await axiosInstance.get(`/orders/${userID}/date/${orderDate}`)
+    const response = await axiosInstance.get(`/orders/customer/${userID}/date/${orderDate}`)
     return response.data
   } catch (error) {
     console.error("Error fetching orders by date:", error)
@@ -61,22 +61,10 @@ export const fetchOrdersByDate = async (userID: string, orderDate: string) => {
 // Get orders by status
 export const fetchOrdersByStatus = async (userID: string, status: string) => {
   try {
-    const response = await axiosInstance.get(`/orders/${userID}/status/${status}`)
+    const response = await axiosInstance.get(`/orders/customer/${userID}/status/${status}`)
     return response.data
   } catch (error) {
     console.error("Error fetching orders by status:", error)
-    return null
-  }
-}
-
-// Get order details
-export const fetchOrderDetails = async (orderID: string) => {
-  try {
-    const response = await axiosInstance.get(`/orders/manager/${orderID}/details`)
-    console.log("Fetch order details success:", response.data)
-    return response.data
-  } catch (error) {
-    console.error("Error fetching order details:", error)
     return null
   }
 }

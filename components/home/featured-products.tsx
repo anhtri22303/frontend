@@ -11,7 +11,7 @@ interface Product {
   productID: string;
   productName: string;
   price: number;
-  discountedPrice?: number; // Giá giảm
+  discountedPrice?: number;
   image_url: string;
   category?: string;
   rating: number;
@@ -29,8 +29,8 @@ export function FeaturedProducts() {
     const fetchData = async () => {
       try {
         const response = await fetchProducts();
-        console.log("Products data:", response.data);
-        setProducts(response.data || []);
+        console.log("Products data:", response);
+        setProducts(response || []);
       } catch (error) {
         console.error("Error fetching products:", error);
       } finally {

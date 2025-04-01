@@ -30,6 +30,7 @@ export default function OrdersPage() {
     setIsLoading(true)
     try {
       const data = await fetchOrders()
+      console.log("Orders data:", data)
       setOrders(data || [])
       setFilteredOrder(null) // Reset filteredOrder khi load tất cả orders
     } catch (error) {

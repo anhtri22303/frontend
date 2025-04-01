@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { createProduct } from "@/app/api/productApi";
-import { fetchPromotions } from "@/app/api/promotionApi";
 import Image from "next/image";
 
 export default function CreateProductPage() {
@@ -26,7 +25,6 @@ export default function CreateProductPage() {
     rating: 0,
     imageFile: null as File | null,
     imagePreview: "",
-
   });
 
   const router = useRouter();
@@ -148,7 +146,6 @@ export default function CreateProductPage() {
           />
         </div>
 
-        {/* --- Image Upload --- */}
         <div>
           <label className="text-sm font-medium mb-1 block">Product Image</label>
           <div className="flex items-center gap-4">

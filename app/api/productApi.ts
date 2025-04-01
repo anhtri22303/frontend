@@ -4,14 +4,16 @@ export const fetchProducts = async () => {
   try {
     const response = await axiosInstance.get("/products");
     console.log("Get product success", response.data);
-    return response.data || [];
+    if (response.data.success) {
+      return response.data.data || [];
+    }
+    return [];
   } catch (error) {
     console.error("Error fetching products:", error);
     return [];
   }
 };
 
-// Create new product
 export const createProduct = async (productData: {
   productName: string;
   description: string;
@@ -23,8 +25,20 @@ export const createProduct = async (productData: {
   imagePreview: string;
 }) => {
   try {
-    const response = await axiosInstance.post("/products", productData);
-    console.log("Create success");
+    const formData = new FormData();
+    const { imageFile, imagePreview, ...productInfo } = productData;
+    formData.append("product", JSON.stringify(productInfo));
+    if (imageFile) {
+      formData.append("image", imageFile);
+    }
+
+    const response = await axiosInstance.post("/products", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    console.log("Create success", response.data);
     return response.data;
   } catch (error) {
     console.error("Error creating product:", error);
@@ -68,8 +82,11 @@ export const deleteProduct = async (id: string) => {
 export const fetchProductsByCategory = async (category: string) => {
   try {
     const response = await axiosInstance.get(`/products/category/${category}`);
-    console.log("Get by category success");
-    return response.data;
+    console.log("Get by category success", response.data);
+    if (response.data.success) { // Sửa từ isSuccess thành success
+      return response.data.data || [];
+    }
+    return [];
   } catch (error) {
     console.error("Error fetching products by category:", error);
     return [];
@@ -79,8 +96,11 @@ export const fetchProductsByCategory = async (category: string) => {
 export const fetchProductsByName = async (productName: string) => {
   try {
     const response = await axiosInstance.get(`/products/name/${productName}`);
-    console.log("Get by name success");
-    return response.data;
+    console.log("Get by name success", response.data);
+    if (response.data.success) { // Sửa từ isSuccess thành success
+      return response.data.data || [];
+    }
+    return [];
   } catch (error) {
     console.error("Error fetching products by name:", error);
     return [];
@@ -91,7 +111,10 @@ export const fetchProductById = async (id: string) => {
   try {
     const response = await axiosInstance.get(`/products/${id}`);
     console.log("Get by ID success", response.data);
-    return response.data;
+    if (response.data.success) { // Sửa từ isSuccess thành success
+      return response.data.data || null;
+    }
+    return null;
   } catch (error) {
     console.error("Error fetching product by ID:", error);
     return null;
@@ -101,8 +124,11 @@ export const fetchProductById = async (id: string) => {
 export const fetchProductsBySkinType = async (skinType: string) => {
   try {
     const response = await axiosInstance.get(`/products/skinType/${skinType}`);
-    console.log("Get by skin type success");
-    return response.data;
+    console.log("Get by skin type success", response.data);
+    if (response.data.success) { // Sửa từ isSuccess thành success
+      return response.data.data || [];
+    }
+    return [];
   } catch (error) {
     console.error("Error fetching products by skin type:", error);
     return [];
@@ -120,11 +146,10 @@ export const fetchProductsByFilters = async (filters: {
       params: filters,
     });
     console.log("Get by filters success", response.data);
-    if (response.data.status === 200) {
+    if (response.data.success) { // Sửa từ status === 200 thành success
       return response.data.data || [];
-    } else {
-      return [];
     }
+    return [];
   } catch (error) {
     console.error("Error fetching products by filters:", error);
     return [];

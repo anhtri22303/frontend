@@ -1,122 +1,179 @@
-"use client"
+"use client";
 
-import { useState, useEffect, SetStateAction } from "react"
-import { useRouter } from "next/navigation"
-import { Search, MoreHorizontal, PlusCircle, Filter } from "lucide-react"
-import Image from "next/image"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { fetchProducts, deleteProduct, fetchProductsByCategory, fetchProductsByName } from "@/app/api/productApi"
-import { fetchPromotions } from "@/app/api/promotionApi"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useState, useEffect, SetStateAction } from "react";
+import { useRouter } from "next/navigation";
+import { Search, MoreHorizontal, PlusCircle } from "lucide-react";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { fetchProducts, deleteProduct, fetchProductsByCategory, fetchProductsByName } from "@/app/api/productApi";
+import { fetchPromotions } from "@/app/api/promotionApi";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-// Update the Product interface
 interface Product {
-  productID: string
-  productName: string
-  category: string
-  price: number
-  rating: number
-  imageFile: null
-  imagePreview: string
-  skinType: string
-  promotion?: Promotion
-  discountedPrice?: number
+  productID: string;
+  productName: string;
+  category: string;
+  price: number;
+  rating: number;
+  image_url: string;
+  skinType: string;
+  promotion?: Promotion;
+  discountedPrice?: number;
 }
 
 interface Promotion {
-  productID: string
-  discount: number
-  startDate: string
-  endDate: string
+  productID: string;
+  discount: number;
+  startDate: string;
+  endDate: string;
 }
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState<Product[]>([])
-  const [selectedProducts, setSelectedProducts] = useState<string[]>([])
-  const [searchName, setSearchName] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState("")
-  const router = useRouter()
+  const [products, setProducts] = useState<Product[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [searchName, setSearchName] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [loading, setLoading] = useState(true); // Thêm state loading
+  const [error, setError] = useState<string | null>(null); // Thêm state error
+  const router = useRouter();
 
-  const categories = ["Cleanser", "Toner", "Serum", "Moisturizer", "Sunscreen", "Mask"] // Add your actual categories here
+  const categories = ["Cleanser", "Toner", "Serum", "Moisturizer", "Sunscreen", "Mask"];
 
   useEffect(() => {
-    loadProducts()
-  }, [])
+    loadProducts();
+  }, []);
 
   const loadProducts = async () => {
     try {
-      const products = await fetchProducts() // Lấy danh sách sản phẩm
-      console.log("Fetched Products:", products.data)
-      const promotions = await fetchPromotions() // Lấy danh sách promotion
+      setLoading(true);
+      setError(null);
+
+      // Gọi API lấy sản phẩm
+      const productsResponse = await fetchProducts();
+      console.log("Products Response:", productsResponse);
+
+      // Gọi API lấy promotions
+      let promotions: Promotion[] = [];
+      try {
+        promotions = await fetchPromotions();
+        console.log("Promotions Response:", promotions);
+      } catch (promoError) {
+        console.error("Failed to fetch promotions:", promoError);
+        // Nếu fetchPromotions thất bại, vẫn tiếp tục với promotions rỗng
+        promotions = [];
+      }
 
       // Kết hợp sản phẩm với promotion
-      const productsWithPromotions: Product[] = products.data.map((product: Product): Product => {
-        console.log("Product ID:", product.productID)
-        const currentDate = new Date().toISOString().split("T")[0] // Lấy ngày hiện tại
+      const productsWithPromotions: Product[] = productsResponse.map((product: Product): Product => {
+        console.log("Processing Product ID:", product.productID);
+        const currentDate = new Date().toISOString().split("T")[0];
         const promotion: Promotion | undefined = promotions.find((promo: Promotion) => {
-          return promo.productID === product.productID &&
-                 promo.startDate <= currentDate &&
-                 promo.endDate >= currentDate
-        })
+          return (
+            promo.productID === product.productID &&
+            promo.startDate <= currentDate &&
+            promo.endDate >= currentDate
+          );
+        });
         const discountedPrice: number | undefined = promotion
-          ? parseFloat((product.price * (1 - promotion.discount / 100)).toFixed(2)) // Tính giá sau khi giảm
-          : product.price
-        return { ...product, promotion, discountedPrice }
-      })
+          ? parseFloat((product.price * (1 - promotion.discount / 100)).toFixed(2))
+          : product.price;
+        return { ...product, promotion, discountedPrice };
+      });
 
-      console.log("Products with Promotions:", productsWithPromotions)
-      setProducts(productsWithPromotions)
+      console.log("Products with Promotions:", productsWithPromotions);
+      setProducts(productsWithPromotions);
     } catch (error) {
-      console.error("Error loading products with promotions:", error)
+      console.error("Error loading products with promotions:", error);
+      setError("Failed to load products. Please try again.");
+      setProducts([]);
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   const handleSearchByName = async () => {
     if (!searchName.trim()) {
-      loadProducts()
-      return
+      loadProducts();
+      return;
     }
     try {
-      const response = await fetchProductsByName(searchName)
-      setProducts(response.data)
+      setLoading(true);
+      const response = await fetchProductsByName(searchName);
+      if (response.success) {
+        setProducts(response.data);
+      } else {
+        setProducts([]);
+      }
     } catch (error) {
-      console.error("Error searching products:", error)
+      console.error("Error searching products:", error);
+      setError("Failed to search products.");
+      setProducts([]);
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   const handleCategoryChange = async (category: string) => {
-    setSelectedCategory(category)
-    if (category === 'all') {
-      loadProducts()
-      return
+    setSelectedCategory(category);
+    if (category === "all") {
+      loadProducts();
+      return;
     }
     try {
-      const response = await fetchProductsByCategory(category)
-      setProducts(response.data)
+      setLoading(true);
+      const response = await fetchProductsByCategory(category);
+      if (response.success) {
+        setProducts(response.data);
+      } else {
+        setProducts([]);
+      }
     } catch (error) {
-      console.error("Error filtering products:", error)
+      console.error("Error filtering products:", error);
+      setError("Failed to filter products by category.");
+      setProducts([]);
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   const handleDeleteProduct = async (productId: string) => {
     if (confirm("Are you sure you want to delete this product?")) {
       try {
-        await deleteProduct(productId)
-        loadProducts()
+        setLoading(true);
+        await deleteProduct(productId);
+        await loadProducts();
       } catch (error) {
-        console.error("Error deleting product:", error)
+        console.error("Error deleting product:", error);
+        setError("Failed to delete product.");
+      } finally {
+        setLoading(false);
       }
     }
-  }
+  };
 
   const toggleProductSelection = (productId: string) => {
     if (selectedProducts.includes(productId)) {
-      setSelectedProducts(selectedProducts.filter((id) => id !== productId))
+      setSelectedProducts(selectedProducts.filter((id) => id !== productId));
     } else {
-      setSelectedProducts([...selectedProducts, productId])
+      setSelectedProducts([...selectedProducts, productId]);
     }
+  };
+
+  if (loading) {
+    return <div className="container py-8">Loading...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="container py-8">
+        <p className="text-red-600">{error}</p>
+        <Button onClick={loadProducts} className="mt-4">
+          Retry
+        </Button>
+      </div>
+    );
   }
 
   return (
@@ -175,9 +232,9 @@ export default function ProductsPage() {
                       className="h-4 w-4 rounded border-gray-300"
                       onChange={() => {
                         if (selectedProducts.length === products.length) {
-                          setSelectedProducts([])
+                          setSelectedProducts([]);
                         } else {
-                          setSelectedProducts(products.map((product) => product.productID))
+                          setSelectedProducts(products.map((product) => product.productID));
                         }
                       }}
                       checked={selectedProducts.length === products.length && products.length > 0}
@@ -187,7 +244,7 @@ export default function ProductsPage() {
                   <th className="px-4 py-3 text-left text-sm font-medium">Category</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Price</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Promotion</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium">Rating</th> {/* Thêm cột Rating */}
+                  <th className="px-4 py-3 text-left text-sm font-medium">Rating</th>
                   <th className="px-4 py-3 text-right text-sm font-medium">Actions</th>
                 </tr>
               </thead>
@@ -205,7 +262,7 @@ export default function ProductsPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <Image
-                          src={product.imageFile || "/public/assets/products/lipstick.png"} // Sử dụng image_url hoặc ảnh mặc định
+                          src={product.image_url || "/public/assets/products/lipstick.png"}
                           width={48}
                           height={48}
                           className="rounded-md object-cover"
@@ -215,13 +272,22 @@ export default function ProductsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm">{product.category}</td>
-                    <td className="px-4 py-3 text-sm">{product.price}</td>
+                    <td className="px-4 py-3 text-sm">
+                      {product.discountedPrice ? (
+                        <>
+                          <span className="text-green-600">${product.discountedPrice}</span>
+                          <span className="text-sm text-gray-500 line-through ml-2">${product.price}</span>
+                        </>
+                      ) : (
+                        `$${product.price}`
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-sm">
                       {product.promotion
-                        ? `${product.discountedPrice} (${product.promotion.discount}% OFF)`
+                        ? `${product.promotion.discount}% OFF`
                         : "No Promotion"}
                     </td>
-                    <td className="px-4 py-3 text-sm">{product.rating || "N/A"}</td> {/* Hiển thị Rating */}
+                    <td className="px-4 py-3 text-sm">{product.rating || "N/A"}</td>
                     <td className="px-4 py-3 text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -277,5 +343,5 @@ export default function ProductsPage() {
         )}
       </div>
     </>
-  )
+  );
 }
