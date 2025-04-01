@@ -23,6 +23,18 @@ export const createCustomer = async (
   }
 };
 
+// Get a customer by ID
+export const fetchCustomerByID = async (userID: string) => {
+  try {
+    const response = await axiosInstance.get(`/user/${userID}`);
+    console.log("Get customer info success:", response.data.data);
+    return response.data.data;
+  } catch (error) {
+    console.error("Error fetching customer:", error);
+    return null;
+  }
+};
+
 // Update customer profile by ID
 export const updateCustomer = async (
   userId: string,
