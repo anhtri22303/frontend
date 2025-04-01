@@ -1,122 +1,232 @@
-"use client"
+"use client";
 
-import { useState, useEffect, SetStateAction } from "react"
-import { useRouter } from "next/navigation"
-import { Search, MoreHorizontal, PlusCircle, Filter } from "lucide-react"
-import Image from "next/image"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { fetchProducts, deleteProduct, fetchProductsByCategory, fetchProductsByName } from "@/app/api/productApi"
-import { fetchPromotions } from "@/app/api/promotionApi"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useState, useEffect, SetStateAction } from "react";
+import { useRouter } from "next/navigation";
+import { Search, MoreHorizontal, PlusCircle } from "lucide-react";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { fetchProducts, deleteProduct, fetchProductsByCategory, fetchProductsByName } from "@/app/api/productApi";
+import { fetchPromotions } from "@/app/api/promotionApi";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/components/ui/use-toast";
 
-// Update the Product interface
 interface Product {
-  productID: string
-  productName: string
-  category: string
-  price: number
-  rating: number
-  imageFile: null
-  imagePreview: string
-  skinType: string
-  promotion?: Promotion
-  discountedPrice?: number
+  productID: string;
+  productName: string;
+  category: string;
+  price: number;
+  rating: number;
+  image_url: string;
+  skinType: string;
+  promotion?: Promotion;
+  discountedPrice?: number;
 }
 
 interface Promotion {
-  productID: string
-  discount: number
-  startDate: string
-  endDate: string
+  productID: string;
+  discount: number;
+  startDate: string;
+  endDate: string;
 }
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState<Product[]>([])
-  const [selectedProducts, setSelectedProducts] = useState<string[]>([])
-  const [searchName, setSearchName] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState("")
-  const router = useRouter()
+  const [products, setProducts] = useState<Product[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [searchName, setSearchName] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const productsPerPage = 10;
+  const router = useRouter();
+  const { toast } = useToast();
 
-  const categories = ["Cleanser", "Toner", "Serum", "Moisturizer", "Sunscreen", "Mask"] // Add your actual categories here
+  const categories = ["Cleanser", "Toner", "Serum", "Moisturizer", "Sunscreen", "Mask"];
 
   useEffect(() => {
-    loadProducts()
-  }, [])
+    loadProducts();
+  }, []);
 
   const loadProducts = async () => {
     try {
-      const products = await fetchProducts() // Lấy danh sách sản phẩm
-      console.log("Fetched Products:", products)
-      const promotions = await fetchPromotions() // Lấy danh sách promotion
+      setLoading(true);
+      setError(null);
 
-      // Kết hợp sản phẩm với promotion
-      const productsWithPromotions: Product[] = products.map((product: Product): Product => {
-        console.log("Product ID:", product.productID)
-        const currentDate = new Date().toISOString().split("T")[0] // Lấy ngày hiện tại
+      const productsResponse = await fetchProducts();
+      if (!Array.isArray(productsResponse)) {
+        throw new Error("Invalid products data");
+      }
+      console.log("Fetched Products:", productsResponse);
+
+      let promotions: Promotion[] = [];
+      try {
+        promotions = await fetchPromotions();
+      } catch (promoError) {
+        console.error("Failed to fetch promotions:", promoError);
+        promotions = [];
+      }
+
+      const productsWithPromotions: Product[] = productsResponse.map((product: Product): Product => {
+        const currentDate = new Date().toISOString().split("T")[0];
         const promotion: Promotion | undefined = promotions.find((promo: Promotion) => {
-          return promo.productID === product.productID &&
-                 promo.startDate <= currentDate &&
-                 promo.endDate >= currentDate
-        })
+          return (
+            promo.productID === product.productID &&
+            promo.startDate <= currentDate &&
+            promo.endDate >= currentDate
+          );
+        });
         const discountedPrice: number | undefined = promotion
-          ? parseFloat((product.price * (1 - promotion.discount / 100)).toFixed(2)) // Tính giá sau khi giảm
-          : product.price
-        return { ...product, promotion, discountedPrice }
-      })
+          ? parseFloat((product.price * (1 - promotion.discount / 100)).toFixed(2))
+          : undefined;
+        return { ...product, promotion, discountedPrice };
+      });
 
-      console.log("Products with Promotions:", productsWithPromotions)
-      setProducts(productsWithPromotions)
-    } catch (error) {
-      console.error("Error loading products with promotions:", error)
+      console.log("Products with Promotions:", productsWithPromotions);
+      setProducts(productsWithPromotions);
+    } catch (error: any) {
+      console.error("Error loading products with promotions:", error);
+      if (error.response?.status === 403) {
+        setError("You do not have permission to view products.");
+      } else {
+        setError("Failed to load products. Please try again.");
+      }
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   const handleSearchByName = async () => {
     if (!searchName.trim()) {
-      loadProducts()
-      return
+      loadProducts();
+      return;
     }
     try {
-      const response = await fetchProductsByName(searchName)
-      setProducts(response.data)
-    } catch (error) {
-      console.error("Error searching products:", error)
+      setLoading(true);
+      setError(null);
+      const response = await fetchProductsByName(searchName);
+      console.log("Search Response:", response);
+      if (response.success) {
+        // Extract the array from response.data
+        const productsData = Array.isArray(response?.data) ? response.data : [];
+        setProducts(productsData);
+      } else {
+        setProducts([]);
+      }
+    } catch (error: any) {
+      console.error("Error searching products:", error);
+      if (error.response?.status === 403) {
+        setError("You do not have permission to search products.");
+      } else {
+        setError("Failed to search products. Please try again.");
+      }
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   const handleCategoryChange = async (category: string) => {
-    setSelectedCategory(category)
-    if (category === 'all') {
-      loadProducts()
-      return
+    setSelectedCategory(category);
+    if (category === "all") {
+      loadProducts();
+      return;
     }
     try {
-      const response = await fetchProductsByCategory(category)
-      setProducts(response.data)
-    } catch (error) {
-      console.error("Error filtering products:", error)
+      setLoading(true);
+      setError(null);
+      const response = await fetchProductsByCategory(category);
+      console.log("Get success", response);
+  
+      // Extract the array of products from the response.data property
+      const productsData = Array.isArray(response?.data) ? response.data : [];
+      setProducts(productsData);
+    } catch (error: any) {
+      console.error("Error filtering products:", error);
+      if (error.response?.status === 403) {
+        setError("You do not have permission to filter products.");
+      } else {
+        setError("Failed to filter products by category.");
+      }
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   const handleDeleteProduct = async (productId: string) => {
     if (confirm("Are you sure you want to delete this product?")) {
       try {
-        await deleteProduct(productId)
-        loadProducts()
-      } catch (error) {
-        console.error("Error deleting product:", error)
+        setLoading(true);
+        setError(null);
+        await deleteProduct(productId);
+        toast({
+          title: "Success",
+          description: "Product has been deleted successfully.",
+          duration: 3000,
+        });
+        await loadProducts();
+      } catch (error: any) {
+        console.error("Error deleting product:", error);
+        if (error.response?.status === 403) {
+          toast({
+            title: "Access Denied",
+            description: "You do not have permission to delete this product.",
+            variant: "destructive",
+            duration: 3000,
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: "Failed to delete product. Please try again.",
+            variant: "destructive",
+            duration: 3000,
+          });
+        }
+      } finally {
+        setLoading(false);
       }
     }
-  }
+  };
 
   const toggleProductSelection = (productId: string) => {
     if (selectedProducts.includes(productId)) {
-      setSelectedProducts(selectedProducts.filter((id) => id !== productId))
+      setSelectedProducts(selectedProducts.filter((id) => id !== productId));
     } else {
-      setSelectedProducts([...selectedProducts, productId])
+      setSelectedProducts([...selectedProducts, productId]);
     }
+  };
+
+  // Pagination
+  const indexOfLastProduct = currentPage * productsPerPage;
+  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+  // Add a safeguard to ensure products is an array before slicing
+  const currentProducts = Array.isArray(products) ? products.slice(indexOfFirstProduct, indexOfLastProduct) : [];
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (indexOfLastProduct < products.length) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  if (loading) {
+    return <div className="container py-8">Loading...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="container py-8">
+        <p className="text-red-600">{error}</p>
+        <Button onClick={loadProducts} className="mt-4">
+          Retry
+        </Button>
+      </div>
+    );
   }
 
   return (
@@ -165,7 +275,7 @@ export default function ProductsPage() {
 
       <div className="rounded-lg border shadow-sm">
         <div className="overflow-x-auto">
-          {Array.isArray(products) && products.length > 0 ? (
+          {Array.isArray(currentProducts) && currentProducts.length > 0 ? (
             <table className="w-full">
               <thead>
                 <tr className="border-b bg-muted/50">
@@ -174,25 +284,25 @@ export default function ProductsPage() {
                       type="checkbox"
                       className="h-4 w-4 rounded border-gray-300"
                       onChange={() => {
-                        if (selectedProducts.length === products.length) {
-                          setSelectedProducts([])
+                        if (selectedProducts.length === currentProducts.length) {
+                          setSelectedProducts([]);
                         } else {
-                          setSelectedProducts(products.map((product) => product.productID))
+                          setSelectedProducts(currentProducts.map((product) => product.productID));
                         }
                       }}
-                      checked={selectedProducts.length === products.length && products.length > 0}
+                      checked={selectedProducts.length === currentProducts.length && currentProducts.length > 0}
                     />
                   </th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Product</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Category</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Price</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Promotion</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium">Rating</th> {/* Thêm cột Rating */}
+                  <th className="px-4 py-3 text-left text-sm font-medium">Rating</th>
                   <th className="px-4 py-3 text-right text-sm font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {products.map((product) => (
+                {currentProducts.map((product) => (
                   <tr key={product.productID} className="border-b">
                     <td className="px-4 py-3">
                       <input
@@ -205,7 +315,7 @@ export default function ProductsPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <Image
-                          src={product.imageFile || ""} 
+                          src={product.image_url || "/placeholder.svg"}
                           width={48}
                           height={48}
                           className="rounded-md object-cover"
@@ -215,13 +325,20 @@ export default function ProductsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm">{product.category}</td>
-                    <td className="px-4 py-3 text-sm">{product.price}</td>
                     <td className="px-4 py-3 text-sm">
-                      {product.promotion
-                        ? `${product.discountedPrice} (${product.promotion.discount}% OFF)`
-                        : "No Promotion"}
+                      {product.discountedPrice ? (
+                        <>
+                          <span className="text-green-600">${product.discountedPrice.toFixed(2)}</span>
+                          <span className="text-sm text-gray-500 line-through ml-2">${product.price.toFixed(2)}</span>
+                        </>
+                      ) : (
+                        `$${product.price.toFixed(2)}`
+                      )}
                     </td>
-                    <td className="px-4 py-3 text-sm">{product.rating || "N/A"}</td> {/* Hiển thị Rating */}
+                    <td className="px-4 py-3 text-sm">
+                      {product.promotion ? `${product.promotion.discount}% OFF` : "No Promotion"}
+                    </td>
+                    <td className="px-4 py-3 text-sm">{product.rating || "N/A"}</td>
                     <td className="px-4 py-3 text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -262,14 +379,25 @@ export default function ProductsPage() {
         {products.length > 0 && (
           <div className="flex items-center justify-between px-4 py-3 border-t">
             <div className="text-sm text-muted-foreground">
-              Showing <span className="font-medium">1</span> to <span className="font-medium">{products.length}</span> of{" "}
+              Showing <span className="font-medium">{indexOfFirstProduct + 1}</span> to{" "}
+              <span className="font-medium">{Math.min(indexOfLastProduct, products.length)}</span> of{" "}
               <span className="font-medium">{products.length}</span> products
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" disabled>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePrevPage}
+                disabled={currentPage === 1}
+              >
                 Previous
               </Button>
-              <Button variant="outline" size="sm" disabled>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleNextPage}
+                disabled={indexOfLastProduct >= products.length}
+              >
                 Next
               </Button>
             </div>
@@ -277,5 +405,5 @@ export default function ProductsPage() {
         )}
       </div>
     </>
-  )
+  );
 }

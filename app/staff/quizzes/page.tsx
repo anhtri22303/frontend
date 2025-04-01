@@ -29,35 +29,54 @@ interface AnswerOption {
 export default function QuizzesPage() {
   const router = useRouter();
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
-  const [answerOptions, setAnswerOptions] = useState<AnswerOption[]>([]);
+  const [allQuizzes, setAllQuizzes] = useState<Quiz[]>([]); // Lưu trữ tất cả quizzes gốc
+  const [answerOptions, setAnswerOptions] = useState<Record<string, AnswerOption[]>>({});
   const [selectedQuizId, setSelectedQuizId] = useState<string | null>(null);
   const [searchText, setSearchText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    loadQuizzesAndAnswerOptions(questionId);
+    loadInitialData();
   }, []);
 
-  const loadQuizzesAndAnswerOptions = async (questionId: string) => {
+  const loadInitialData = async () => {
     setIsLoading(true);
     try {
       const quizzesData = await fetchQuizzes();
-      const answerOptionsData = await fetchAnswerOptions(questionId);
+      console.log("Fetch quizzes data success", quizzesData);
       setQuizzes(quizzesData);
-      setAnswerOptions(answerOptionsData);
+      setAllQuizzes(quizzesData); // Lưu trữ bản sao gốc
+
+      // Sau khi lấy danh sách quizzes, gọi loadAnswerOptionsForQuiz cho từng quiz
+      for (const quiz of quizzesData) {
+        await loadAnswerOptionsForQuiz(quiz.questionId);
+      }
     } catch (error) {
-      console.error("Error loading quizzes and answer options:", error);
+      console.error("Error loading quizzes:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const loadAnswerOptionsForQuiz = async (questionId: string) => {
+    try {
+      const answerOptionsData = await fetchAnswerOptions(questionId);
+      console.log("Fetch answer data success for questionId", questionId, answerOptionsData);
+      setAnswerOptions(prev => ({
+        ...prev,
+        [questionId]: answerOptionsData
+      }));
+    } catch (error) {
+      console.error(`Error loading answer options for questionId ${questionId}:`, error);
+    }
+  };
+
   const handleSearch = () => {
     if (!searchText.trim()) {
-      loadQuizzesAndAnswerOptions();
+      setQuizzes(allQuizzes);
       return;
     }
-    const filteredQuizzes = quizzes.filter((quiz) =>
+    const filteredQuizzes = allQuizzes.filter((quiz) =>
       quiz.quizText.toLowerCase().includes(searchText.toLowerCase())
     );
     setQuizzes(filteredQuizzes);
@@ -66,32 +85,40 @@ export default function QuizzesPage() {
   const handleDeleteQuiz = async (questionId: string) => {
     if (confirm("Are you sure you want to delete this quiz and its answer options?")) {
       try {
-        // Delete associated answer options first
-        const quizAnswerOptions = answerOptions.filter((option) => option.questionId === questionId);
-        for (const option of quizAnswerOptions) {
-          await deleteAnswerOption(option.optionId);
-        }
-        // Delete the quiz
         await deleteQuiz(questionId);
-        loadQuizzesAndAnswerOptions();
+        setQuizzes(quizzes.filter(q => q.questionId !== questionId));
+        setAllQuizzes(allQuizzes.filter(q => q.questionId !== questionId));
+        setAnswerOptions(prev => {
+          const newOptions = { ...prev };
+          delete newOptions[questionId];
+          return newOptions;
+        });
+        if (selectedQuizId === questionId) setSelectedQuizId(null);
       } catch (error) {
         console.error("Error deleting quiz:", error);
       }
     }
   };
 
-  const handleDeleteAnswerOption = async (optionId: string) => {
+  const handleDeleteAnswerOption = async (optionId: string, questionId: string) => {
     if (confirm("Are you sure you want to delete this answer option?")) {
       try {
         await deleteAnswerOption(optionId);
-        loadQuizzesAndAnswerOptions();
+        setAnswerOptions(prev => ({
+          ...prev,
+          [questionId]: prev[questionId].filter(opt => opt.optionId !== optionId)
+        }));
       } catch (error) {
         console.error("Error deleting answer option:", error);
       }
     }
   };
 
-  const toggleQuizDetails = (questionId: string) => {
+  const toggleQuizDetails = async (questionId: string) => {
+    // Nếu answer options chưa được tải, gọi API để lấy
+    if (!answerOptions[questionId]) {
+      await loadAnswerOptionsForQuiz(questionId);
+    }
     setSelectedQuizId(selectedQuizId === questionId ? null : questionId);
   };
 
@@ -153,46 +180,44 @@ export default function QuizzesPage() {
                         {selectedQuizId === quiz.questionId && (
                           <div className="mt-2 pl-4">
                             <h4 className="text-sm font-semibold mb-2">Answer Options</h4>
-                            {answerOptions.filter((option) => option.questionId === quiz.questionId).length > 0 ? (
+                            {answerOptions[quiz.questionId]?.length > 0 ? (
                               <ul className="space-y-2">
-                                {answerOptions
-                                  .filter((option) => option.questionId === quiz.questionId)
-                                  .map((option) => (
-                                    <li
-                                      key={option.optionId}
-                                      className="flex items-center justify-between p-2 bg-gray-50 rounded"
-                                    >
-                                      <div>
-                                        <p className="text-sm">{option.optionText}</p>
-                                        <p className="text-xs text-muted-foreground">
-                                          Skin Type: {option.skinType}
-                                        </p>
-                                      </div>
-                                      <div className="flex gap-2">
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() =>
-                                            router.push(
-                                              `/staff/quizzes/${quiz.questionId}/answer-options/${option.optionId}/edit`
-                                            )
-                                          }
-                                        >
-                                          <Edit className="h-4 w-4 mr-1" />
-                                          Edit
-                                        </Button>
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          className="text-red-600"
-                                          onClick={() => handleDeleteAnswerOption(option.optionId)}
-                                        >
-                                          <Trash2 className="h-4 w-4 mr-1" />
-                                          Delete
-                                        </Button>
-                                      </div>
-                                    </li>
-                                  ))}
+                                {answerOptions[quiz.questionId].map((option) => (
+                                  <li
+                                    key={option.optionId}
+                                    className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                                  >
+                                    <div>
+                                      <p className="text-sm">{option.optionText}</p>
+                                      <p className="text-xs text-muted-foreground">
+                                        Skin Type: {option.skinType}
+                                      </p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() =>
+                                          router.push(
+                                            `/staff/quizzes/${quiz.questionId}/answer-options/${option.optionId}/edit`
+                                          )
+                                        }
+                                      >
+                                        <Edit className="h-4 w-4 mr-1" />
+                                        Edit
+                                      </Button>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="text-red-600"
+                                        onClick={() => handleDeleteAnswerOption(option.optionId, quiz.questionId)}
+                                      >
+                                        <Trash2 className="h-4 w-4 mr-1" />
+                                        Delete
+                                      </Button>
+                                    </div>
+                                  </li>
+                                ))}
                               </ul>
                             ) : (
                               <p className="text-sm text-muted-foreground">
@@ -246,7 +271,7 @@ export default function QuizzesPage() {
             <div className="text-sm text-muted-foreground">
               Showing <span className="font-medium">1</span> to{" "}
               <span className="font-medium">{quizzes.length}</span> of{" "}
-              <span className="font-medium">{quizzes.length}</span> quizzes
+              <span className="font-medium">{allQuizzes.length}</span> quizzes
             </div>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" disabled>

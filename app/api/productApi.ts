@@ -46,21 +46,14 @@ export const createProduct = async (productData: {
   }
 };
 
-export const updateProduct = async (
-  id: string,
-  product: {
-    name: string;
-    description: string;
-    category: string;
-    price: string;
-    rating: number;
-    image_url: string;
-    skinType: string;
-  }
-) => {
+export const updateProduct = async (id: string, formData: FormData) => {
   try {
-    const response = await axiosInstance.put(`/products/${id}`, product);
-    console.log("Update success");
+    const response = await axiosInstance.put(`/products/${id}`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    console.log("Update success", response.data);
     return response.data;
   } catch (error) {
     console.error("Error updating product:", error);
@@ -83,10 +76,7 @@ export const fetchProductsByCategory = async (category: string) => {
   try {
     const response = await axiosInstance.get(`/products/category/${category}`);
     console.log("Get by category success", response.data);
-    if (response.data.success) { // Sửa từ isSuccess thành success
-      return response.data.data || [];
-    }
-    return [];
+      return response.data || [];
   } catch (error) {
     console.error("Error fetching products by category:", error);
     return [];
@@ -97,10 +87,7 @@ export const fetchProductsByName = async (productName: string) => {
   try {
     const response = await axiosInstance.get(`/products/name/${productName}`);
     console.log("Get by name success", response.data);
-    if (response.data.success) { // Sửa từ isSuccess thành success
-      return response.data.data || [];
-    }
-    return [];
+      return response.data || [];
   } catch (error) {
     console.error("Error fetching products by name:", error);
     return [];

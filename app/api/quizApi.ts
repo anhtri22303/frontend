@@ -5,12 +5,64 @@ interface Quiz {
   quizText: string;
 }
 
+interface AnswerOptionRequest {
+  optionText: string;
+  skinType: string;
+}
+
+interface CreateQuizData {
+  quizText: string;
+  answerOptionRequests: AnswerOptionRequest[];
+}
+
+interface QuizResponse {
+  questionId: string;
+  quizText: string;
+  answerOptionDTOs: {
+    optionId: string;
+    optionText: string;
+    skinType: string;
+  }[];
+}
+
+export const createQuiz = async (quizData: CreateQuizData): Promise<QuizResponse> => {
+  try {
+    const response = await axiosInstance.post("/quizzes", quizData);
+    return response.data.data;
+  } catch (error) {
+    console.error("Error creating quiz:", error);
+    throw error;
+  }
+};
+
+// Các hàm khác giữ nguyên
 export const fetchQuizzes = async (): Promise<Quiz[]> => {
   try {
     const response = await axiosInstance.get("/quizzes");
+    console.log("Fetch quizzes data success", response.data.data);
     return response.data.data;
   } catch (error) {
     console.error("Error fetching quizzes:", error);
+    throw error;
+  }
+};
+
+export const fetchQuizById = async (questionId: string): Promise<QuizResponse> => {
+  try {
+    const response = await axiosInstance.get(`/quizzes/${questionId}`);
+    return response.data.data;
+  } catch (error) {
+    console.error(`Error fetching quiz with id ${questionId}:`, error);
+    throw error;
+  }
+};
+
+export const updateQuiz = async (questionId: string, quizData: CreateQuizData): Promise<QuizResponse> => {
+  try {
+    const response = await axiosInstance.put(`/quizzes/${questionId}`, quizData);
+    return response.data.data;
+  } catch (error) {
+    console.error(`Error updating quiz with id ${questionId}:`, error);
     throw error;
   }
 };

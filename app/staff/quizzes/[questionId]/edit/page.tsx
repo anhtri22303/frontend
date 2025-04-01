@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { createQuiz } from "@/app/api/quizApi";
+import { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,19 +13,64 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { X } from "lucide-react";
+import { fetchQuizById, updateQuiz } from "@/app/api/quizApi";
 
 interface AnswerOption {
+  optionId?: string;
   optionText: string;
   skinType: string;
 }
 
-export default function CreateQuizPage() {
+interface QuizData {
+  questionId: string;
+  quizText: string;
+  answerOptionDTOs: AnswerOption[];
+}
+
+export default function EditQuizPage() {
   const router = useRouter();
+  const { questionId } = useParams();
   const [quizText, setQuizText] = useState("");
   const [options, setOptions] = useState<AnswerOption[]>([
     { optionText: "", skinType: "Dry" },
   ]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (questionId) {
+      loadQuizData(questionId as string);
+    } else {
+      setError("Invalid quiz ID");
+      setIsFetching(false);
+    }
+  }, [questionId]);
+
+  const loadQuizData = async (id: string) => {
+    setIsFetching(true);
+    try {
+      const quizData = await fetchQuizById(id);
+      console.log("Fetch quiz data success:", quizData);
+
+      if (!quizData || !quizData.quizText) {
+        throw new Error("Invalid quiz data");
+      }
+
+      setQuizText(quizData.quizText);
+      const newOptions =
+        quizData.answerOptionDTOs && quizData.answerOptionDTOs.length > 0
+          ? quizData.answerOptionDTOs
+          : [{ optionText: "", skinType: "Dry" }];
+      setOptions(newOptions);
+      console.log("Updated options state:", newOptions); // Log để kiểm tra
+    } catch (error) {
+      console.error("Failed to load quiz:", error);
+      setError("Failed to load quiz. Please try again.");
+    } finally {
+      setIsFetching(false);
+    }
+  };
 
   const handleAddOption = () => {
     setOptions([...options, { optionText: "", skinType: "Dry" }]);
@@ -49,8 +93,8 @@ export default function CreateQuizPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
     try {
-      // Validation
       if (!quizText.trim()) {
         alert("Please enter a question.");
         setIsLoading(false);
@@ -66,30 +110,48 @@ export default function CreateQuizPage() {
         setIsLoading(false);
         return;
       }
-  
+
       const quizData = {
         quizText,
         answerOptionRequests: options.map(option => ({
           optionText: option.optionText,
-          skinType: option.skinType
-        }))
+          skinType: option.skinType,
+        })),
       };
-      
-      await createQuiz(quizData);
+
+      await updateQuiz(questionId as string, quizData);
       router.push("/staff/quizzes");
     } catch (error) {
-      console.error("Failed to create quiz:", error);
-      alert("Failed to create quiz. Please try again.");
+      console.error("Failed to update quiz:", error);
+      setError("Failed to update quiz. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
+  if (isFetching) {
+    return <div className="container mx-auto p-6">Loading quiz...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="text-red-500">{error}</div>
+        <Button
+          className="mt-4"
+          onClick={() => router.push("/staff/quizzes")}
+        >
+          Back to Quizzes
+        </Button>
+      </div>
+    );
+  }
+  console.log("Rendering options:", options);
   return (
     <div className="container mx-auto p-6">
       <Card>
         <CardHeader>
-          <CardTitle>Create New Quiz</CardTitle>
+          <CardTitle>Edit Quiz</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -107,7 +169,10 @@ export default function CreateQuizPage() {
             <div className="space-y-2">
               <label>Answers</label>
               {options.map((option, index) => (
-                <div key={index} className="flex items-center space-x-2">
+                <div
+                  key={option.optionId || `new-${index}`} // Sử dụng optionId nếu có, nếu không thì dùng index
+                  className="flex items-center space-x-2"
+                >
                   <Input
                     value={option.optionText}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
@@ -158,11 +223,12 @@ export default function CreateQuizPage() {
               <Button
                 variant="outline"
                 onClick={() => router.push("/staff/quizzes")}
+                disabled={isLoading}
               >
                 Cancel
               </Button>
               <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Creating..." : "Create Quiz"}
+                {isLoading ? "Updating..." : "Update Quiz"}
               </Button>
             </div>
           </form>

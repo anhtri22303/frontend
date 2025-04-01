@@ -14,31 +14,54 @@ interface EditProductPageProps {
   };
 }
 
+interface Product {
+  productID: string;
+  productName: string;
+  description: string;
+  price: number;
+  category: string;
+  skinType: string;
+  rating: number;
+  imageFile: File | null;
+  imagePreview: string;
+}
+
 export default function EditProductPage({ params }: EditProductPageProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [product, setProduct] = useState({
+  const [product, setProduct] = useState<Product>({
     productID: "",
     productName: "",
     description: "",
     price: 0,
     category: "",
+    skinType: "",
     rating: 0,
-    image_url: null as File | null, // Thay đổi kiểu dữ liệu thành File | null
+    imageFile: null,
+    imagePreview: "",
   });
-  const [previewImage, setPreviewImage] = useState<string | null>(null); // URL tạm thời để xem trước ảnh
 
   useEffect(() => {
     const loadProduct = async () => {
       try {
-        const response = await fetchProductById(params.productID); // Lấy dữ liệu sản phẩm từ API
-        setProduct({
-          ...response.data,
-          image_url: null, // Đặt giá trị ban đầu của image_url là null
-        });
-        setPreviewImage(response.data.image_url); // Hiển thị ảnh hiện tại
+        const response = await fetchProductById(params.productID);
+        if (response) {
+          setProduct({
+            productID: response.productID || "",
+            productName: response.productName || "",
+            description: response.description || "",
+            price: response.price || 0,
+            category: response.category || "",
+            skinType: response.skinType || "",
+            rating: response.rating || 0,
+            imageFile: null,
+            imagePreview: response.image_url || "",
+          });
+        } else {
+          throw new Error("Product not found");
+        }
       } catch (error) {
         console.error("Error loading product:", error);
         toast({
@@ -57,11 +80,11 @@ export default function EditProductPage({ params }: EditProductPageProps) {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
-    setProduct({ ...product, image_url: file }); // Gán file vào state
-    if (file) {
-      const fileURL = URL.createObjectURL(file); // Tạo URL tạm thời để xem trước ảnh
-      setPreviewImage(fileURL);
-    }
+    setProduct((prev) => ({
+      ...prev,
+      imageFile: file,
+      imagePreview: file ? URL.createObjectURL(file) : prev.imagePreview,
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -71,33 +94,45 @@ export default function EditProductPage({ params }: EditProductPageProps) {
     try {
       setIsSubmitting(true);
 
-      // Tạo FormData để gửi dữ liệu
+      const productData = {
+        productName: product.productName,
+        description: product.description,
+        price: product.price,
+        category: product.category,
+        skinType: product.skinType,
+        rating: product.rating,
+      };
+
       const formData = new FormData();
-      formData.append("productID", product.productID);
-      formData.append("productName", product.productName);
-      formData.append("description", product.description);
-      formData.append("price", product.price.toString());
-      formData.append("category", product.category);
-      formData.append("rating", product.rating.toString());
-      if (product.image_url) {
-        formData.append("image_url", product.image_url); // Gửi file trực tiếp
+      formData.append("product", JSON.stringify(productData));
+      if (product.imageFile) {
+        formData.append("image", product.imageFile);
       }
 
-      await updateProduct(product.productID, formData); // Gửi FormData đến API
+      await updateProduct(product.productID, formData);
       toast({
         title: "Success",
         description: "Product has been updated successfully",
         duration: 3000,
       });
-      router.push("/staff/products"); // Điều hướng về trang danh sách sản phẩm
-    } catch (error) {
+      router.push("/staff/products");
+    } catch (error: any) {
       console.error("Error updating product:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update product. Please try again.",
-        variant: "destructive",
-        duration: 3000,
-      });
+      if (error.response?.status === 403) {
+        toast({
+          title: "Access Denied",
+          description: "You do not have permission to update this product.",
+          variant: "destructive",
+          duration: 3000,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to update product. Please try again.",
+          variant: "destructive",
+          duration: 3000,
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -152,7 +187,7 @@ export default function EditProductPage({ params }: EditProductPageProps) {
             required
             value={product.price}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setProduct({ ...product, price: parseFloat(e.target.value) })
+              setProduct({ ...product, price: parseFloat(e.target.value) || 0 })
             }
             placeholder="Enter product price"
             disabled={isSubmitting}
@@ -173,13 +208,26 @@ export default function EditProductPage({ params }: EditProductPageProps) {
         </div>
 
         <div>
+          <label className="text-sm font-medium mb-1 block">Skin Type</label>
+          <Input
+            required
+            value={product.skinType}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setProduct({ ...product, skinType: e.target.value })
+            }
+            placeholder="Enter skin type"
+            disabled={isSubmitting}
+          />
+        </div>
+
+        <div>
           <label className="text-sm font-medium mb-1 block">Rating</label>
           <Input
             type="number"
             required
             value={product.rating}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setProduct({ ...product, rating: parseFloat(e.target.value) })
+              setProduct({ ...product, rating: parseFloat(e.target.value) || 0 })
             }
             placeholder="Enter product rating"
             disabled={isSubmitting}
@@ -194,9 +242,9 @@ export default function EditProductPage({ params }: EditProductPageProps) {
             onChange={handleFileChange}
             disabled={isSubmitting}
           />
-          {previewImage && (
+          {product.imagePreview && (
             <img
-              src={previewImage}
+              src={product.imagePreview}
               alt="Preview"
               className="mt-4 h-32 w-32 object-cover rounded-md"
             />

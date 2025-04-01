@@ -72,6 +72,7 @@ export default function RoutineList() {
     setIsLoading(true);
     try {
       const data = await searchRoutinesByName(searchName);
+      console.log("Search routine by name success:", data);
       setRoutines(data);
     } catch (error) {
       console.error("Failed to search routines:", error);

@@ -10,7 +10,8 @@ interface AnswerOption {
 export const fetchAnswerOptions = async (questionId: string): Promise<AnswerOption[]> => {
   try {
     const response = await axiosInstance.get(`/answer-options/question/${questionId}`);
-    return response.data.data;
+    console.log("Fetch answer data success", response.data);
+    return response.data;
   } catch (error) {
     console.error("Error fetching answer options:", error);
     throw error;
