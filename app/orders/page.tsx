@@ -35,8 +35,9 @@ export default function OrdersPage() {
   const loadOrders = async (userID: string) => {
     setIsLoading(true);
     try {
-      const data = await fetchOrdersByUserID(userID);
-      setOrders(data || []);
+      const response = await fetchOrdersByUserID(userID);
+      console.log("", response.data);
+      setOrders(response.data || []);
     } catch (error) {
       console.error("Error loading orders:", error);
       toast.error("Failed to load orders.");

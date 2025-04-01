@@ -71,7 +71,7 @@ export const fetchOrdersByStatus = async (userID: string, status: string) => {
 
 export const fetchOrderDetailsByUserID = async (userID: string, orderID: string) => {
   try {
-    const response = await axiosInstance.get(`/orders/${userID}/${orderID}/details`)
+    const response = await axiosInstance.get(`/orders/customer/${userID}/${orderID}/details`)
     console.log("Fetch order details by user ID success:", response.data)
     return response.data
   } catch (error) {

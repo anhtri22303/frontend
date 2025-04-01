@@ -54,7 +54,7 @@ export default function CartPage() {
         const cartItemsWithDetails = await Promise.all(
           response.items.map(async (item) => {
             const productDetails = await fetchProductById(item.productID);
-            const productData = productDetails?.data; // Truy cập thuộc tính `data`
+            const productData = productDetails; // Truy cập thuộc tính `data`
   
             return {
               ...item,

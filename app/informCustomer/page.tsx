@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { fetchUserById } from "@/app/api/userManagerApi";
 import { updateCustomer } from "@/app/api/customerApi";
 import toast from "react-hot-toast";
 
@@ -16,18 +17,39 @@ export default function InformCustomerPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  // Giả lập dữ liệu người dùng từ localStorage hoặc API
+  // Fetch user data by ID
   useEffect(() => {
-    const storedFullName = localStorage.getItem("fullName") || "";
-    const storedEmail = localStorage.getItem("userEmail") || "";
-    const storedPhone = localStorage.getItem("userPhone") || "";
-    const storedAddress = localStorage.getItem("userAddress") || "";
+    const fetchUserData = async () => {
+      const userId = localStorage.getItem("userID");
+      if (!userId) {
+        toast.error("User ID not found!");
+        router.push("/login");
+        return;
+      }
 
-    setFullName(storedFullName);
-    setEmail(storedEmail);
-    setPhone(storedPhone);
-    setAddress(storedAddress);
-  }, []);
+      try {
+        setIsLoading(true);
+        const response = await fetchUserById(userId);
+        if (response) {
+          setFullName(response.data.fullName || "");
+          setEmail(response.data.email || "");
+          setPhone(response.data.phone || "");
+          setAddress(response.data.address || "");
+          localStorage.setItem("userAddress", response.data.address || "");
+          toast.success("User data loaded successfully!");
+        } else {
+          toast.error("Failed to load user data.");
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        toast.error("An error occurred while fetching user data.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [router]);
 
   const handleSave = async () => {
     // Kiểm tra các trường không được để trống
@@ -54,10 +76,7 @@ export default function InformCustomerPage() {
 
       if (response) {
         toast.success("Information updated successfully!");
-        // // Cập nhật localStorage nếu cần
-        localStorage.setItem("fullName", fullName);
-        localStorage.setItem("userEmail", email);
-        localStorage.setItem("userPhone", phone);
+        // Cập nhật thông tin vào localStorage
         localStorage.setItem("userAddress", address);
         router.push("/cart"); // Điều hướng quay lại trang cart
       } else {
@@ -88,6 +107,7 @@ export default function InformCustomerPage() {
             onChange={(e) => setFullName(e.target.value)}
             placeholder="Enter your full name"
             required
+            disabled={isLoading}
           />
         </div>
         <div>
@@ -99,6 +119,7 @@ export default function InformCustomerPage() {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Enter your email"
             required
+            disabled={isLoading}
           />
         </div>
         <div>
@@ -110,6 +131,7 @@ export default function InformCustomerPage() {
             onChange={(e) => setPhone(e.target.value)}
             placeholder="Enter your phone number"
             required
+            disabled={isLoading}
           />
         </div>
         <div>
@@ -121,6 +143,7 @@ export default function InformCustomerPage() {
             onChange={(e) => setAddress(e.target.value)}
             placeholder="Enter your address"
             required
+            disabled={isLoading}
           />
         </div>
         <div className="flex gap-4 mt-4">

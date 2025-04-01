@@ -4,7 +4,7 @@ export interface OrderDetail {
   orderID: string | null
   productID: string
   quantity: number
-  price: number
+  totalAmount: number
 }
 
 export interface Order {
