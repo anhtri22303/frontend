@@ -7,6 +7,7 @@ import { fetchRoutinesBySkinType } from "@/app/api/routineApi";
 import { Button } from "@/components/ui/button";
 import { addToCart } from "@/app/api/cartApi";
 import toast from "react-hot-toast";
+import Link from "next/link";
 
 interface Routine {
   routineID: string;
@@ -132,40 +133,42 @@ export default function QuizResults() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {products.map((product) => (
               <Card key={product.productID} className="overflow-hidden group">
-                <div className="relative aspect-square">
-                  <img
-                    src={product.image_url || "/placeholder.svg"}
-                    alt={product.productName}
-                    className="object-cover transition-transform group-hover:scale-105 w-full h-full"
-                  />
-                </div>
-                <CardContent className="pt-4">
-                  <h3 className="font-medium truncate w-full">{product.productName}</h3>
-                  <div className="mt-2">
-                    <p className="font-semibold">${product.price.toFixed(2)}</p>
+                <Link href={`/shop/product/${product.productID}`}>
+                  <div className="relative aspect-square">
+                    <img
+                      src={product.image_url || "/placeholder.svg"}
+                      alt={product.productName}
+                      className="object-cover transition-transform group-hover:scale-105 w-full h-full"
+                    />
                   </div>
-                  <div className="mt-2 text-sm">
-                    <p className="text-muted-foreground">{product.category || "N/A"}</p>
-                  </div>
-                  <div className="flex items-center mt-2">
-                    <span>Rating: {product.rating}/5</span>
-                    <div className="ml-2 flex">
-                      {[...Array(5)].map((_, i) => (
-                        <svg
-                          key={i}
-                          className={`w-4 h-4 ${
-                            i < product.rating
-                              ? "text-yellow-400 fill-current"
-                              : "text-gray-300"
-                          }`}
-                          viewBox="0 0 20 20"
-                        >
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                        </svg>
-                      ))}
+                  <CardContent className="pt-4">
+                    <h3 className="font-medium truncate w-full">{product.productName}</h3>
+                    <div className="mt-2">
+                      <p className="font-semibold">${product.price.toFixed(2)}</p>
                     </div>
-                  </div>
-                </CardContent>
+                    <div className="mt-2 text-sm">
+                      <p className="text-muted-foreground">{product.category || "N/A"}</p>
+                    </div>
+                    <div className="flex items-center mt-2">
+                      <span>Rating: {product.rating}/5</span>
+                      <div className="ml-2 flex">
+                        {[...Array(5)].map((_, i) => (
+                          <svg
+                            key={i}
+                            className={`w-4 h-4 ${
+                              i < product.rating
+                                ? "text-yellow-400 fill-current"
+                                : "text-gray-300"
+                            }`}
+                            viewBox="0 0 20 20"
+                          >
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Link>
                 <CardFooter className="flex flex-col gap-2">
                   <div className="flex items-center gap-2 w-full">
                     <label
