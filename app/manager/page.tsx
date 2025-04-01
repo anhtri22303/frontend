@@ -173,7 +173,7 @@ export default function ManagerDashboard() {
             {productCategoryData.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={productCategoryData}>
-                  <XAxis dataKey="category" />
+                  <XAxis dataKey="category" angle={0} textAnchor="middle" interval={0} height={60} />
                   <YAxis />
                   <Tooltip />
                   <Bar dataKey="count" fill="#8884d8" />
