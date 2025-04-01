@@ -31,7 +31,7 @@ interface Order {
 
 interface User {
   userID: string;
-  name: string;
+  fullName: string;
   role: string;
   email: string;
 }
@@ -74,8 +74,7 @@ export default function ManagerDashboard() {
           fetchPromotions(),
           fetchRoutines()
         ]);
-
-        setProducts(productsData.data || []);
+        setProducts(productsData || []);
         setOrders(ordersData || []);
         setStaffAndManagers(staffData?.data || []);
         setCustomers(customersData?.data || []);
@@ -286,7 +285,7 @@ export default function ManagerDashboard() {
                 <tbody>
                   {staffAndManagers.map((user) => (
                     <tr key={user.userID}>
-                      <td className="py-2">{user.name || "N/A"}</td>
+                      <td className="py-2">{user.fullName || "N/A"}</td>
                       <td className="py-2">{user.role || "N/A"}</td>
                       <td className="py-2">{user.email || "N/A"}</td>
                     </tr>

@@ -3,11 +3,8 @@ import axiosInstance from "@/lib/axiosInstance";
 export const fetchProducts = async () => {
   try {
     const response = await axiosInstance.get("/products");
-    console.log("Get product success", response.data);
-    if (response.data.success) {
+    console.log("Get product success", response.data.data);
       return response.data.data || [];
-    }
-    return [];
   } catch (error) {
     console.error("Error fetching products:", error);
     return [];
