@@ -88,3 +88,17 @@ export const searchRoutinesByName = async (name: string) => {
     throw error
   }
 }
+
+// Apply routine to user
+export const applyRoutineToUser = async (userID: string, routineID: string) => {
+  try {
+    const response = await axiosInstance.post(
+      `/skin-care-routines/${routineID}/apply-to-user/${userID}`
+    );
+    console.log("Routine applied successfully:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error applying routine to user:", error);
+    throw error;
+  }
+};
