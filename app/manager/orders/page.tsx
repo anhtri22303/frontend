@@ -126,7 +126,7 @@ export default function OrdersPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
         <div className="flex gap-2">
           <Input
-            placeholder="Search by Customer ID"
+            placeholder="Customer ID"
             value={customerIdSearch}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomerIdSearch(e.target.value)}
           />
@@ -148,7 +148,7 @@ export default function OrdersPage() {
 
         <div className="flex gap-2">
           <Input
-            placeholder="Search by Order ID"
+            placeholder="Order ID"
             value={orderIdSearch}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setOrderIdSearch(e.target.value)}
           />

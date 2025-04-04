@@ -116,12 +116,6 @@ export default function ProductsPage() {
   const handleAddToCart = async (productId: string) => {
     setIsLoading(true);
     try {
-      const jwtToken = localStorage.getItem("jwtToken");
-      if (!jwtToken) {
-        toast.error("Please log in to add items to cart!");
-        return;
-      }
-
       const userId = localStorage.getItem("userID");
       if (!userId) {
         toast.error("User not logged in!");

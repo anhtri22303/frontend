@@ -105,15 +105,9 @@ export default function ProductPage() {
   const handleAddToCart = async () => {
     setCartLoading(true);
     try {
-      const jwtToken = localStorage.getItem("jwtToken");
-      if (!jwtToken) {
-        toast.error("Please log in to add items to cart!");
-        return;
-      }
-
       const userID = localStorage.getItem("userID");
       if (!userID) {
-        toast.error("User not logged in!");
+        toast.error("Please log in to add items to cart!");
         return;
       }
 
@@ -256,7 +250,8 @@ export default function ProductPage() {
           <TabsTrigger value="details">Details</TabsTrigger>
           <TabsTrigger value="reviews" onClick={loadFeedbacks}>
             Reviews ({feedbacks.length})
-          </TabsList>
+          </TabsTrigger>
+        </TabsList>
 
         <TabsContent value="details" className="pt-6">
           <div className="space-y-4">

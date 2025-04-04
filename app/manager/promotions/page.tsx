@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { fetchPromotions, deletePromotion, searchPromotionsByName } from "@/app/api/promotionApi"
+import { fetchPromotions, deletePromotion, searchPromotionsByName, fetchPromotionById } from "@/app/api/promotionApi"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -22,6 +22,7 @@ export default function PromotionsPage() {
   const [promotions, setPromotions] = useState<Promotion[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
+  const [searchId, setSearchId] = useState("")
 
   useEffect(() => {
     loadPromotions()
@@ -67,17 +68,47 @@ export default function PromotionsPage() {
     }
   }
 
+  const handleSearchById = async () => {
+    if (!searchId.trim()) {
+      alert("Please enter a promotion ID to search.");
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const response = await fetchPromotionById(searchId);
+      console.log("Search by ID result:", response); // Kiểm tra dữ liệu trả về
+      setPromotions(response ? [response] : []); // Hiển thị kết quả tìm kiếm
+    } catch (error) {
+      console.error("Failed to search promotion by ID:", error);
+      setPromotions([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetFilters = () => {
+    setSearchTerm("");
+    setSearchId("");
+    loadPromotions();
+  };
+
   return (
     <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Promotions</h1>
-        <Button onClick={() => router.push('/manager/promotions/create')}>
-          Create New Promotion
-        </Button>
+        <div className="flex gap-4">
+          <Button variant="outline" onClick={handleResetFilters}>
+            Reset Filters
+          </Button>
+          <Button onClick={() => router.push('/manager/promotions/create')}>
+            Create New Promotion
+          </Button>
+        </div>
       </div>
 
       {/* Khung nhập và nút tìm kiếm */}
       <div className="flex gap-4 mb-6">
+        {/* Filter by Promotion Name */}
         <Input
           value={searchTerm}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
@@ -85,6 +116,16 @@ export default function PromotionsPage() {
         />
         <Button onClick={handleSearch} disabled={isLoading}>
           {isLoading ? "Searching..." : "Search"}
+        </Button>
+
+        {/* Filter by Promotion ID */}
+        <Input
+          value={searchId}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchId(e.target.value)}
+          placeholder="Enter promotion ID"
+        />
+        <Button onClick={handleSearchById} disabled={isLoading}>
+          {isLoading ? "Searching..." : "Search by ID"}
         </Button>
       </div>
 
@@ -96,12 +137,22 @@ export default function PromotionsPage() {
             </CardHeader>
             <CardContent>
               <p className="text-lg font-bold mb-2">{promotion.discount}% OFF</p>
+              {/* Hiển thị Promotion ID */}
+              <p className="text-sm text-muted-foreground">
+                Promotion ID: {promotion.promotionID}
+              </p>
               <p className="text-sm text-muted-foreground">
                 Product ID: {promotion.productID}
               </p>
               <p className="text-sm text-muted-foreground">
-                Valid from {format(new Date(promotion.startDate), 'PP')} to{' '}
-                {format(new Date(promotion.endDate), 'PP')}
+                Valid from{" "}
+                {promotion.startDate
+                  ? format(new Date(promotion.startDate), "PP")
+                  : "N/A"}{" "}
+                to{" "}
+                {promotion.endDate
+                  ? format(new Date(promotion.endDate), "PP")
+                  : "N/A"}
               </p>
               <div className="flex gap-2 mt-4">
                 <Button

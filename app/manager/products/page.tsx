@@ -2,12 +2,12 @@
 
 import { useState, useEffect, SetStateAction } from "react";
 import { useRouter } from "next/navigation";
-import { Search, MoreHorizontal, PlusCircle } from "lucide-react";
+import { Search, PlusCircle, MoreHorizontal } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { fetchProducts, deleteProduct, fetchProductsByCategory, fetchProductsByName } from "@/app/api/productApi";
+import { fetchProducts, deleteProduct, fetchProductsByCategory, fetchProductsByName, fetchProductsBySkinType, fetchProductById } from "@/app/api/productApi";
 import { fetchPromotions } from "@/app/api/promotionApi";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -32,14 +32,16 @@ interface Promotion {
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [searchName, setSearchName] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [searchId, setSearchId] = useState("");
+  const [searchSkinType, setSearchSkinType] = useState("");
   const [loading, setLoading] = useState(true); // Thêm state loading
   const [error, setError] = useState<string | null>(null); // Thêm state error
   const router = useRouter();
 
   const categories = ["Cleanser", "Toner", "Serum", "Moisturizer", "Sunscreen", "Mask"];
+  const skinTypes = ["Dry", "Oily", "Combination", "Sensitive", "Normal"];
 
   useEffect(() => {
     loadProducts();
@@ -117,20 +119,16 @@ export default function ProductsPage() {
 
   const handleCategoryChange = async (category: string) => {
     setSelectedCategory(category);
-    if (category === "all") {
-      loadProducts();
+    if (!category) {
+      loadProducts(); // Nếu không chọn category, tải lại toàn bộ sản phẩm
       return;
     }
     try {
       setLoading(true);
       const response = await fetchProductsByCategory(category);
-      if (response.success) {
-        setProducts(response.data);
-      } else {
-        setProducts([]);
-      }
+      setProducts(response.data || []); // Cập nhật danh sách sản phẩm theo category
     } catch (error) {
-      console.error("Error filtering products:", error);
+      console.error("Error filtering products by category:", error);
       setError("Failed to filter products by category.");
       setProducts([]);
     } finally {
@@ -153,12 +151,46 @@ export default function ProductsPage() {
     }
   };
 
-  const toggleProductSelection = (productId: string) => {
-    if (selectedProducts.includes(productId)) {
-      setSelectedProducts(selectedProducts.filter((id) => id !== productId));
-    } else {
-      setSelectedProducts([...selectedProducts, productId]);
+  const handleSearchById = async () => {
+    if (!searchId.trim()) {
+      loadProducts();
+      return;
     }
+    try {
+      setLoading(true);
+      const product = await fetchProductById(searchId);
+      setProducts(product ? [product] : []);
+    } catch (error) {
+      console.error("Error searching product by ID:", error);
+      setError("Failed to search product by ID.");
+      setProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearchBySkinType = async () => {
+    if (!searchSkinType.trim()) {
+      loadProducts();
+      return;
+    }
+    try {
+      setLoading(true);
+      const response = await fetchProductsBySkinType(searchSkinType);
+      setProducts(response);
+    } catch (error) {
+      console.error("Error searching products by skin type:", error);
+      setError("Failed to search products by skin type.");
+      setProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetFilters = () => {
+    setSearchId("");
+    setSearchSkinType("");
+    loadProducts();
   };
 
   if (loading) {
@@ -186,35 +218,59 @@ export default function ProductsPage() {
         </Button>
       </div>
 
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
-        <div className="flex gap-4 w-full md:w-auto">
-          <div className="relative flex-1 md:w-96">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+      {/* Filters */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div>
+            <div className="flex items-center gap-2">
             <Input
-              type="search"
-              placeholder="Search products..."
-              className="pl-8 w-full"
-              value={searchName}
-              onChange={(e: { target: { value: SetStateAction<string> } }) => setSearchName(e.target.value)}
-              onKeyDown={(e: { key: string }) => e.key === "Enter" && handleSearchByName()}
+              type="text"
+              placeholder="Enter Product ID"
+              value={searchId}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchId(e.target.value)}
+              onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === "Enter" && handleSearchById()}
             />
-          </div>
-          <Select value={selectedCategory} onValueChange={handleCategoryChange}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select Category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {categories.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <Button onClick={handleSearchById}>Search</Button>
+            </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={loadProducts}>
+
+        <div>
+          <div className="flex items-center gap-2">
+            <Select value={searchSkinType} onValueChange={setSearchSkinType}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select Skin Type" />
+              </SelectTrigger>
+              <SelectContent>
+                {skinTypes.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {type}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button onClick={handleSearchBySkinType}>Search</Button>
+          </div>
+        </div>
+
+        <div>
+          <div className="flex items-center gap-2">
+            <Select value={selectedCategory} onValueChange={handleCategoryChange}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem> {/* Sử dụng "all" thay vì "" */}
+                {categories.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="col-span-3 flex justify-end">
+          <Button variant="outline" onClick={handleResetFilters}>
             Reset Filters
           </Button>
         </div>
@@ -226,39 +282,20 @@ export default function ProductsPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b bg-muted/50">
-                  <th className="w-12 px-4 py-3">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-gray-300"
-                      onChange={() => {
-                        if (selectedProducts.length === products.length) {
-                          setSelectedProducts([]);
-                        } else {
-                          setSelectedProducts(products.map((product) => product.productID));
-                        }
-                      }}
-                      checked={selectedProducts.length === products.length && products.length > 0}
-                    />
-                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium">Product ID</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Product</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Category</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Price</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Promotion</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Rating</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium">Skin Type</th>
                   <th className="px-4 py-3 text-right text-sm font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {products.map((product) => (
                   <tr key={product.productID} className="border-b">
-                    <td className="px-4 py-3">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 rounded border-gray-300"
-                        checked={selectedProducts.includes(product.productID)}
-                        onChange={() => toggleProductSelection(product.productID)}
-                      />
-                    </td>
+                    <td className="px-4 py-3 text-sm">{product.productID}</td> {/* Hiển thị Product ID */}
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <Image
@@ -283,11 +320,10 @@ export default function ProductsPage() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-sm">
-                      {product.promotion
-                        ? `${product.promotion.discount}% OFF`
-                        : "No Promotion"}
+                      {product.promotion ? `${product.promotion.discount}% OFF` : "No Promotion"}
                     </td>
                     <td className="px-4 py-3 text-sm">{product.rating || "N/A"}</td>
+                    <td className="px-4 py-3 text-sm">{product.skinType}</td>
                     <td className="px-4 py-3 text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>

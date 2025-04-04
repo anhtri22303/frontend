@@ -1,66 +1,53 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Order, fetchOrderByID } from "@/app/api/orderApi";
-import { fetchProductById } from "@/app/api/productApi";
-import toast from "react-hot-toast";
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { ArrowLeft } from "lucide-react"
+
+import { Button } from "@/components/ui/button"
+import { Order, fetchOrderByID } from "@/app/api/orderApi"
 
 interface OrderDetailsProps {
   params: {
-    orderId: string;
-  };
+    orderId: string
+  }
 }
 
 export default function OrderDetails({ params }: OrderDetailsProps) {
-  const router = useRouter();
-  const [order, setOrder] = useState<Order | null>(null);
-  const [productDetails, setProductDetails] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter()
+  const [order, setOrder] = useState<Order | null>(null)
 
   useEffect(() => {
     if (params.orderId) {
-      loadOrderDetails();
+      loadOrderDetails()
     }
-  }, [params.orderId]);
+  }, [params.orderId])
 
   const loadOrderDetails = async () => {
     try {
-      const response = await fetchOrderByID(params.orderId);
-      console.log("Order data:", response.data); // Kiểm tra dữ liệu trả về
-      setOrder(response.data);
-    } catch (error) {
-      console.error("Error loading order details:", error);
-    }
-  };
-
-  // Fetch product data by ID
-  const handleFetchProduct = async (productId: string) => {
-    try {
-      setIsLoading(true);
-      const response = await fetchProductById(productId);
-      if (response) {
-        setProductDetails(response.data);
-        console.log("Product data:", response.data);
-      } else {
-        toast.error("Failed to load product data.");
+      const data = await fetchOrderByID(params.orderId)
+      // Log the data to debug
+      console.log("Fetched order:", data);
+      // If totalAmount is missing, calculate it from orderDetails
+      if (data && !data.totalAmount && data.orderDetails) {
+        const calculatedTotal = data.orderDetails.reduce(
+          (sum, detail) => sum + detail.quantity * detail.totalAmount,
+          0
+        );
+        data.totalAmount = calculatedTotal;
       }
+      setOrder(data)
     } catch (error) {
-      console.error("Error fetching product data:", error);
-      toast.error("An error occurred while fetching product data.");
-    } finally {
-      setIsLoading(false);
+      console.error("Error loading order details:", error)
     }
-  };
+  }
 
   if (!params.orderId) {
-    return <div>Invalid Order ID</div>;
+    return <div>Invalid Order ID</div>
   }
 
   if (!order) {
-    return <div>Loading...</div>;
+    return <div>Loading...</div>
   }
 
   return (
@@ -80,27 +67,20 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Customer ID</p>
-              <p className="font-medium">{order.customerID || "N/A"}</p>
+              <p className="font-medium">{order.customerID || 'N/A'}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Order Date</p>
-              <p className="font-medium">
-                {new Date(order.orderDate).toLocaleDateString()}
-              </p>
+              <p className="font-medium">{new Date(order.orderDate).toLocaleDateString()}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Status</p>
-              <span
-                className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                  order.status === "PENDING"
-                    ? "bg-yellow-100 text-yellow-800"
-                    : order.status === "PROCESSING"
-                    ? "bg-blue-100 text-blue-800"
-                    : order.status === "COMPLETED"
-                    ? "bg-green-100 text-green-800"
-                    : "bg-red-100 text-red-800"
-                }`}
-              >
+              <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+                order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                order.status === 'PROCESSING' ? 'bg-blue-100 text-blue-800' :
+                order.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
+                'bg-red-100 text-red-800'
+              }`}>
                 {order.status}
               </span>
             </div>
@@ -109,15 +89,14 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
 
         <div className="rounded-lg border p-6">
           <h2 className="text-2xl font-bold mb-4">Order Details</h2>
-          <div className="rounded-md border overflow-x-auto">
-            <table className="w-full ml-4">
-              {" "}
-              {/* Thêm `ml-4` để xích bảng qua phải */}
+          <div className="rounded-md border">
+            <table className="w-full">
               <thead>
                 <tr className="border-b bg-muted/50">
                   <th className="p-4 text-left font-medium">Product ID</th>
                   <th className="p-4 text-left font-medium">Quantity</th>
                   <th className="p-4 text-left font-medium">Price</th>
+                  <th className="p-4 text-left font-medium">Subtotal</th>
                 </tr>
               </thead>
               <tbody>
@@ -125,21 +104,13 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
                   <tr key={detail.productID} className="border-b">
                     <td className="p-4">{detail.productID}</td>
                     <td className="p-4">{detail.quantity}</td>
-                    <td className="p-4">
-                      $
-                      {detail.totalAmount
-                        ? detail.totalAmount.toFixed(2)
-                        : "0.00"}
-                    </td>
+                    <td className="p-4">${detail.totalAmount.toFixed(2)}</td>
+                    <td className="p-4">${(detail.quantity * detail.totalAmount).toFixed(2)}</td>
                   </tr>
                 ))}
                 <tr>
-                  <td colSpan={2} className="p-4 text-right font-medium">
-                    Total:
-                  </td>
-                  <td className="p-4 font-medium">
-                    ${order.totalAmount ? order.totalAmount.toFixed(2) : "0.00"}
-                  </td>
+                  <td colSpan={3} className="p-4 text-right font-medium">Total Amount:</td>
+                  <td className="p-4 font-medium">${order.totalAmount ? order.totalAmount.toFixed(2) : '0.00'}</td>
                 </tr>
               </tbody>
             </table>
@@ -147,5 +118,5 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
         </div>
       </div>
     </div>
-  );
+  )
 }

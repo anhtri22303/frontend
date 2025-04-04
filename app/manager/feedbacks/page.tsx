@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Edit, Trash2, Plus } from "lucide-react"
+import { Edit, Trash2, Plus, Search } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -23,13 +23,17 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { Input } from "@/components/ui/input"
 
-import { Feedback, fetchFeedbacks, deleteFeedback } from "@/app/api/feedbackApi"
+import { Feedback, fetchFeedbacks, deleteFeedback, fetchFeedbackById } from "@/app/api/feedbackApi"
 
 export default function FeedbacksPage() {
   const router = useRouter()
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([])
   const [loading, setLoading] = useState(true)
+  const [searchFeedbackId, setSearchFeedbackId] = useState("")
+  const [searchCustomerId, setSearchCustomerId] = useState("")
+  const [searchProductId, setSearchProductId] = useState("")
 
   useEffect(() => {
     loadFeedbacks()
@@ -66,6 +70,71 @@ export default function FeedbacksPage() {
     router.push("/manager/feedbacks/create")
   }
 
+  const handleSearchByFeedbackId = async () => {
+    if (!searchFeedbackId.trim()) {
+      alert("Please enter a Feedback ID to search.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await fetchFeedbackById(searchFeedbackId);
+      console.log("Feedback by id found:", response);
+      setFeedbacks(response ? [response] : []);
+    } catch (error) {
+      console.error("Failed to search feedback by ID:", error);
+      setFeedbacks([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearchByCustomerID = async () => {
+    if (!searchCustomerId.trim()) {
+      alert("Please enter a Customer ID to search.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await fetchFeedbacks(); // Lấy toàn bộ feedbacks
+      const filteredFeedbacks = response.filter(
+        (feedback: Feedback) => feedback.customerID === searchCustomerId.trim()
+      );
+      setFeedbacks(filteredFeedbacks); // Cập nhật danh sách feedbacks đã lọc
+    } catch (error) {
+      console.error("Failed to search feedbacks by Customer ID:", error);
+      setFeedbacks([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearchByProductID = async () => {
+    if (!searchProductId.trim()) {
+      alert("Please enter a Product ID to search.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await fetchFeedbacks(); // Lấy toàn bộ feedbacks
+      const filteredFeedbacks = response.filter(
+        (feedback: Feedback) => feedback.productID === searchProductId.trim()
+      );
+      setFeedbacks(filteredFeedbacks); // Cập nhật danh sách feedbacks đã lọc
+    } catch (error) {
+      console.error("Failed to search feedbacks by Product ID:", error);
+      setFeedbacks([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetFilters = async () => {
+    setSearchFeedbackId("");
+    setSearchCustomerId("");
+    setSearchProductId("");
+    await loadFeedbacks(); // Tải lại toàn bộ danh sách feedbacks
+  };
+
   const renderStars = (rating: number) => {
     return "★".repeat(rating) + "☆".repeat(5 - rating)
   }
@@ -85,9 +154,46 @@ export default function FeedbacksPage() {
     <div className="container py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Feedbacks</h1>
-        <Button onClick={handleCreate}>
-          <Plus className="mr-2 h-4 w-4" />
-          Create Feedback
+        <div className="flex gap-4">
+          <Button variant="outline" onClick={handleResetFilters}>
+            Reset Filters
+          </Button>
+          <Button onClick={handleCreate}>
+            <Plus className="mr-2 h-4 w-4" />
+            Create Feedback
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex gap-4 mb-6">
+        {/* Filter by Feedback ID */}
+        <Input
+          value={searchFeedbackId}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchFeedbackId(e.target.value)}
+          placeholder="Enter Feedback ID"
+        />
+        <Button onClick={handleSearchByFeedbackId} disabled={loading}>
+          <Search className="h-4 w-4" />
+        </Button>
+
+        {/* Filter by Customer ID */}
+        <Input
+          value={searchCustomerId}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchCustomerId(e.target.value)}
+          placeholder="Enter Customer ID"
+        />
+        <Button onClick={handleSearchByCustomerID} disabled={loading}>
+          <Search className="h-4 w-4" />
+        </Button>
+
+        {/* Filter by Product ID */}
+        <Input
+          value={searchProductId}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchProductId(e.target.value)}
+          placeholder="Enter Product ID"
+        />
+        <Button onClick={handleSearchByProductID} disabled={loading}>
+          <Search className="h-4 w-4" />
         </Button>
       </div>
 
