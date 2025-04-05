@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Package, ShoppingCart, Users, Star, Clock, CheckCircle } from "lucide-react";
+import { Package, ShoppingCart, Users, Star, Clock, CheckCircle, Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { fetchProducts } from "@/app/api/productApi";
 import { fetchOrders } from "@/app/api/orderApi";
@@ -28,6 +28,14 @@ export default function ManagerDashboard() {
   const [completedPage, setCompletedPage] = useState(1);
   const ordersPerPage = 5;
 
+  // Date filter states
+  const [pendingStartDate, setPendingStartDate] = useState("");
+  const [pendingEndDate, setPendingEndDate] = useState("");
+  const [completedStartDate, setCompletedStartDate] = useState("");
+  const [completedEndDate, setCompletedEndDate] = useState("");
+  const [filteredPendingOrders, setFilteredPendingOrders] = useState([]);
+  const [filteredCompletedOrders, setFilteredCompletedOrders] = useState([]);
+
   useEffect(() => {
     const fetchAllData = async () => {
       try {
@@ -42,8 +50,15 @@ export default function ManagerDashboard() {
         ]);
         setProducts(productsData || []);
         setOrders(ordersData || []);
-        setPendingOrders(ordersData.filter((order) => order.status === "PENDING"));
-        setCompletedOrders(ordersData.filter((order) => order.status === "COMPLETED"));
+        
+        const pendingOrdersData = ordersData.filter((order) => order.status === "PENDING");
+        const completedOrdersData = ordersData.filter((order) => order.status === "COMPLETED");
+        
+        setPendingOrders(pendingOrdersData);
+        setCompletedOrders(completedOrdersData);
+        setFilteredPendingOrders(pendingOrdersData);
+        setFilteredCompletedOrders(completedOrdersData);
+        
         setStaffAndManagers(staffData?.data || []);
         setCustomers(customersData?.data || []);
         setFeedbacks(feedbacksData || []);
@@ -58,6 +73,65 @@ export default function ManagerDashboard() {
     fetchAllData();
   }, []);
 
+  useEffect(() => {
+    // Filter pending orders by date
+    filterPendingOrdersByDate();
+  }, [pendingStartDate, pendingEndDate, pendingOrders]);
+
+  useEffect(() => {
+    // Filter completed orders by date
+    filterCompletedOrdersByDate();
+  }, [completedStartDate, completedEndDate, completedOrders]);
+
+  // Date filter functions
+  const filterPendingOrdersByDate = () => {
+    let filtered = [...pendingOrders];
+    
+    if (pendingStartDate) {
+      filtered = filtered.filter(
+        (order) => new Date(order.orderDate) >= new Date(pendingStartDate)
+      );
+    }
+    
+    if (pendingEndDate) {
+      filtered = filtered.filter(
+        (order) => new Date(order.orderDate) <= new Date(pendingEndDate)
+      );
+    }
+    
+    setFilteredPendingOrders(filtered);
+    setPendingPage(1); // Reset to first page when filter changes
+  };
+
+  const filterCompletedOrdersByDate = () => {
+    let filtered = [...completedOrders];
+    
+    if (completedStartDate) {
+      filtered = filtered.filter(
+        (order) => new Date(order.orderDate) >= new Date(completedStartDate)
+      );
+    }
+    
+    if (completedEndDate) {
+      filtered = filtered.filter(
+        (order) => new Date(order.orderDate) <= new Date(completedEndDate)
+      );
+    }
+    
+    setFilteredCompletedOrders(filtered);
+    setCompletedPage(1); // Reset to first page when filter changes
+  };
+
+  const clearPendingFilters = () => {
+    setPendingStartDate("");
+    setPendingEndDate("");
+  };
+
+  const clearCompletedFilters = () => {
+    setCompletedStartDate("");
+    setCompletedEndDate("");
+  };
+
   if (loading) {
     return <div className="container mx-auto">Loading...</div>;
   }
@@ -68,8 +142,8 @@ export default function ManagerDashboard() {
     return orders.slice(startIndex, startIndex + ordersPerPage);
   };
 
-  const pendingOrdersToShow = paginate(pendingOrders, pendingPage);
-  const completedOrdersToShow = paginate(completedOrders, completedPage);
+  const pendingOrdersToShow = paginate(filteredPendingOrders, pendingPage);
+  const completedOrdersToShow = paginate(filteredCompletedOrders, completedPage);
 
   return (
     <div className="container mx-auto p-4">
@@ -77,6 +151,7 @@ export default function ManagerDashboard() {
 
       {/* Overview Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6 mb-6">
+        {/* ...existing card components... */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Products</CardTitle>
@@ -143,9 +218,36 @@ export default function ManagerDashboard() {
         <Card>
           <CardHeader>
             <CardTitle>Pending Orders</CardTitle>
+            <div className="flex flex-col space-y-2 sm:flex-row sm:space-x-2 sm:space-y-0 mt-2">
+              <div className="flex items-center space-x-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">Filter by date:</span>
+              </div>
+              <div className="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
+                <input
+                  type="date"
+                  value={pendingStartDate}
+                  onChange={(e) => setPendingStartDate(e.target.value)}
+                  className="border rounded px-2 py-1 text-sm"
+                />
+                <span className="text-sm hidden sm:inline">to</span>
+                <input
+                  type="date"
+                  value={pendingEndDate}
+                  onChange={(e) => setPendingEndDate(e.target.value)}
+                  className="border rounded px-2 py-1 text-sm"
+                />
+                <button
+                  onClick={clearPendingFilters}
+                  className="px-2 py-1 text-sm bg-gray-200 rounded hover:bg-gray-300"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            {pendingOrders.length > 0 ? (
+            {filteredPendingOrders.length > 0 ? (
               <div className="rounded-md border">
                 <table className="w-full">
                   <thead>
@@ -189,23 +291,23 @@ export default function ManagerDashboard() {
                     Previous
                   </button>
                   <span className="text-sm">
-                    Page {pendingPage} of {Math.ceil(pendingOrders.length / ordersPerPage)}
+                    Page {pendingPage} of {Math.ceil(filteredPendingOrders.length / ordersPerPage)}
                   </span>
                   <button
                     className="px-4 py-2 text-sm bg-gray-200 rounded disabled:opacity-50"
                     onClick={() =>
                       setPendingPage((prev) =>
-                        Math.min(prev + 1, Math.ceil(pendingOrders.length / ordersPerPage))
+                        Math.min(prev + 1, Math.ceil(filteredPendingOrders.length / ordersPerPage))
                       )
                     }
-                    disabled={pendingPage === Math.ceil(pendingOrders.length / ordersPerPage)}
+                    disabled={pendingPage === Math.ceil(filteredPendingOrders.length / ordersPerPage)}
                   >
                     Next
                   </button>
                 </div>
               </div>
             ) : (
-              <p>No pending orders available.</p>
+              <p>No pending orders available within the selected date range.</p>
             )}
           </CardContent>
         </Card>
@@ -213,9 +315,36 @@ export default function ManagerDashboard() {
         <Card>
           <CardHeader>
             <CardTitle>Completed Orders</CardTitle>
+            <div className="flex flex-col space-y-2 sm:flex-row sm:space-x-2 sm:space-y-0 mt-2">
+              <div className="flex items-center space-x-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">Filter by date:</span>
+              </div>
+              <div className="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
+                <input
+                  type="date"
+                  value={completedStartDate}
+                  onChange={(e) => setCompletedStartDate(e.target.value)}
+                  className="border rounded px-2 py-1 text-sm"
+                />
+                <span className="text-sm hidden sm:inline">to</span>
+                <input
+                  type="date"
+                  value={completedEndDate}
+                  onChange={(e) => setCompletedEndDate(e.target.value)}
+                  className="border rounded px-2 py-1 text-sm"
+                />
+                <button
+                  onClick={clearCompletedFilters}
+                  className="px-2 py-1 text-sm bg-gray-200 rounded hover:bg-gray-300"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            {completedOrders.length > 0 ? (
+            {filteredCompletedOrders.length > 0 ? (
               <div className="rounded-md border">
                 <table className="w-full">
                   <thead>
@@ -259,23 +388,23 @@ export default function ManagerDashboard() {
                     Previous
                   </button>
                   <span className="text-sm">
-                    Page {completedPage} of {Math.ceil(completedOrders.length / ordersPerPage)}
+                    Page {completedPage} of {Math.ceil(filteredCompletedOrders.length / ordersPerPage)}
                   </span>
                   <button
                     className="px-4 py-2 text-sm bg-gray-200 rounded disabled:opacity-50"
                     onClick={() =>
                       setCompletedPage((prev) =>
-                        Math.min(prev + 1, Math.ceil(completedOrders.length / ordersPerPage))
+                        Math.min(prev + 1, Math.ceil(filteredCompletedOrders.length / ordersPerPage))
                       )
                     }
-                    disabled={completedPage === Math.ceil(completedOrders.length / ordersPerPage)}
+                    disabled={completedPage === Math.ceil(filteredCompletedOrders.length / ordersPerPage)}
                   >
                     Next
                   </button>
                 </div>
               </div>
             ) : (
-              <p>No completed orders available.</p>
+              <p>No completed orders available within the selected date range.</p>
             )}
           </CardContent>
         </Card>

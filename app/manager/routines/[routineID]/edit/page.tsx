@@ -1,11 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
-import { fetchRoutineById } from "@/app/api/routineApi";
+import { useRouter } from "next/navigation";
+import { fetchRoutineById, updateRoutine } from "@/app/api/routineApi";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, ArrowLeft } from "lucide-react"; // Sử dụng icon từ lucide-react
+import { Loader2, ArrowLeft, Save } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/components/ui/use-toast";
 
 interface Product {
   productID: string;
@@ -17,25 +21,54 @@ interface Routine {
   skinType: string;
   routineName: string;
   routineDescription: string;
-  products?: Product[]; // Danh sách sản phẩm (nếu có)
+  products?: Product[]; 
 }
 
-export default function RoutineDetailPage() {
+interface RoutineEditPageProps {
+  params: {
+    routineID: string
+  }
+}
+
+export default function RoutineEditPage({ params }: RoutineEditPageProps) {
   const router = useRouter();
-  const { id } = useParams(); // Lấy ID từ URL
-  const [routine, setRoutine] = useState<Routine | null>(null);
+  const { toast } = useToast();
+  const [routine, setRoutine] = useState<Routine>({
+    routineID: "",
+    skinType: "",
+    routineName: "",
+    routineDescription: "",
+    products: []
+  });
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!id) return;
+  // Danh sách các loại da
+  const skinTypes = ["Dry", "Oily", "Combination", "Sensitive", "Normal"];
 
+  useEffect(() => {
     const loadRoutine = async () => {
+      // Kiểm tra xem routineID có tồn tại không
+      if (!params.routineID) {
+        setError("Routine ID is missing.");
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
       setError(null);
+      
       try {
-        const data = await fetchRoutineById(id as string);
-        setRoutine(data);
+        const response = await fetchRoutineById(params.routineID);
+        console.log("Routine data:", response.data);
+        
+        if (!response.data) {
+          setError("Routine not found.");
+          return;
+        }
+        
+        setRoutine(response.data);
       } catch (err) {
         console.error("Failed to fetch routine:", err);
         setError("Failed to load routine details. Please try again.");
@@ -45,7 +78,72 @@ export default function RoutineDetailPage() {
     };
 
     loadRoutine();
-  }, [id]);
+  }, [params.routineID]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setRoutine(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSkinTypeChange = (value: string) => {
+    setRoutine(prev => ({
+      ...prev,
+      skinType: value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setError(null);
+
+    // Validate form
+    if (!routine.routineName.trim()) {
+      setError("Routine name is required.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!routine.skinType) {
+      setError("Skin type is required.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      // Submit form data
+      const updatedData = {
+        routineID: routine.routineID,
+        routineName: routine.routineName,
+        routineDescription: routine.routineDescription,
+        skinType: routine.skinType
+      };
+      
+      await updateRoutine(params.routineID, updatedData);
+      
+      toast({
+        title: "Success",
+        description: "Routine updated successfully!",
+        variant: "default",
+      });
+      
+      // Redirect to routine details page
+      router.push(`/manager/routines/${params.routineID}`);
+    } catch (err) {
+      console.error("Failed to update routine:", err);
+      setError("Failed to update routine. Please try again.");
+      toast({
+        title: "Error",
+        description: "Failed to update routine. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -55,10 +153,10 @@ export default function RoutineDetailPage() {
     );
   }
 
-  if (error || !routine) {
+  if (error && !routine.routineID) {
     return (
       <div className="container mx-auto p-6 text-center text-gray-500 py-12">
-        <p className="text-lg">{error || "Routine not found."}</p>
+        <p className="text-lg">{error}</p>
         <Button
           variant="outline"
           onClick={() => router.push("/manager/routines")}
@@ -71,82 +169,118 @@ export default function RoutineDetailPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 min-h-screen bg-gray-50">
-      {/* Header */}
+    <div className="container mx-auto p-6 max-w-3xl">
       <div className="flex items-center mb-8">
         <Button
           variant="ghost"
           onClick={() => router.push("/manager/routines")}
-          className="mr-4 transition-all duration-200"
+          className="mr-4"
         >
           <ArrowLeft className="h-5 w-5 mr-2" />
           Back
         </Button>
-        <h1 className="text-3xl font-bold text-gray-800">{routine.routineName}</h1>
+        <h1 className="text-2xl font-bold">Edit Routine</h1>
       </div>
 
-      {/* Routine Details */}
-      <Card className="bg-white shadow-lg border border-gray-200 rounded-lg mb-6">
-        <CardHeader className="border-b border-gray-200">
-          <CardTitle className="text-lg font-semibold text-gray-800">
-            Routine Details
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-6 space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm font-medium text-gray-700">Routine Name</p>
-              <p className="text-gray-900">{routine.routineName}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-700">Skin Type</p>
-              <p className="text-primary">{routine.skinType}</p>
-            </div>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-gray-700">Description</p>
-            <p className="text-gray-900">{routine.routineDescription}</p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Products List (nếu có) */}
-      {routine.products && routine.products.length > 0 ? (
-        <Card className="bg-white shadow-lg border border-gray-200 rounded-lg">
-          <CardHeader className="border-b border-gray-200">
-            <CardTitle className="text-lg font-semibold text-gray-800">
-              Products in Routine
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <div className="grid gap-4">
-              {routine.products.map((product) => (
-                <div
-                  key={product.productID}
-                  className="flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-200"
-                >
-                  <div>
-                    <p className="text-sm font-medium text-gray-700">{product.productName}</p>
-                    <p className="text-xs text-gray-500">ID: {product.productID}</p>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => router.push(`/manager/products/${product.productID}`)} // Giả sử bạn có route cho product detail
-                    className="transition-all duration-200"
-                  >
-                    View Product
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="text-center text-gray-500 py-6">
-          <p className="text-sm">No products associated with this routine.</p>
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
+          {error}
         </div>
       )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Routine Information</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1" htmlFor="routineID">
+                Routine ID
+              </label>
+              <Input
+                id="routineID"
+                name="routineID"
+                value={routine.routineID}
+                disabled
+                className="bg-gray-50"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-1" htmlFor="routineName">
+                Routine Name *
+              </label>
+              <Input
+                id="routineName"
+                name="routineName"
+                value={routine.routineName}
+                onChange={handleInputChange}
+                placeholder="Enter routine name"
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-1" htmlFor="skinType">
+                Skin Type *
+              </label>
+              <Select
+                value={routine.skinType}
+                onValueChange={handleSkinTypeChange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select skin type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {skinTypes.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-1" htmlFor="routineDescription">
+                Description
+              </label>
+              <Textarea
+                id="routineDescription"
+                name="routineDescription"
+                value={routine.routineDescription}
+                onChange={handleInputChange}
+                placeholder="Enter routine description"
+                rows={5}
+              />
+            </div>
+            
+            <div className="pt-4 flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.push(`/manager/routines/${params.routineID}`)}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit"
+                disabled={isSubmitting}
+                className="gap-2"
+              >
+                {isSubmitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+                {isSubmitting ? "Saving..." : "Save Changes"}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

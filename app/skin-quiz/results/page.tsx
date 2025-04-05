@@ -142,7 +142,7 @@ export default function QuizResults() {
                 </CardHeader>
                 <CardContent>
                   <p>{routine.routineDescription}</p>
-                  <Link href={`/skin-quiz/result/${routine.routineID}`}>
+                  <Link href={`/skin-quiz/results/${routine.routineID}`}>
                     <Button className="mt-4">View Detail</Button>
                   </Link>
                 </CardContent>

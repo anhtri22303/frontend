@@ -11,6 +11,7 @@ interface Order {
   orderDate: string
   status: string
   totalAmount: number
+  payment?: string;
   orderDetails: OrderItem[]
 }
 

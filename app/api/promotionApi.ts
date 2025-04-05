@@ -3,7 +3,7 @@ import axiosInstance from "@/lib/axiosInstance"
 export interface Promotion {
   promotionID: string
   promotionName: string
-  productID: string
+  productID: string[]
   discount: number
   startDate?: string
   endDate?: string

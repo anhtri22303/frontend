@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Search, MoreHorizontal, Filter, RotateCw } from "lucide-react"
-
+import { Search, MoreHorizontal, Filter, RotateCw, CreditCard, Calendar, FileSearch } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -106,6 +105,26 @@ export default function OrdersPage() {
     loadOrders()
   }
 
+  // Function to render payment badge based on payment method
+  const renderPaymentBadge = (payment: string | undefined) => {
+    if (!payment) return <span className="px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-800">N/A</span>;
+    
+    switch(payment.toUpperCase()) {
+      case 'COD':
+        return <span className="px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-800">Cash on Delivery</span>;
+      case 'CREDIT_CARD':
+        return <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">Credit Card</span>;
+      case 'BANK_TRANSFER':
+        return <span className="px-2 py-1 rounded-full text-xs bg-indigo-100 text-indigo-800">Bank Transfer</span>;
+      case 'PAYPAL':
+        return <span className="px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800">PayPal</span>;
+      case 'MOMO':
+        return <span className="px-2 py-1 rounded-full text-xs bg-pink-100 text-pink-800">MoMo</span>;
+      default:
+        return <span className="px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-800">{payment}</span>;
+    }
+  };
+
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
@@ -114,61 +133,79 @@ export default function OrdersPage() {
           variant="outline" 
           onClick={handleResetFilters}
           disabled={isLoading}
+          className="flex items-center gap-2"
         >
           {isLoading ? (
             <RotateCw className="h-4 w-4 animate-spin" />
           ) : (
-            "Reset Filters"
+            <>
+              <RotateCw className="h-4 w-4" />
+              Reset Filters
+            </>
           )}
         </Button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
         <div className="flex gap-2">
-          <Input
-            placeholder="Customer ID"
-            value={customerIdSearch}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomerIdSearch(e.target.value)}
-          />
+          <div className="relative flex-1">
+            <Input
+              placeholder="Customer ID"
+              value={customerIdSearch}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomerIdSearch(e.target.value)}
+              className="pl-10 w-full"
+            />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+          </div>
           <Button onClick={() => handleSearch('customer')}>
             <Search className="h-4 w-4" />
           </Button>
         </div>
 
         <div className="flex gap-2">
-          <Input
-            type="date"
-            value={orderDateSearch}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setOrderDateSearch(e.target.value)}
-          />
+          <div className="relative flex-1">
+            <Input
+              type="date"
+              value={orderDateSearch}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setOrderDateSearch(e.target.value)}
+              className="pl-10 w-full"
+            />
+            <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+          </div>
           <Button onClick={() => handleSearch('date')}>
             <Search className="h-4 w-4" />
           </Button>
         </div>
 
         <div className="flex gap-2">
-          <Input
-            placeholder="Order ID"
-            value={orderIdSearch}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setOrderIdSearch(e.target.value)}
-          />
+          <div className="relative flex-1">
+            <Input
+              placeholder="Order ID"
+              value={orderIdSearch}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setOrderIdSearch(e.target.value)}
+              className="pl-10 w-full"
+            />
+            <FileSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+          </div>
           <Button onClick={() => handleSearch('order')}>
             <Search className="h-4 w-4" />
           </Button>
         </div>
 
         <div className="flex gap-2">
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder="Filter by Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="PENDING">PENDING</SelectItem>
-              <SelectItem value="PROCESSING">PROCESSING</SelectItem>
-              <SelectItem value="COMPLETED">COMPLETED</SelectItem>
-              <SelectItem value="CANCELLED">CANCELLED</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex-1">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="PENDING">PENDING</SelectItem>
+                <SelectItem value="PROCESSING">PROCESSING</SelectItem>
+                <SelectItem value="COMPLETED">COMPLETED</SelectItem>
+                <SelectItem value="CANCELLED">CANCELLED</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <Button onClick={() => handleSearch('status')}>
             <Filter className="h-4 w-4" />
           </Button>
@@ -183,6 +220,7 @@ export default function OrdersPage() {
               <th className="p-4 text-left font-medium">Customer ID</th>
               <th className="p-4 text-left font-medium">Order Date</th>
               <th className="p-4 text-left font-medium">Status</th>
+              <th className="p-4 text-left font-medium">Payment</th>
               <th className="p-4 text-left font-medium">Total Amount</th>
               <th className="p-4 text-left font-medium">Actions</th>
             </tr>
@@ -207,6 +245,9 @@ export default function OrdersPage() {
                   >
                     {filteredOrder.status}
                   </span>
+                </td>
+                <td className="p-4">
+                  {renderPaymentBadge(filteredOrder.payment)}
                 </td>
                 <td className="p-4">${filteredOrder.totalAmount ? filteredOrder.totalAmount.toFixed(2) : '0.00'}</td>
                 <td className="p-4">
@@ -248,6 +289,9 @@ export default function OrdersPage() {
                       {order.status}
                     </span>
                   </td>
+                  <td className="p-4">
+                    {renderPaymentBadge(order.payment)}
+                  </td>
                   <td className="p-4">${order.totalAmount.toFixed(2)}</td>
                   <td className="p-4">
                     <DropdownMenu>
@@ -270,7 +314,7 @@ export default function OrdersPage() {
               ))
             ) : (
               <tr>
-                <td colSpan={6} className="p-4 text-center text-muted-foreground">
+                <td colSpan={7} className="p-4 text-center text-muted-foreground">
                   No orders found
                 </td>
               </tr>

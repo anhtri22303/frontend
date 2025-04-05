@@ -52,7 +52,7 @@ const managerLinks: SidebarLink[] = [
   { href: "/manager/promotions", label: "Promotions", icon: <BadgeDollarSign className="h-6 w-6" /> },
   { href: "/manager/feedbacks", label: "Feedbacks", icon: <Command className="h-6 w-6" /> },
   { href: "/manager/routines", label: "Routines", icon: <RouteIcon className="h-6 w-6" /> },
-  { href: "/manager/skin-quiz", label: "Skin-Quiz", icon: <QuoteIcon className="h-6 w-6" /> },
+  // { href: "/manager/skin-quiz", label: "Skin-Quiz", icon: <QuoteIcon className="h-6 w-6" /> },
   // { href: "/manager/answers", label: "Answers", icon: <SaveIcon className="h-6 w-6" /> },
 ]
 
