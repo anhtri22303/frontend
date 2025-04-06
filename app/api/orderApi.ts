@@ -4,7 +4,9 @@ export interface OrderDetail {
   orderID: string | null
   productID: string
   quantity: number
+  productPrice: number
   totalAmount: number
+  discountPercentage?: number
   discountPrice?: number
 }
 

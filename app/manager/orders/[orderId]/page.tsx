@@ -26,23 +26,39 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
   const loadOrderDetails = async () => {
     try {
       const data = await fetchOrderByID(params.orderId)
-      // Log the data to debug
       console.log("Fetched order:", data);
-      // If totalAmount is missing, calculate it from orderDetails
-      if (data && !data.totalAmount && data.orderDetails) {
-        const calculatedTotal = data.orderDetails.reduce(
-          (sum, detail) => sum + detail.quantity * detail.totalAmount,
-          0
-        );
+      
+      if (data && data.orderDetails) {
+        // Calculate discount prices if they don't exist
+        const updatedOrderDetails = data.orderDetails.map(detail => {
+          if (detail.discountPercentage && !detail.discountPrice) {
+            // Calculate discount price: productPrice * (1 - discountPercentage/100)
+            const discountMultiplier = 1 - (parseFloat(detail.discountPercentage) / 100);
+            detail.discountPrice = detail.productPrice * discountMultiplier;
+          }
+          return detail;
+        });
+
+        // Calculate total based on whether promotion exists
+        const hasPromotion = updatedOrderDetails.some(detail => detail.discountPercentage);
+        const calculatedTotal = updatedOrderDetails.reduce((sum, detail) => {
+          if (hasPromotion && detail.discountPrice) {
+            // Use discount price if promotion exists
+            return sum + detail.quantity * detail.discountPrice;
+          }
+          // Use regular price if no promotion
+          return sum + detail.quantity * detail.productPrice;
+        }, 0);
+
+        data.orderDetails = updatedOrderDetails;
         data.totalAmount = calculatedTotal;
       }
-      setOrder(data)
+      setOrder(data);
     } catch (error) {
-      console.error("Error loading order details:", error)
+      console.error("Error loading order details:", error);
     }
-  }
+  };
 
-  // Function to render payment badge based on payment method
   const renderPaymentBadge = (payment: string | undefined) => {
     if (!payment) return <span className="px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-800">N/A</span>;
     
@@ -111,13 +127,13 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
                 {renderPaymentBadge(order.payment)}
               </div>
             </div>
-            {order.promotion && (
+            {order.discountPercentage && (
               <div>
                 <p className="text-sm text-muted-foreground">Order Promotion</p>
                 <div className="flex items-center gap-1 mt-1">
                   <Tag className="h-4 w-4 text-muted-foreground" />
                   <span className="px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800">
-                    {order.promotion}
+                    {order.discountPercentage}
                   </span>
                 </div>
               </div>
@@ -143,7 +159,7 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
                   <tr key={detail.productID} className="border-b">
                     <td className="p-4">{detail.productID}</td>
                     <td className="p-4">{detail.quantity}</td>
-                    <td className="p-4">${detail.totalAmount.toFixed(2)}</td>
+                    <td className="p-4">${detail.productPrice.toFixed(2)}</td>
                     <td className="p-4">
                       {detail.discountPrice ? (
                         <span className="text-green-600">${detail.discountPrice.toFixed(2)}</span>
@@ -152,9 +168,9 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
                       )}
                     </td>
                     <td className="p-4">
-                      {detail.promotion ? (
+                      {detail.discountPercentage ? (
                         <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
-                          {detail.promotion}
+                          {detail.discountPercentage}
                         </span>
                       ) : (
                         <span className="text-gray-400">N/A</span>

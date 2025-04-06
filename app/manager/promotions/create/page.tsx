@@ -1,318 +1,170 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { createPromotion } from "@/app/api/promotionApi"
-import { fetchProducts } from "@/app/api/productApi"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Search, X } from "lucide-react"
-import { useToast } from "@/components/ui/use-toast"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createPromotion } from "@/app/api/promotionApi"; // Adjust the import path
 
-interface Product {
-  productID: string;
-  productName: string;
-  description?: string;
-  price: number;
-  image_url?: string;
-  skinType?: string;
-  category?: string;
-}
-
-export default function CreatePromotion() {
-  const router = useRouter()
-  const { toast } = useToast()
+export default function CreatePromotionForm() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     promotionName: "",
-    discount: 0,
+    productIDs: [],
+    discount: "",
     startDate: "",
     endDate: "",
-    productID: [] as string[]
-  })
-  const [isLoading, setIsLoading] = useState(false)
-  const [products, setProducts] = useState<Product[]>([])
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedProductIDs, setSelectedProductIDs] = useState<string[]>([])
-  const [selectedProducts, setSelectedProducts] = useState<Product[]>([])
+  });
+  const [error, setError] = useState("");
 
-  // Fetch all products when component mounts
-  useEffect(() => {
-    const loadProducts = async () => {
-      try {
-        const data = await fetchProducts()
-        setProducts(data || [])
-      } catch (error) {
-        console.error("Failed to load products:", error)
-        toast({
-          title: "Error",
-          description: "Failed to load products. Please try again.",
-          variant: "destructive",
-        })
-      }
+  // Sample product list (in a real app, fetch this from an API)
+  const availableProducts = [
+    { id: "1001", name: "Phyto Peptide Cleanser" },
+    { id: "1003", name: "Klairs Supple Preparation Unscented Toner" },
+  ];
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleProductSelect = (productId) => {
+    setFormData((prev) => ({
+      ...prev,
+      productIDs: prev.productIDs.includes(productId)
+        ? prev.productIDs.filter((id) => id !== productId)
+        : [...prev.productIDs, productId],
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    // Validation
+    if (!formData.promotionName) {
+      setError("Promotion Name is required.");
+      return;
     }
-    
-    loadProducts()
-  }, [toast])
-
-  // Group products by skinType
-  const groupedProducts = products.reduce((acc, product) => {
-    const skinType = product.skinType || "Other"
-    if (!acc[skinType]) {
-      acc[skinType] = []
+    const discount = parseFloat(formData.discount);
+    if (isNaN(discount) || discount <= 0 || discount > 100) {
+      setError("Discount must be a number between 0 and 100.");
+      return;
     }
-    acc[skinType].push(product)
-    return acc
-  }, {} as Record<string, Product[]>)
-
-  // Handle product selection
-  const handleProductSelect = (product: Product) => {
-    if (selectedProductIDs.includes(product.productID)) {
-      // Remove product if already selected
-      setSelectedProductIDs(selectedProductIDs.filter(id => id !== product.productID))
-      setSelectedProducts(selectedProducts.filter(p => p.productID !== product.productID))
-    } else {
-      // Add product if not selected
-      setSelectedProductIDs([...selectedProductIDs, product.productID])
-      setSelectedProducts([...selectedProducts, product])
+    if (!formData.startDate || !formData.endDate) {
+      setError("Start Date and End Date are required.");
+      return;
     }
-  }
-
-  // Apply selected products to formData
-  const handleApplySelection = () => {
-    setFormData({ ...formData, productID: selectedProductIDs })
-    setIsDialogOpen(false)
-  }
-
-  // Remove a selected product
-  const handleRemoveProduct = (productID: string) => {
-    setSelectedProductIDs(selectedProductIDs.filter(id => id !== productID))
-    setSelectedProducts(selectedProducts.filter(p => p.productID !== productID))
-    setFormData({
-      ...formData,
-      productID: formData.productID.filter(id => id !== productID)
-    })
-  }
-
-  // Filter products based on search term
-  const filteredProducts = searchTerm
-    ? products.filter(p => 
-        p.productName.includes(searchTerm) ||
-        p.productID.includes(searchTerm) ||
-        (p.category && p.category.includes(searchTerm))
-      )
-    : products
-
-  // Reorganize filtered products by skin type
-  const filteredGroupedProducts = filteredProducts.reduce((acc, product) => {
-    const skinType = product.skinType || "Other"
-    if (!acc[skinType]) {
-      acc[skinType] = []
+    if (new Date(formData.startDate) >= new Date(formData.endDate)) {
+      setError("Start Date must be before End Date.");
+      return;
     }
-    acc[skinType].push(product)
-    return acc
-  }, {} as Record<string, Product[]>)
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (formData.productID.length === 0) {
-      toast({
-        title: "Error",
-        description: "Please select at least one product for this promotion.",
-        variant: "destructive",
-      })
-      return
+    if (formData.productIDs.length === 0) {
+      setError("At least one product must be selected.");
+      return;
     }
-    
-    setIsLoading(true)
+
     try {
-      await createPromotion(formData)
-      toast({
-        title: "Success",
-        description: "Promotion created successfully!"
-      })
-      router.push("/manager/promotions")
+      const promotionData = {
+        promotionName: formData.promotionName,
+        productIDs: formData.productIDs,
+        discount: discount,
+        startDate: formData.startDate, // Already in YYYY-MM-DD format from input type="date"
+        endDate: formData.endDate,
+      };
+      console.log("Submitting promotion:", promotionData);
+      await createPromotion(promotionData);
+      alert("Promotion created successfully!");
+      router.push("/promotions"); // Redirect to promotions list or another page
     } catch (error) {
-      console.error("Failed to create promotion:", error)
-      toast({
-        title: "Error",
-        description: "Failed to create promotion. Please try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsLoading(false)
+      console.error("Failed to create promotion:", error);
+      setError("Failed to create promotion. Please try again.");
     }
-  }
+  };
 
   return (
-    <div className="container mx-auto p-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Create New Promotion</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <label className="font-medium">Promotion Name</label>
-              <Input
-                value={formData.promotionName}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, promotionName: e.target.value })}
-                placeholder="Enter promotion name"
-                required
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-4">Create Promotion</h1>
+      {error && <div className="text-red-500 mb-4">{error}</div>}
+      <form onSubmit={handleSubmit}>
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-1">Promotion Name</label>
+          <input
+            type="text"
+            name="promotionName"
+            value={formData.promotionName}
+            onChange={handleInputChange}
+            className="border p-2 w-full rounded"
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-1">Discount (%)</label>
+          <input
+            type="number"
+            name="discount"
+            value={formData.discount}
+            onChange={handleInputChange}
+            className="border p-2 w-full rounded"
+            min="0"
+            max="100"
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-1">Start Date</label>
+          <input
+            type="date"
+            name="startDate"
+            value={formData.startDate}
+            onChange={handleInputChange}
+            className="border p-2 w-full rounded"
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-1">End Date</label>
+          <input
+            type="date"
+            name="endDate"
+            value={formData.endDate}
+            onChange={handleInputChange}
+            className="border p-2 w-full rounded"
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-1">Products</label>
+          {availableProducts.map((product) => (
+            <div key={product.id} className="flex items-center">
+              <input
+                type="checkbox"
+                checked={formData.productIDs.includes(product.id)}
+                onChange={() => handleProductSelect(product.id)}
+                className="mr-2"
               />
+              <span>
+                {product.name} (ID: {product.id})
+              </span>
             </div>
-
-            <div className="space-y-2">
-              <label className="font-medium">Discount (%)</label>
-              <Input
-                type="number"
-                value={formData.discount}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, discount: Number(e.target.value) })}
-                placeholder="Enter discount percentage"
-                required
-                min="0"
-                max="100"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="font-medium">Start Date</label>
-              <Input
-                type="date"
-                value={formData.startDate}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, startDate: e.target.value })}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="font-medium">End Date</label>
-              <Input
-                type="date"
-                value={formData.endDate}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, endDate: e.target.value })}
-                required
-                min={formData.startDate}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="font-medium">Products</label>
-              
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" type="button" className="w-full justify-start text-left font-normal">
-                    {selectedProducts.length > 0 
-                      ? `${selectedProducts.length} products selected` 
-                      : "Select products"}
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Select Products</DialogTitle>
-                  </DialogHeader>
-                  
-                  <div className="relative mb-4">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      className="pl-9"
-                      placeholder="Search products by name, ID or category..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </div>
-                  
-                  <div className="mt-4">
-                    {Object.keys(filteredGroupedProducts).length === 0 ? (
-                      <p className="text-center text-gray-500 my-8">No products found</p>
-                    ) : (
-                      Object.entries(filteredGroupedProducts).map(([skinType, products]) => (
-                        <div key={skinType} className="mb-6">
-                          <h3 className="font-semibold text-lg mb-2 border-b pb-1">{skinType}</h3>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            {products.map(product => (
-                              <div 
-                                key={product.productID}
-                                className={`p-3 border rounded-md cursor-pointer flex items-center gap-3 ${
-                                  selectedProductIDs.includes(product.productID) ? 'bg-primary/5 border-primary' : ''
-                                }`}
-                                onClick={() => handleProductSelect(product)}
-                              >
-                                <Checkbox 
-                                  checked={selectedProductIDs.includes(product.productID)}
-                                  className="pointer-events-none"
-                                />
-                                <div className="flex-1">
-                                  <p className="font-medium">{product.productName}</p>
-                                  <p className="text-sm text-gray-500">ID: {product.productID}</p>
-                                  <div className="flex justify-between">
-                                    <span className="text-sm text-gray-500">{product.category || "N/A"}</span>
-                                    <span className="text-sm font-medium">${product.price.toFixed(2)}</span>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                  
-                  <div className="flex justify-between mt-4 pt-4 border-t">
-                    <span className="text-sm text-gray-500">
-                      {selectedProductIDs.length} products selected
-                    </span>
-                    <div className="flex gap-2">
-                      <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                        Cancel
-                      </Button>
-                      <Button onClick={handleApplySelection}>
-                        Apply
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-              
-              {/* Display selected products */}
-              {selectedProducts.length > 0 && (
-                <div className="mt-2 space-y-2">
-                  {selectedProducts.map(product => (
-                    <div 
-                      key={product.productID} 
-                      className="flex justify-between items-center p-2 bg-gray-50 rounded-md"
-                    >
-                      <div>
-                        <p className="font-medium">{product.productName}</p>
-                        <p className="text-xs text-gray-500">ID: {product.productID}</p>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRemoveProduct(product.productID)}
-                      >
-                        <X className="h-4 w-4 text-gray-500" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="flex justify-end space-x-2 pt-2">
-              <Button variant="outline" onClick={() => router.back()} type="button">
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Creating..." : "Create Promotion"}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+          ))}
+          <p className="text-sm text-gray-500 mt-1">
+            {formData.productIDs.length} product(s) selected
+          </p>
+        </div>
+        <div className="flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="border p-2 rounded"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="bg-red-500 text-white p-2 rounded"
+          >
+            Create Promotion
+          </button>
+        </div>
+      </form>
     </div>
-  )
+  );
 }
