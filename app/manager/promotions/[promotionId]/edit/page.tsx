@@ -48,7 +48,7 @@ export default function EditPromotionPage({ params }: EditPromotionPageProps) {
   const [promotion, setPromotion] = useState<Promotion>({
     promotionID: params.promotionId,
     promotionName: "",
-    productID: [],
+    productIDs: [], // Changed from productID to productIDs
     discount: 0,
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date().toISOString().split('T')[0]
@@ -75,10 +75,20 @@ export default function EditPromotionPage({ params }: EditPromotionPageProps) {
         
         // If promotion data is available
         if (promotionData) {
-          // Ensure productID is always an array
-          const productIDs = Array.isArray(promotionData.productID) 
-            ? promotionData.productID 
-            : [promotionData.productID].filter(Boolean);
+          // Handle both old (productID) and new (productIDs) field names
+          let productIds: string[] = [];
+          
+          if (promotionData.productIDs) {
+            // New format
+            productIds = Array.isArray(promotionData.productIDs) 
+              ? promotionData.productIDs 
+              : [promotionData.productIDs].filter(Boolean);
+          } else if (promotionData.productID) {
+            // Old format
+            productIds = Array.isArray(promotionData.productID) 
+              ? promotionData.productID 
+              : [promotionData.productID].filter(Boolean);
+          }
             
           // Format dates to YYYY-MM-DD for input[type="date"]
           const startDate = promotionData.startDate 
@@ -94,18 +104,18 @@ export default function EditPromotionPage({ params }: EditPromotionPageProps) {
             promotionID: promotionData.promotionID,
             promotionName: promotionData.promotionName || "",
             discount: promotionData.discount || 0,
-            productID: productIDs,
+            productIDs: productIds, // Using productIDs consistently
             startDate: startDate,
             endDate: endDate
           });
           
           // Update selected product IDs
-          setSelectedProductIDs(productIDs);
+          setSelectedProductIDs(productIds);
           
           // Find and set selected products
           if (productsData) {
             const selectedProds = productsData.filter(p => 
-              productIDs.includes(p.productID)
+              productIds.includes(p.productID)
             );
             setSelectedProducts(selectedProds);
           }
@@ -152,7 +162,7 @@ export default function EditPromotionPage({ params }: EditPromotionPageProps) {
   const handleApplySelection = () => {
     setPromotion({
       ...promotion,
-      productID: selectedProductIDs
+      productIDs: selectedProductIDs // Changed from productID to productIDs
     })
     setIsDialogOpen(false)
   }
@@ -163,7 +173,7 @@ export default function EditPromotionPage({ params }: EditPromotionPageProps) {
     setSelectedProducts(selectedProducts.filter(p => p.productID !== productID))
     setPromotion({
       ...promotion,
-      productID: promotion.productID.filter(id => id !== productID)
+      productIDs: promotion.productIDs.filter(id => id !== productID) // Changed from productID to productIDs
     })
   }
 
@@ -204,9 +214,15 @@ export default function EditPromotionPage({ params }: EditPromotionPageProps) {
       // Ensure promotion object has the latest selected product IDs
       const updatedPromotion = {
         ...promotion,
-        productID: selectedProductIDs
+        productIDs: selectedProductIDs // Changed from productID to productIDs
       }
       
+      // Remove any old productID field if it exists
+      if ('productID' in updatedPromotion) {
+        delete updatedPromotion.productID;
+      }
+      
+      console.log("Sending updated promotion data:", updatedPromotion);
       await updatePromotion(params.promotionId, updatedPromotion)
       toast({
         title: "Success",
