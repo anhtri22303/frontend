@@ -47,18 +47,10 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
     if (!payment) return <span className="px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-800">N/A</span>;
     
     switch(payment.toUpperCase()) {
-      case 'COD':
-        return <span className="px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-800">Cash on Delivery</span>;
-      case 'CREDIT_CARD':
-        return <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">Credit Card</span>;
-      case 'BANK_TRANSFER':
-        return <span className="px-2 py-1 rounded-full text-xs bg-indigo-100 text-indigo-800">Bank Transfer</span>;
-      case 'PAYPAL':
-        return <span className="px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800">PayPal</span>;
-      case 'MOMO':
-        return <span className="px-2 py-1 rounded-full text-xs bg-pink-100 text-pink-800">MoMo</span>;
+      case 'Stripe':
+        return <span className="px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-800">Stripe</span>;
       default:
-        return <span className="px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-800">{payment}</span>;
+        return <span className="px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-800">{payment}</span>;
     }
   };
 

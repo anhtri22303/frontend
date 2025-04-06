@@ -49,24 +49,34 @@ export default function CartPage() {
     try {
       setLoading(true);
       const response = await fetchCartByUserId(userID!);
-  
+
       if (response && response.items) {
-        const cartItemsWithDetails = await Promise.all(
+        // The response now includes all the details we need
+        setCartItems(response.items);
+        
+        // Add image data from product API if not provided in cart response
+        const cartItemsWithImages = await Promise.all(
           response.items.map(async (item) => {
-            const productDetails = await fetchProductById(item.productID);
-            const productData = productDetails; // Truy cập thuộc tính `data`
-  
-            return {
-              ...item,
-              price: productData?.price || 0, // Giá gốc từ API sản phẩm
-              discountedPrice: productData?.discountedPrice || null, // Giá giảm từ API sản phẩm
-              name: productData?.productName || `Product ${item.productID}`, // Tên sản phẩm
-              image: productData?.image_url || "/placeholder.svg", // Hình ảnh sản phẩm
-            };
+            if (!item.image) {
+              try {
+                const productDetails = await fetchProductById(item.productID);
+                return {
+                  ...item,
+                  image: productDetails?.image_url || "/placeholder.svg",
+                };
+              } catch (error) {
+                console.error(`Error fetching product details for ${item.productID}:`, error);
+                return {
+                  ...item,
+                  image: "/placeholder.svg",
+                };
+              }
+            }
+            return item;
           })
         );
-  
-        setCartItems(cartItemsWithDetails);
+
+        setCartItems(cartItemsWithImages);
       }
       console.log("Cart items loaded:", response.items);
     } catch (error) {
@@ -256,29 +266,29 @@ export default function CartPage() {
               >
                 <Image
                   src={item.image || "/placeholder.svg"}
-                  alt={item.name || `Product ${item.productID}`}
+                  alt={item.productName || `Product ${item.productID}`}
                   width={100}
                   height={100}
                   className="rounded-md"
                 />
                 <div className="flex-grow">
                   <h3 className="font-semibold">
-                    {item.name || `Product ${item.productID}`}
+                    {item.productName || `Product ${item.productID}`}
                   </h3>
                   <div className="mt-1">
-                    {item.discountedPrice ? (
+                    {item.discountPercentage ? (
                       <div className="flex items-center gap-2">
-                        <p className="text-red-500 font-semibold">
-                          ${item.discountedPrice?.toFixed(2) || "0.00"}
-                        </p>
-                        <p className="text-gray-500 line-through">
-                          ${item.price?.toFixed(2) || "0.00"}
-                        </p>
+                        <span className="text-green-600 font-semibold">
+                          ${(item.productPrice - (item.productPrice * (item.discountPercentage / 100))).toFixed(2)}
+                        </span>
+                        <span className="text-gray-500 line-through">
+                          ${item.productPrice?.toFixed(2)}
+                        </span>
                       </div>
                     ) : (
-                      <p className="font-semibold">
-                        ${item.price?.toFixed(2) || "0.00"}
-                      </p>
+                      <span className="font-semibold">
+                        ${item.productPrice?.toFixed(2)}
+                      </span>
                     )}
                   </div>
                   <div className="flex items-center mt-2">
@@ -303,6 +313,16 @@ export default function CartPage() {
                     </Button>
                   </div>
                 </div>
+                <div className="text-right">
+                  <p className="font-medium mb-1">Sales:</p>
+                  {item.discountPercentage ? (
+                    <span className="text-xs text-green-600">
+                      {item.discountPercentage}% off
+                    </span>
+                  ) : (
+                    <span className="font-semibold">${item.totalAmount.toFixed(2)}</span>
+                  )}
+                </div>
                 <Button
                   variant="ghost"
                   onClick={() => handleRemoveItem(item.productID)}
@@ -325,16 +345,26 @@ export default function CartPage() {
           <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
           <div className="space-y-2">
             <div className="flex justify-between">
-              <span>Total Amount</span>
-              <span>${totalAmount.toFixed(2)}</span>
+              <span>PreTotal</span>
+              <span>${cartItems.reduce((sum, item) => sum + item.totalAmount, 0).toFixed(2)}</span>
             </div>
-            <div className="flex justify-between">
-              <span>Discounted Total</span>
-              <span>${discountedTotalAmount.toFixed(2)}</span>
-            </div>
+            
+            {cartItems.some(item => item.discountedTotalAmount) && (
+              <div className="flex justify-between text-green-600">
+                <span>Discount</span>
+                <span>-${(
+                  cartItems.reduce((sum, item) => sum + item.totalAmount, 0) - 
+                  cartItems.reduce((sum, item) => sum + (item.discountedTotalAmount || item.totalAmount), 0)
+                ).toFixed(2)}</span>
+              </div>
+            )}
+            
             <div className="flex justify-between font-semibold text-lg border-t pt-2">
               <span>Final Total</span>
-              <span>${discountedTotalAmount.toFixed(2)}</span>
+              <span>${cartItems.reduce(
+                (sum, item) => sum + (item.discountedTotalAmount || item.totalAmount), 
+                0
+              ).toFixed(2)}</span>
             </div>
           </div>
 
@@ -347,7 +377,7 @@ export default function CartPage() {
             </Button>
             <Button
               onClick={handleCheckout}
-              disabled={isProcessing}
+              disabled={isProcessing || cartItems.length === 0}
               className="w-full"
             >
               {isProcessing ? "Processing..." : "Proceed to Checkout"}
