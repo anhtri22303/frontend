@@ -30,7 +30,7 @@ export default function CreatePromotion() {
     discount: 0,
     startDate: "",
     endDate: "",
-    productID: [] as string[]
+    productIDs: [] as string[] // Changed from productID to productIDs
   })
   const [isLoading, setIsLoading] = useState(false)
   const [products, setProducts] = useState<Product[]>([])
@@ -83,7 +83,7 @@ export default function CreatePromotion() {
 
   // Apply selected products to formData
   const handleApplySelection = () => {
-    setFormData({ ...formData, productID: selectedProductIDs })
+    setFormData({ ...formData, productIDs: selectedProductIDs }) // Changed from productID to productIDs
     setIsDialogOpen(false)
   }
 
@@ -93,7 +93,7 @@ export default function CreatePromotion() {
     setSelectedProducts(selectedProducts.filter(p => p.productID !== productID))
     setFormData({
       ...formData,
-      productID: formData.productID.filter(id => id !== productID)
+      productIDs: formData.productIDs.filter(id => id !== productID) // Changed from productID to productIDs
     })
   }
 
@@ -118,7 +118,7 @@ export default function CreatePromotion() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (formData.productID.length === 0) {
+    if (formData.productIDs.length === 0) { // Changed from productID to productIDs
       toast({
         title: "Error",
         description: "Please select at least one product for this promotion.",
