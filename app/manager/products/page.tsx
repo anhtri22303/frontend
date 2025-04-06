@@ -1,14 +1,13 @@
 "use client";
 
-import { useState, useEffect, SetStateAction } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Search, PlusCircle, MoreHorizontal } from "lucide-react";
+import { PlusCircle, MoreHorizontal } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { fetchProducts, deleteProduct, fetchProductsByCategory, fetchProductsByName, fetchProductsBySkinType, fetchProductById } from "@/app/api/productApi";
-import { fetchPromotions } from "@/app/api/promotionApi";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Product {
@@ -16,18 +15,10 @@ interface Product {
   productName: string;
   category: string;
   price: number;
+  discountedPrice?: number;
   rating: number;
   image_url: string;
   skinType: string;
-  promotion?: Promotion;
-  discountedPrice?: number;
-}
-
-interface Promotion {
-  productID: string;
-  discount: number;
-  startDate: string;
-  endDate: string;
 }
 
 export default function ProductsPage() {
@@ -36,8 +27,8 @@ export default function ProductsPage() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [searchId, setSearchId] = useState("");
   const [searchSkinType, setSearchSkinType] = useState("");
-  const [loading, setLoading] = useState(true); // Thêm state loading
-  const [error, setError] = useState<string | null>(null); // Thêm state error
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   const categories = ["Cleanser", "Toner", "Serum", "Moisturizer", "Sunscreen", "Mask"];
@@ -56,38 +47,10 @@ export default function ProductsPage() {
       const productsResponse = await fetchProducts();
       console.log("Products Response:", productsResponse);
 
-      // Gọi API lấy promotions
-      let promotions: Promotion[] = [];
-      try {
-        promotions = await fetchPromotions();
-        console.log("Promotions Response:", promotions);
-      } catch (promoError) {
-        console.error("Failed to fetch promotions:", promoError);
-        // Nếu fetchPromotions thất bại, vẫn tiếp tục với promotions rỗng
-        promotions = [];
-      }
-
-      // Kết hợp sản phẩm với promotion
-      const productsWithPromotions: Product[] = productsResponse.map((product: Product): Product => {
-        console.log("Processing Product ID:", product.productID);
-        const currentDate = new Date().toISOString().split("T")[0];
-        const promotion: Promotion | undefined = promotions.find((promo: Promotion) => {
-          return (
-            promo.productID === product.productID &&
-            promo.startDate <= currentDate &&
-            promo.endDate >= currentDate
-          );
-        });
-        const discountedPrice: number | undefined = promotion
-          ? parseFloat((product.price * (1 - promotion.discount / 100)).toFixed(2))
-          : product.price;
-        return { ...product, promotion, discountedPrice };
-      });
-
-      console.log("Products with Promotions:", productsWithPromotions);
-      setProducts(productsWithPromotions);
+      // Sử dụng trực tiếp dữ liệu từ API mà không cần xử lý thêm
+      setProducts(productsResponse);
     } catch (error) {
-      console.error("Error loading products with promotions:", error);
+      console.error("Error loading products:", error);
       setError("Failed to load products. Please try again.");
       setProducts([]);
     } finally {
@@ -119,8 +82,8 @@ export default function ProductsPage() {
 
   const handleCategoryChange = async (category: string) => {
     setSelectedCategory(category);
-    if (!category) {
-      loadProducts(); // Nếu không chọn category, tải lại toàn bộ sản phẩm
+    if (category === "all") {
+      loadProducts(); // Nếu chọn "All Categories", tải lại toàn bộ sản phẩm
       return;
     }
     try {
@@ -190,6 +153,7 @@ export default function ProductsPage() {
   const handleResetFilters = () => {
     setSearchId("");
     setSearchSkinType("");
+    setSelectedCategory("");
     loadProducts();
   };
 
@@ -221,7 +185,7 @@ export default function ProductsPage() {
       {/* Filters */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div>
-            <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <Input
               type="text"
               placeholder="Enter Product ID"
@@ -230,7 +194,7 @@ export default function ProductsPage() {
               onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === "Enter" && handleSearchById()}
             />
             <Button onClick={handleSearchById}>Search</Button>
-            </div>
+          </div>
         </div>
 
         <div>
@@ -258,7 +222,7 @@ export default function ProductsPage() {
                 <SelectValue placeholder="Select Category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem> {/* Sử dụng "all" thay vì "" */}
+                <SelectItem value="all">All Categories</SelectItem>
                 {categories.map((category) => (
                   <SelectItem key={category} value={category}>
                     {category}
@@ -286,7 +250,6 @@ export default function ProductsPage() {
                   <th className="px-4 py-3 text-left text-sm font-medium">Product</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Category</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Price</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium">Promotion</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Rating</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Skin Type</th>
                   <th className="px-4 py-3 text-right text-sm font-medium">Actions</th>
@@ -295,11 +258,11 @@ export default function ProductsPage() {
               <tbody>
                 {products.map((product) => (
                   <tr key={product.productID} className="border-b">
-                    <td className="px-4 py-3 text-sm">{product.productID}</td> {/* Hiển thị Product ID */}
+                    <td className="px-4 py-3 text-sm">{product.productID}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <Image
-                          src={product.image_url || "/public/assets/products/lipstick.png"}
+                          src={product.image_url || "/placeholder.png"}
                           width={48}
                           height={48}
                           className="rounded-md object-cover"
@@ -310,17 +273,14 @@ export default function ProductsPage() {
                     </td>
                     <td className="px-4 py-3 text-sm">{product.category}</td>
                     <td className="px-4 py-3 text-sm">
-                      {product.discountedPrice ? (
+                      {product.discountedPrice && product.discountedPrice < product.price ? (
                         <>
-                          <span className="text-green-600">${product.discountedPrice}</span>
-                          <span className="text-sm text-gray-500 line-through ml-2">${product.price}</span>
+                          <span className="text-green-600">${product.discountedPrice.toFixed(2)}</span>
+                          <span className="text-sm text-gray-500 line-through ml-2">${product.price.toFixed(2)}</span>
                         </>
                       ) : (
-                        `$${product.price}`
+                        `$${product.price.toFixed(2)}`
                       )}
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      {product.promotion ? `${product.promotion.discount}% OFF` : "No Promotion"}
                     </td>
                     <td className="px-4 py-3 text-sm">{product.rating || "N/A"}</td>
                     <td className="px-4 py-3 text-sm">{product.skinType}</td>
@@ -354,7 +314,7 @@ export default function ProductsPage() {
               <div className="text-6xl mb-4">🔍</div>
               <h3 className="text-lg font-semibold text-gray-900 mb-1">No Products Found</h3>
               <p className="text-sm text-gray-500">
-                {searchName || selectedCategory
+                {searchName || selectedCategory || searchId || searchSkinType
                   ? "Try adjusting your search or filter to find what you're looking for."
                   : "There are no products available at the moment."}
               </p>
