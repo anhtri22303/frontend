@@ -14,7 +14,7 @@ interface Promotion {
   discount: number
   startDate: string
   endDate: string
-  productID: string
+  productIDs: string[] // Changed from productID to productIDs
 }
 
 export default function PromotionsPage() {
@@ -141,10 +141,24 @@ export default function PromotionsPage() {
               <p className="text-sm text-muted-foreground">
                 Promotion ID: {promotion.promotionID}
               </p>
-              <p className="text-sm text-muted-foreground">
-                Product ID: {promotion.productID}
-              </p>
-              <p className="text-sm text-muted-foreground">
+              
+              {/* Display all product IDs */}
+              <div className="text-sm text-muted-foreground mt-2">
+                <p className="font-medium mb-1">Products:</p>
+                {promotion.productIDs && Array.isArray(promotion.productIDs) && promotion.productIDs.length > 0 ? (
+                  <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto">
+                    {promotion.productIDs.map((id, index) => (
+                      <span key={index} className="bg-slate-100 px-2 py-1 rounded-md text-xs">
+                        {id}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <span className="text-xs italic">No products assigned</span>
+                )}
+              </div>
+              
+              <p className="text-sm text-muted-foreground mt-2">
                 Valid from{" "}
                 {promotion.startDate
                   ? format(new Date(promotion.startDate), "PP")
