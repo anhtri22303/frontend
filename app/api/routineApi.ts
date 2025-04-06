@@ -102,3 +102,14 @@ export const applyRoutineToUser = async (userID: string, routineID: string) => {
     throw error;
   }
 };
+
+export const fetchRoutineByUserIdAndRoutineId = async (userID: string, routineID: string) => {
+  try {
+    const response = await axiosInstance.get(`/skin-care-routines/${routineID}/user/${userID}`);
+    console.log("Get routine by user ID and routine ID success");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching routine by user ID and routine ID:", error);
+    throw error;
+  }
+};

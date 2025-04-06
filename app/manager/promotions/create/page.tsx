@@ -12,71 +12,111 @@ export default function CreatePromotionForm() {
     discount: "",
     startDate: "",
     endDate: "",
-  });
-  const [error, setError] = useState("");
+    productIDs: [] as string[] // Changed from productID to productIDs
+  })
+  const [isLoading, setIsLoading] = useState(false)
+  const [products, setProducts] = useState<Product[]>([])
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [selectedProductIDs, setSelectedProductIDs] = useState<string[]>([])
+  const [selectedProducts, setSelectedProducts] = useState<Product[]>([])
 
-  // Sample product list (in a real app, fetch this from an API)
-  const availableProducts = [
-    { id: "1001", name: "Phyto Peptide Cleanser" },
-    { id: "1003", name: "Klairs Supple Preparation Unscented Toner" },
-  ];
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleProductSelect = (productId) => {
-    setFormData((prev) => ({
-      ...prev,
-      productIDs: prev.productIDs.includes(productId)
-        ? prev.productIDs.filter((id) => id !== productId)
-        : [...prev.productIDs, productId],
-    }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-
-    // Validation
-    if (!formData.promotionName) {
-      setError("Promotion Name is required.");
-      return;
+  // Fetch all products when component mounts
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const data = await fetchProducts()
+        setProducts(data || [])
+      } catch (error) {
+        console.error("Failed to load products:", error)
+        toast({
+          title: "Error",
+          description: "Failed to load products. Please try again.",
+          variant: "destructive",
+        })
+      }
     }
-    const discount = parseFloat(formData.discount);
-    if (isNaN(discount) || discount <= 0 || discount > 100) {
-      setError("Discount must be a number between 0 and 100.");
-      return;
-    }
-    if (!formData.startDate || !formData.endDate) {
-      setError("Start Date and End Date are required.");
-      return;
-    }
-    if (new Date(formData.startDate) >= new Date(formData.endDate)) {
-      setError("Start Date must be before End Date.");
-      return;
-    }
-    if (formData.productIDs.length === 0) {
-      setError("At least one product must be selected.");
-      return;
-    }
+    
+    loadProducts()
+  }, [toast])
 
+  // Group products by skinType
+  const groupedProducts = products.reduce((acc, product) => {
+    const skinType = product.skinType || "Other"
+    if (!acc[skinType]) {
+      acc[skinType] = []
+    }
+    acc[skinType].push(product)
+    return acc
+  }, {} as Record<string, Product[]>)
+
+  // Handle product selection
+  const handleProductSelect = (product: Product) => {
+    if (selectedProductIDs.includes(product.productID)) {
+      // Remove product if already selected
+      setSelectedProductIDs(selectedProductIDs.filter(id => id !== product.productID))
+      setSelectedProducts(selectedProducts.filter(p => p.productID !== product.productID))
+    } else {
+      // Add product if not selected
+      setSelectedProductIDs([...selectedProductIDs, product.productID])
+      setSelectedProducts([...selectedProducts, product])
+    }
+  }
+
+  // Apply selected products to formData
+  const handleApplySelection = () => {
+    setFormData({ ...formData, productIDs: selectedProductIDs }) // Changed from productID to productIDs
+    setIsDialogOpen(false)
+  }
+
+  // Remove a selected product
+  const handleRemoveProduct = (productID: string) => {
+    setSelectedProductIDs(selectedProductIDs.filter(id => id !== productID))
+    setSelectedProducts(selectedProducts.filter(p => p.productID !== productID))
+    setFormData({
+      ...formData,
+      productIDs: formData.productIDs.filter(id => id !== productID) // Changed from productID to productIDs
+    })
+  }
+
+  // Filter products based on search term
+  const filteredProducts = searchTerm
+    ? products.filter(p => 
+        p.productName.includes(searchTerm) ||
+        p.productID.includes(searchTerm) ||
+        (p.category && p.category.includes(searchTerm))
+      )
+    : products
+
+  // Reorganize filtered products by skin type
+  const filteredGroupedProducts = filteredProducts.reduce((acc, product) => {
+    const skinType = product.skinType || "Other"
+    if (!acc[skinType]) {
+      acc[skinType] = []
+    }
+    acc[skinType].push(product)
+    return acc
+  }, {} as Record<string, Product[]>)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (formData.productIDs.length === 0) { // Changed from productID to productIDs
+      toast({
+        title: "Error",
+        description: "Please select at least one product for this promotion.",
+        variant: "destructive",
+      })
+      return
+    }
+    
+    setIsLoading(true)
     try {
-      const promotionData = {
-        promotionName: formData.promotionName,
-        productIDs: formData.productIDs,
-        discount: discount,
-        startDate: formData.startDate, // Already in YYYY-MM-DD format from input type="date"
-        endDate: formData.endDate,
-      };
-      console.log("Submitting promotion:", promotionData);
-      await createPromotion(promotionData);
-      alert("Promotion created successfully!");
-      router.push("/promotions"); // Redirect to promotions list or another page
+      await createPromotion(formData)
+      toast({
+        title: "Success",
+        description: "Promotion created successfully!"
+      })
+      router.push("/manager/promotions")
     } catch (error) {
       console.error("Failed to create promotion:", error);
       setError("Failed to create promotion. Please try again.");

@@ -103,20 +103,31 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Customer ID</p>
-              <p className="font-medium">{order.customerID || 'N/A'}</p>
+              <p className="font-medium">{order.customerID || "N/A"}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Customer Name</p>
+              <p className="font-medium">{order.customerName || "N/A"}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Order Date</p>
-              <p className="font-medium">{new Date(order.orderDate).toLocaleDateString()}</p>
+              <p className="font-medium">
+                {new Date(order.orderDate).toLocaleDateString()}
+              </p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Status</p>
-              <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                order.status === 'PROCESSING' ? 'bg-blue-100 text-blue-800' :
-                order.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
-                'bg-red-100 text-red-800'
-              }`}>
+              <span
+                className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+                  order.status === "PENDING"
+                    ? "bg-yellow-100 text-yellow-800"
+                    : order.status === "PROCESSING"
+                    ? "bg-blue-100 text-blue-800"
+                    : order.status === "COMPLETED"
+                    ? "bg-green-100 text-green-800"
+                    : "bg-red-100 text-red-800"
+                }`}
+              >
                 {order.status}
               </span>
             </div>
@@ -138,6 +149,17 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
                 </div>
               </div>
             )}
+            {/* Show discounted total if available */}
+            {order.discountedTotalAmount && (
+              <div>
+                <p className="text-sm text-muted-foreground">
+                  Discounted Total
+                </p>
+                <p className="font-medium text-green-600">
+                  ${order.discountedTotalAmount.toFixed(2)}
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -147,22 +169,55 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
             <table className="w-full">
               <thead>
                 <tr className="border-b bg-muted/50">
-                  <th className="p-4 text-left font-medium">Product ID</th>
+                  <th className="p-4 text-left font-medium">Product</th>
                   <th className="p-4 text-left font-medium">Quantity</th>
                   <th className="p-4 text-left font-medium">Price</th>
                   <th className="p-4 text-left font-medium">Discount Price</th>
+                  <th className="p-4 text-left font-medium">
+                    Discounted Total
+                  </th>
                   <th className="p-4 text-left font-medium">Promotion</th>
                 </tr>
               </thead>
               <tbody>
                 {order.orderDetails?.map((detail) => (
                   <tr key={detail.productID} className="border-b">
-                    <td className="p-4">{detail.productID}</td>
-                    <td className="p-4">{detail.quantity}</td>
-                    <td className="p-4">${detail.productPrice.toFixed(2)}</td>
                     <td className="p-4">
-                      {detail.discountPrice ? (
-                        <span className="text-green-600">${detail.discountPrice.toFixed(2)}</span>
+                      <div>
+                        <div className="font-medium">
+                          {detail.productName || detail.productID}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          ID: {detail.productID}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-4">{detail.quantity}</td>
+                    <td className="p-4">
+                      $
+                      {detail.productPrice
+                        ? detail.productPrice.toFixed(2)
+                        : detail.totalAmount.toFixed(2)}
+                    </td>
+                    <td className="p-4">
+                      {detail.productPrice && detail.discountPercentage ? (
+                        <span className="text-green-600">
+                          $
+                          {(
+                            detail.productPrice -
+                            detail.productPrice *
+                              (detail.discountPercentage / 100)
+                          ).toFixed(2)}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">N/A</span>
+                      )}
+                    </td>
+                    <td className="p-4">
+                      {detail.discountedTotalAmount ? (
+                        <span className="text-green-600">
+                          ${detail.discountedTotalAmount.toFixed(2)}
+                        </span>
                       ) : (
                         <span className="text-gray-400">N/A</span>
                       )}
@@ -170,7 +225,10 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
                     <td className="p-4">
                       {detail.discountPercentage ? (
                         <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
-                          {detail.discountPercentage}
+                          {detail.discountPercentage}%{" "}
+                          {detail.discountName
+                            ? `(${detail.discountName})`
+                            : ""}
                         </span>
                       ) : (
                         <span className="text-gray-400">N/A</span>
@@ -179,14 +237,30 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
                   </tr>
                 ))}
                 <tr>
-                  <td colSpan={4} className="p-4 text-right font-medium">Total Amount:</td>
-                  <td className="p-4 font-medium">${order.totalAmount ? order.totalAmount.toFixed(2) : '0.00'}</td>
+                  <td colSpan={4} className="p-4 text-right font-medium">
+                    Total Amount:
+                  </td>
+                  <td className="p-4 font-medium">
+                    ${order.totalAmount ? order.totalAmount.toFixed(2) : "0.00"}
+                  </td>
+                  <td className="p-4"></td>
                 </tr>
+                {order.discountedTotalAmount && (
+                  <tr className="bg-green-50">
+                    <td colSpan={4} className="p-4 text-right font-medium">
+                      Discounted Total:
+                    </td>
+                    <td className="p-4 font-medium text-green-600">
+                      ${order.discountedTotalAmount.toFixed(2)}
+                    </td>
+                    <td className="p-4"></td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }
