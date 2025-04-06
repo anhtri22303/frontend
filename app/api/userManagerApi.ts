@@ -56,6 +56,28 @@ export const fetchUserById = async (userID: string) => {
   }
 }
 
+// Get user by name
+export const fetchUserByName = async (name: string) => {
+  try {
+    const response = await axiosInstance.get(`/manager/users/search?name=${name}`);
+    return response.data.data;
+  } catch (error) {
+    console.error("Error fetching user by name:", error);
+    return null;
+  }
+};
+
+// Get user by email
+export const fetchUserByEmail = async (email: string) => {
+  try {
+    const response = await axiosInstance.get(`/manager/users/email/${email}`);
+    return response.data.data;
+  } catch (error) {
+    console.error("Error fetching user by email:", error);
+    return null;
+  }
+};
+
 // Update user
 export const updateUser = async (userId: string, formData: FormData) => {
   try {

@@ -130,7 +130,7 @@ export const fetchProductsByFilters = async (filters: {
       params: filters,
     });
     console.log("Get by filters success", response.data);
-    if (response.data.success) { // Sửa từ status === 200 thành success
+    if (response.data.success) {
       return response.data.data || [];
     }
     return [];

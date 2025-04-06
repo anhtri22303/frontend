@@ -16,6 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { toast } from "@/components/ui/use-toast";
 
 interface Route {
   href: string;
@@ -49,25 +50,32 @@ export default function Header() {
   }, []);
 
   const handleLogout = () => {
-    // Gọi hàm logout từ useAuth
     logout();
-
-    // Xóa thông tin người dùng khỏi localStorage
     localStorage.removeItem("userRole");
-    localStorage.removeItem("authToken"); // Nếu bạn lưu token ở đây
-
-    // Chuyển hướng về trang login và reload trang
+    localStorage.removeItem("authToken");
     window.location.href = "/login";
+  };
+
+  const handleProtectedRouteClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    const jwtToken = localStorage.getItem("jwtToken");
+    if (!jwtToken) {
+      e.preventDefault();
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to access this page.",
+        variant: "default",
+      });
+      window.location.href = `/login?redirect=${href}`;
+    }
   };
 
   const getRoutes = (): Route[] => {
     if (userRole === "MANAGER") {
-      return []; // Manager không có menu items
+      return [];
     }
     if (userRole === "STAFF") {
-      return []; // Staff không có menu items
+      return [];
     }
-    // Customer hoặc chưa login
     return [
       { href: "/", label: "Home" },
       { href: "/shop", label: "Shop" },
@@ -101,6 +109,7 @@ export default function Header() {
                   <Link
                     key={route.href}
                     href={route.href}
+                    onClick={(e) => handleProtectedRouteClick(e, route.href)}
                     className={`text-lg font-medium transition-colors hover:text-primary ${
                       pathname === route.href ? "text-primary" : "text-muted-foreground"
                     }`}
@@ -121,6 +130,7 @@ export default function Header() {
               <Link
                 key={route.href}
                 href={route.href}
+                onClick={(e) => handleProtectedRouteClick(e, route.href)}
                 className={`text-sm font-medium transition-colors hover:text-primary ${
                   pathname === route.href ? "text-primary" : "text-muted-foreground"
                 }`}
@@ -133,7 +143,21 @@ export default function Header() {
 
         <div className="flex items-center gap-2">
           {(!userRole || userRole === "CUSTOMER") && (
-            <Link href="/cart">
+            <Link
+              href="/cart"
+              onClick={(e) => {
+                const jwtToken = localStorage.getItem("jwtToken");
+                if (!jwtToken) {
+                  e.preventDefault(); // Ngăn chặn hành động mặc định của Link
+                  toast({
+                    title: "Authentication Required",
+                    description: "Please log in to access your cart.",
+                    variant: "default",
+                  });
+                  window.location.href = "/login?redirect=/cart"; // Chuyển hướng đến trang đăng nhập
+                }
+              }}
+            >
               <Button variant="ghost" size="icon" className="relative">
                 <ShoppingCart className="h-5 w-5" />
                 {cartCount > 0 && (

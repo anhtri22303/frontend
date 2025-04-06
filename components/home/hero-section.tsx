@@ -1,7 +1,30 @@
+"use client";
+
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { useEffect, useState } from "react"
+import { toast } from "@/components/ui/use-toast"
 
 export function HeroSection() {
+  const [quizLink, setQuizLink] = useState("/skin-quiz")
+
+  useEffect(() => {
+    const jwtToken = localStorage.getItem("jwtToken")
+    if (!jwtToken) {
+      setQuizLink("/login?redirect=/skin-quiz")
+    }
+  }, [])
+
+  const handleSkinQuizClick = () => {
+    if (!localStorage.getItem("jwtToken")) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to take the skin quiz.",
+        variant: "default",
+      })
+    }
+  }
+
   return (
     <section className="relative">
       <div
@@ -20,15 +43,17 @@ export function HeroSection() {
           quiz and find products that work for you.
         </p>
         <div className="mt-10 flex flex-col sm:flex-row gap-4">
-          <Button asChild size="lg">
-            <Link href="/skin-quiz">Take Skin Quiz</Link>
-          </Button>
+          <Link href={quizLink}>
+            <Button onClick={handleSkinQuizClick} size="lg">
+              Take Skin Quiz
+            </Button>
+          </Link>
           <Button asChild variant="outline" size="lg">
             <Link href="/shop">Shop Products</Link>
           </Button>
         </div>
       </div>
     </section>
-  );
+  )
 }
 

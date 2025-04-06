@@ -50,3 +50,14 @@ export const updateCustomer = async (userId: string, formData: FormData) => {
     return null;
   }
 };
+
+// export const updateCustomerSkinType = async (userId: string, data: { skinType: string }) => {
+//   try {
+//     const response = await axiosInstance.put(`/user/${userId}`, data);
+//     console.log("Update customer success");
+//     return response.data;
+//   } catch (error) {
+//     console.error("Error updating customer:", error);
+//     return null;
+//   }
+// };

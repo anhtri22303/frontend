@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { addToCart } from "@/app/api/cartApi";
 import toast from "react-hot-toast";
 import Link from "next/link";
+import { fetchCustomerByID, updateCustomer } from "@/app/api/customerApi";
+import { applyRoutineToUser } from "@/app/api/routineApi";
 
 interface Routine {
   routineID: string;
@@ -27,15 +29,73 @@ interface Product {
   rating?: number;
 }
 
+interface Customer {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  address: string;
+  skinType: string;
+  loyalPoints: number;
+}
+
 export default function QuizResults() {
   const searchParams = useSearchParams();
   const skinType = searchParams.get("skinType");
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [customer, setCustomer] = useState<Customer | null>(null);
   const [loading, setLoading] = useState(true);
-  const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
-  const [isLoading, setIsLoading] = useState(false);
 
+  useEffect(() => {
+    const fetchAndUpdateCustomer = async () => {
+      try {
+        const userId = localStorage.getItem("userID");
+        if (!userId) {
+          toast.error("User not logged in!");
+          return;
+        }
+
+        // Fetch customer data
+        const customerData = await fetchCustomerByID(userId);
+        if (!customerData) {
+          console.error("Customer data is missing or invalid.");
+          return;
+        }
+
+        // Gán userId vào customer.id nếu thiếu
+        const updatedCustomerData = { ...customerData, id: userId };
+        setCustomer(updatedCustomerData);
+        console.log("Fetched customer data:", updatedCustomerData);
+
+        // Update skin type if needed
+        if (skinType && updatedCustomerData.skinType !== skinType) {
+          const formData = new FormData();
+          const { id, ...updatedCustomer } = updatedCustomerData; // Loại bỏ trường `id`
+          updatedCustomer.skinType = skinType; // Cập nhật skinType
+
+          formData.append("user", JSON.stringify(updatedCustomer));
+
+          const response = await updateCustomer(userId, formData);
+          if (response) {
+            setCustomer(response); // Cập nhật state với dữ liệu mới
+            console.log("Customer updated skinType successfully:", response);
+            toast.success("Skin type updated successfully!");
+          } else {
+            toast.error("Failed to update customer.");
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching or updating customer data:", error);
+        toast.error("Failed to fetch or update customer data.");
+      }
+    };
+
+    fetchAndUpdateCustomer();
+  }, [skinType]);
+
+
+  // Fetch routines and products
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -63,45 +123,12 @@ export default function QuizResults() {
     fetchData();
   }, [skinType]);
 
-  const handleQuantityChange = (productId: string, value: string) => {
-    const newQuantity = parseInt(value) || 1;
-    setQuantities((prev) => ({
-      ...prev,
-      [productId]: Math.max(1, newQuantity),
-    }));
-  };
-
-  const handleAddToCart = async (productId: string) => {
-    setIsLoading(true);
-    try {
-      const userId = localStorage.getItem("userID");
-      if (!userId) {
-        toast.error("User not logged in!");
-        return;
-      }
-
-      const quantity = quantities[productId] || 1;
-      await addToCart(userId, productId, quantity);
-      toast.success("Product added to cart!");
-    } catch (error) {
-      console.error("Error adding to cart:", error);
-      toast.error("Failed to add product to cart.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">Loading your personalized recommendations...</div>
-      </div>
-    );
-  }
-
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-center mb-8">Your Quiz Results</h1>
+      {/* Your Skin Type */}
+      <div className="text-center mb-8">
+        <h2 className="text-2xl font-bold">Your Skin Type: {skinType}</h2>
+      </div>
 
       {/* Routines Section */}
       <div className="mb-8">
@@ -115,6 +142,9 @@ export default function QuizResults() {
                 </CardHeader>
                 <CardContent>
                   <p>{routine.routineDescription}</p>
+                  <Link href={`/skin-quiz/results/${routine.routineID}`}>
+                    <Button className="mt-4">View Detail</Button>
+                  </Link>
                 </CardContent>
               </Card>
             ))}
@@ -122,86 +152,6 @@ export default function QuizResults() {
         ) : (
           <p className="text-center text-muted-foreground">
             No routines found for your skin type.
-          </p>
-        )}
-      </div>
-
-      {/* Products Section */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">Recommended Products</h2>
-        {products.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {products.map((product) => (
-              <Card key={product.productID} className="overflow-hidden group">
-                <Link href={`/shop/product/${product.productID}`}>
-                  <div className="relative aspect-square">
-                    <img
-                      src={product.image_url || "/placeholder.svg"}
-                      alt={product.productName}
-                      className="object-cover transition-transform group-hover:scale-105 w-full h-full"
-                    />
-                  </div>
-                  <CardContent className="pt-4">
-                    <h3 className="font-medium truncate w-full">{product.productName}</h3>
-                    <div className="mt-2">
-                      <p className="font-semibold">${product.price.toFixed(2)}</p>
-                    </div>
-                    <div className="mt-2 text-sm">
-                      <p className="text-muted-foreground">{product.category || "N/A"}</p>
-                    </div>
-                    <div className="flex items-center mt-2">
-                      <span>Rating: {product.rating}/5</span>
-                      <div className="ml-2 flex">
-                        {[...Array(5)].map((_, i) => (
-                          <svg
-                            key={i}
-                            className={`w-4 h-4 ${
-                              i < product.rating
-                                ? "text-yellow-400 fill-current"
-                                : "text-gray-300"
-                            }`}
-                            viewBox="0 0 20 20"
-                          >
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                          </svg>
-                        ))}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Link>
-                <CardFooter className="flex flex-col gap-2">
-                  <div className="flex items-center gap-2 w-full">
-                    <label
-                      htmlFor={`quantity-${product.productID}`}
-                      className="text-sm"
-                    >
-                      Qty:
-                    </label>
-                    <input
-                      id={`quantity-${product.productID}`}
-                      type="number"
-                      min="1"
-                      value={quantities[product.productID] || 1}
-                      onChange={(e) =>
-                        handleQuantityChange(product.productID, e.target.value)
-                      }
-                      className="w-16"
-                    />
-                  </div>
-                  <Button
-                    className="w-full"
-                    onClick={() => handleAddToCart(product.productID)}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? "Adding..." : "Add to Cart"}
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <p className="text-center text-muted-foreground">
-            No products found for your skin type.
           </p>
         )}
       </div>

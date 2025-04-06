@@ -5,6 +5,7 @@ export interface OrderDetail {
   productID: string
   quantity: number
   totalAmount: number
+  discountPrice?: number
 }
 
 export interface Order {
@@ -13,6 +14,8 @@ export interface Order {
   orderDate: string
   status: string
   totalAmount: number
+  payment?: string
+  promotion?: string
   orderDetails?: OrderDetail[]
 }
 
