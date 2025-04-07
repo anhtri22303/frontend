@@ -20,8 +20,9 @@ interface Product {
   description: string;
   rating: number;
   image_url: string;
-  skinType: string;
+  skinTypes: string[]; // Kept as string[] to match the desired format
   isNew?: boolean;
+  discountedPrice?: number;
 }
 
 export default function ProductsPage() {
@@ -40,42 +41,47 @@ export default function ProductsPage() {
 
   useEffect(() => {
     loadProducts();
-    // Check for category in URL params
-    const categoryParam = searchParams.get('category');
+    const categoryParam = searchParams.get("category");
     if (categoryParam) {
       setSelectedCategories([categoryParam]);
     }
   }, [searchParams]);
 
   const loadProducts = async () => {
+    setIsLoading(true);
     try {
       const data = await fetchProducts();
       setProducts(data);
       setFilteredProducts(data);
-      const maxProductPrice: number = Math.max(...data.map((product: Product) => product.price));
+      const maxProductPrice = Math.max(...data.map((product: Product) => product.price), 1000);
       setMaxPrice(maxProductPrice);
       setPriceRange([0, maxProductPrice]);
     } catch (error) {
       console.error("Error fetching products:", error);
       setMaxPrice(1000);
       setPriceRange([0, 1000]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const applyFilters = async () => {
+    setIsLoading(true);
     try {
       const filters = {
         categories: selectedCategories.length > 0 ? selectedCategories.join(",") : undefined,
-        skinTypes: selectedSkinTypes.length > 0 ? selectedSkinTypes.join(",") : undefined,
+        skinTypes: selectedSkinTypes.length > 0 ? selectedSkinTypes.join(",") : undefined, // Join array into comma-separated string for API
         minPrice: priceRange[0],
         maxPrice: priceRange[1],
       };
-  
+
       const data = await fetchProductsByFilters(filters);
       setFilteredProducts(data);
     } catch (error) {
       console.error("Error applying filters:", error);
       setFilteredProducts([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -84,25 +90,19 @@ export default function ProductsPage() {
   }, [selectedCategories, selectedSkinTypes, priceRange]);
 
   const handleCategoryChange = (category: string) => {
-    const updatedCategories = selectedCategories.includes(category)
-      ? selectedCategories.filter((c) => c !== category)
-      : [...selectedCategories, category];
-    setSelectedCategories(updatedCategories);
+    setSelectedCategories((prev) =>
+      prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category]
+    );
   };
 
   const handleSkinTypeChange = (skinType: string) => {
-    const updatedSkinTypes = selectedSkinTypes.includes(skinType)
-      ? selectedSkinTypes.filter((s) => s !== skinType)
-      : [...selectedSkinTypes, skinType];
-    setSelectedSkinTypes(updatedSkinTypes);
+    setSelectedSkinTypes((prev) =>
+      prev.includes(skinType) ? prev.filter((s) => s !== skinType) : [...prev, skinType]
+    );
   };
 
-  const handlePriceChange = (newPriceRange: [number, number]) => {
-    setPriceRange(newPriceRange);
-    const filteredByPrice = products.filter(
-      (product) => product.price >= newPriceRange[0] && product.price <= newPriceRange[1]
-    );
-    setFilteredProducts(filteredByPrice);
+  const handlePriceChange = (newPriceRange: number[]) => {
+    setPriceRange(newPriceRange as [number, number]);
   };
 
   const handleQuantityChange = (productId: string, value: string) => {
@@ -118,13 +118,13 @@ export default function ProductsPage() {
     try {
       const userId = localStorage.getItem("userID");
       if (!userId) {
-        toast.error("User not logged in!");
+        toast.error("Please log in to add items to your cart!");
         return;
       }
 
       const quantity = quantities[productId] || 1;
       await addToCart(userId, productId, quantity);
-      toast.success("Product added to cart!");
+      toast.success("Product added to cart successfully!");
     } catch (error) {
       console.error("Error adding to cart:", error);
       toast.error("Failed to add product to cart.");
@@ -146,6 +146,7 @@ export default function ProductsPage() {
                   type="checkbox"
                   checked={selectedCategories.includes(category)}
                   onChange={() => handleCategoryChange(category)}
+                  disabled={isLoading}
                 />
                 {category}
               </label>
@@ -160,6 +161,7 @@ export default function ProductsPage() {
                   type="checkbox"
                   checked={selectedSkinTypes.includes(skinType)}
                   onChange={() => handleSkinTypeChange(skinType)}
+                  disabled={isLoading}
                 />
                 {skinType}
               </label>
@@ -172,7 +174,8 @@ export default function ProductsPage() {
             onValueChange={handlePriceChange}
             min={0}
             max={maxPrice}
-            step={1}
+            step={10}
+            disabled={isLoading}
           />
           <div className="flex justify-between text-sm mt-2">
             <span>${priceRange[0]}</span>
@@ -182,115 +185,104 @@ export default function ProductsPage() {
 
         {/* Products Grid */}
         <div className="w-3/4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {filteredProducts.length > 0 ? (
-              filteredProducts.map((product) => (
-                <Card key={product.productID} className="overflow-hidden group">
-                  <Link href={`/shop/product/${product.productID}`}>
-                    <div className="relative aspect-square">
-                      <Image
-                        src={product.image_url || "/placeholder.svg"}
-                        alt={product.productName}
-                        fill
-                        className="object-cover transition-transform group-hover:scale-105"
-                      />
-                      {product.isNew && (
-                        <Badge
-                          className="absolute top-2 right-2"
-                          variant="secondary"
-                        >
-                          New
-                        </Badge>
-                      )}
-                    </div>
-                    <CardContent className="pt-4">
-                      <h3 className="font-medium truncate w-full">
-                        {product.productName}
-                      </h3>
-                      <div className="mt-2">
-                        {product.discountedPrice && product.discountedPrice < product.price ? (
-                          <>
-                            <span className="text-green-600">${product.discountedPrice.toFixed(2)}</span>
-                            <span className="text-sm text-gray-500 line-through ml-2">${product.price.toFixed(2)}</span>
-                          </>
-                        ) : (
-                          `$${product.price.toFixed(2)}`
+          {isLoading ? (
+            <div className="text-center py-12">
+              <p className="text-lg text-gray-500">Loading products...</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {filteredProducts.length > 0 ? (
+                filteredProducts.map((product) => (
+                  <Card key={product.productID} className="overflow-hidden group">
+                    <Link href={`/shop/product/${product.productID}`}>
+                      <div className="relative aspect-square">
+                        <Image
+                          src={product.image_url || "/placeholder.svg"}
+                          alt={product.productName}
+                          fill
+                          className="object-cover transition-transform group-hover:scale-105"
+                        />
+                        {product.isNew && (
+                          <Badge className="absolute top-2 right-2" variant="secondary">
+                            New
+                          </Badge>
                         )}
                       </div>
-                      <div className="mt-2 text-sm">
-                        <p className="text-muted-foreground">
-                          {product.category || "N/A"}
-                        </p>
-                      </div>
-                      <div className="mt-2 text-sm">
-                        <p className="block">Skin Type:</p>
-                        <p className="text-muted-foreground">
-                          {product.skinType || "All"}
-                        </p>
-                      </div>
-                      <div className="flex items-center mt-2">
-                        <span>Rating: {product.rating}/5</span>
-                        <div className="ml-2 flex">
-                          {[...Array(5)].map((_, i) => (
-                            <svg
-                              key={i}
-                              className={`w-4 h-4 ${
-                                i < product.rating
-                                  ? "text-yellow-400 fill-current"
-                                  : "text-gray-300"
-                              }`}
-                              viewBox="0 0 20 20"
-                            >
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                          ))}
+                      <CardContent className="pt-4">
+                        <h3 className="font-medium truncate w-full">{product.productName}</h3>
+                        <div className="mt-2">
+                          {product.discountedPrice && product.discountedPrice < product.price ? (
+                            <>
+                              <span className="text-green-600">${product.discountedPrice.toFixed(2)}</span>
+                              <span className="text-sm text-gray-500 line-through ml-2">${product.price.toFixed(2)}</span>
+                            </>
+                          ) : (
+                            <span className="font-semibold">${product.price.toFixed(2)}</span>
+                          )}
                         </div>
+                        <div className="mt-2 text-sm">
+                          <p className="text-muted-foreground">{product.category || "N/A"}</p>
+                        </div>
+                        <div className="mt-2 text-sm">
+                          <p className="block">Skin Type:</p>
+                          <p className="text-muted-foreground">
+                            {product.skinTypes && product.skinTypes.length > 0
+                              ? [...new Set(product.skinTypes)].join("/") // Join with "/" to match the image format
+                              : "All"}
+                          </p>
+                        </div>
+                        <div className="flex items-center mt-2">
+                          <span>Rating: {product.rating}/5</span>
+                          <div className="ml-2 flex">
+                            {[...Array(5)].map((_, i) => (
+                              <svg
+                                key={i}
+                                className={`w-4 h-4 ${
+                                  i < product.rating ? "text-yellow-400 fill-current" : "text-gray-300"
+                                }`}
+                                viewBox="0 0 20 20"
+                              >
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                              </svg>
+                            ))}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Link>
+                    <CardFooter className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2 w-full">
+                        <label htmlFor={`quantity-${product.productID}`} className="text-sm">
+                          Qty:
+                        </label>
+                        <input
+                          id={`quantity-${product.productID}`}
+                          type="number"
+                          min="1"
+                          value={quantities[product.productID] || 1}
+                          onChange={(e) => handleQuantityChange(product.productID, e.target.value)}
+                          className="w-16 border rounded px-2 py-1"
+                        />
                       </div>
-                    </CardContent>
-                  </Link>
-                  <CardFooter className="flex flex-col gap-2">
-                    <div className="flex items-center gap-2 w-full">
-                      <label
-                        htmlFor={`quantity-${product.productID}`}
-                        className="text-sm"
+                      <Button
+                        className="w-full"
+                        onClick={() => handleAddToCart(product.productID)}
+                        disabled={isLoading}
                       >
-                        Qty:
-                      </label>
-                      <input
-                        id={`quantity-${product.productID}`}
-                        type="number"
-                        min="1"
-                        value={quantities[product.productID] || 1}
-                        onChange={(e) =>
-                          handleQuantityChange(
-                            product.productID,
-                            e.target.value
-                          )
-                        }
-                        className="w-16"
-                      />
-                    </div>
-                    <Button
-                      className="w-full"
-                      onClick={() => handleAddToCart(product.productID)}
-                      disabled={isLoading}
-                    >
-                      {isLoading ? "Adding..." : "Add to Cart"}
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))
-            ) : (
-              <div className="text-center col-span-full py-12">
-                <h3 className="text-2xl font-bold text-gray-700">
-                  No Products Found
-                </h3>
-                <p className="text-md text-gray-500 mt-2">
-                  Try adjusting your filters to find more products.
-                </p>
-              </div>
-            )}
-          </div>
+                        {isLoading ? "Adding..." : "Add to Cart"}
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                ))
+              ) : (
+                <div className="text-center col-span-full py-12">
+                  <h3 className="text-2xl font-bold text-gray-700">No Products Found</h3>
+                  <p className="text-md text-gray-500 mt-2">
+                    Try adjusting your filters to find more products.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
