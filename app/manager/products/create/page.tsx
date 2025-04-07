@@ -21,7 +21,7 @@ export default function CreateProductPage() {
     description: "",
     price: 0,
     category: "Cleanser",
-    skinType: "Dry",
+    skinTypes: ["Dry"], // Changed to array to store multiple skin types
     rating: 0,
     imageFile: null as File | null,
     imagePreview: "",
@@ -47,6 +47,23 @@ export default function CreateProductPage() {
         imagePreview: URL.createObjectURL(file),
       });
     }
+  };
+
+  const addSkinType = (value: string) => {
+    // Only add if the skin type isn't already selected
+    if (!newProduct.skinTypes.includes(value)) {
+      setNewProduct({
+        ...newProduct,
+        skinTypes: [...newProduct.skinTypes, value],
+      });
+    }
+  };
+
+  const removeSkinType = (skinTypeToRemove: string) => {
+    setNewProduct({
+      ...newProduct,
+      skinTypes: newProduct.skinTypes.filter((type) => type !== skinTypeToRemove),
+    });
   };
 
   return (
@@ -111,24 +128,54 @@ export default function CreateProductPage() {
         </div>
 
         <div>
-          <label className="text-sm font-medium mb-1 block">Skin Type</label>
-          <Select
-            value={newProduct.skinType}
-            onValueChange={(value) =>
-              setNewProduct({ ...newProduct, skinType: value })
-            }
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select skin type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Dry">Dry</SelectItem>
-              <SelectItem value="Oily">Oily</SelectItem>
-              <SelectItem value="Combination">Combination</SelectItem>
-              <SelectItem value="Sensitive">Sensitive</SelectItem>
-              <SelectItem value="Normal">Normal</SelectItem>
-            </SelectContent>
-          </Select>
+          <label className="text-sm font-medium mb-1 block">Skin Types</label>
+          <div className="flex items-center gap-2">
+            <Select
+              onValueChange={addSkinType}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select skin type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Dry">Dry</SelectItem>
+                <SelectItem value="Oily">Oily</SelectItem>
+                <SelectItem value="Combination">Combination</SelectItem>
+                <SelectItem value="Sensitive">Sensitive</SelectItem>
+                <SelectItem value="Normal">Normal</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={() => {
+                const lastSelected = newProduct.skinTypes[newProduct.skinTypes.length - 1];
+                if (lastSelected && !newProduct.skinTypes.includes(lastSelected)) {
+                  addSkinType(lastSelected);
+                }
+              }}
+            >
+              +
+            </Button>
+          </div>
+          {/* Display selected skin types */}
+          <div className="mt-2 flex flex-wrap gap-2">
+            {newProduct.skinTypes.map((type) => (
+              <div
+                key={type}
+                className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded-md text-sm"
+              >
+                {type}
+                <button
+                  type="button"
+                  onClick={() => removeSkinType(type)}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div>
@@ -176,11 +223,11 @@ export default function CreateProductPage() {
       </div>
 
       <div className="mt-6 flex gap-4">
-        <Button variant="outline" onClick={() => router.push("/manager/products")}>
-          Cancel
-        </Button>
-        <Button onClick={handleCreateProduct}>Create Product</Button>
+          <Button variant="outline" onClick={() => router.push("/manager/products")}>
+            Cancel
+          </Button>
+          <Button onClick={handleCreateProduct}>Create Product</Button>
+        </div>
       </div>
-    </div>
   );
 }

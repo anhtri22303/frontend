@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { fetchProducts, deleteProduct, fetchProductsByCategory, fetchProductsByName, fetchProductsBySkinType, fetchProductById } from "@/app/api/productApi";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 
 interface Product {
   productID: string;
@@ -18,7 +19,7 @@ interface Product {
   discountedPrice?: number;
   rating: number;
   image_url: string;
-  skinType: string;
+  skinTypes: string | string[]; // Cập nhật kiểu dữ liệu để hỗ trợ cả chuỗi và mảng
 }
 
 export default function ProductsPage() {
@@ -42,12 +43,8 @@ export default function ProductsPage() {
     try {
       setLoading(true);
       setError(null);
-
-      // Gọi API lấy sản phẩm
       const productsResponse = await fetchProducts();
       console.log("Products Response:", productsResponse);
-
-      // Sử dụng trực tiếp dữ liệu từ API mà không cần xử lý thêm
       setProducts(productsResponse);
     } catch (error) {
       console.error("Error loading products:", error);
@@ -55,6 +52,58 @@ export default function ProductsPage() {
       setProducts([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Cải thiện hàm parseSkinTypes để xử lý cả chuỗi và mảng
+  const parseSkinTypes = (skinTypes: string | string[]): string[] => {
+    // Nếu skinTypes là mảng, trả về ngay mảng đó
+    if (Array.isArray(skinTypes)) {
+      return skinTypes;
+    }
+
+    // Nếu skinTypes không tồn tại hoặc là chuỗi rỗng, trả về mảng rỗng
+    if (!skinTypes) return [];
+
+    try {
+      // Xử lý chuỗi JSON như "[\"Dry\",\"Oily\"]"
+      if (typeof skinTypes === "string" && skinTypes.startsWith('[')) {
+        return JSON.parse(skinTypes);
+      }
+      // Xử lý chuỗi phân tách bằng dấu phẩy như "Dry,Oily,Combination"
+      if (typeof skinTypes === "string" && skinTypes.includes(',')) {
+        return skinTypes.split(',').map(type => type.trim());
+      }
+      // Xử lý chuỗi dính liền như "OilySensitiveCombination"
+      if (typeof skinTypes === "string") {
+        const result: string[] = [];
+        let currentWord = '';
+
+        for (let i = 0; i < skinTypes.length; i++) {
+          const char = skinTypes[i];
+          // Nếu gặp chữ cái in hoa và đã có từ trước đó, thêm từ hiện tại vào kết quả
+          if (/[A-Z]/.test(char) && currentWord) {
+            result.push(currentWord);
+            currentWord = char;
+          } else {
+            currentWord += char;
+          }
+        }
+        // Thêm từ cuối cùng vào kết quả
+        if (currentWord) {
+          result.push(currentWord);
+        }
+
+        // Nếu không tách được, trả về chuỗi gốc như một giá trị đơn
+        return result.length > 0 ? result : [skinTypes.trim()];
+      }
+
+      // Fallback: trả về chuỗi gốc như một giá trị đơn
+      return [skinTypes.toString()];
+    } catch (error) {
+      console.error("Error parsing skinTypes:", error);
+      // Fallback: Coi như một giá trị đơn
+      return [skinTypes.toString()];
     }
   };
 
@@ -83,13 +132,13 @@ export default function ProductsPage() {
   const handleCategoryChange = async (category: string) => {
     setSelectedCategory(category);
     if (category === "all") {
-      loadProducts(); // Nếu chọn "All Categories", tải lại toàn bộ sản phẩm
+      loadProducts();
       return;
     }
     try {
       setLoading(true);
       const response = await fetchProductsByCategory(category);
-      setProducts(response.data || []); // Cập nhật danh sách sản phẩm theo category
+      setProducts(response.data || []);
     } catch (error) {
       console.error("Error filtering products by category:", error);
       setError("Failed to filter products by category.");
@@ -97,6 +146,14 @@ export default function ProductsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const skinTypeColors: { [key: string]: string } = {
+    Dry: "bg-blue-100 text-blue-800 border-blue-200",
+    Oily: "bg-green-100 text-green-800 border-green-200",
+    Combination: "bg-purple-100 text-purple-800 border-purple-200",
+    Sensitive: "bg-pink-100 text-pink-800 border-pink-200",
+    Normal: "bg-gray-100 text-gray-800 border-gray-200",
   };
 
   const handleDeleteProduct = async (productId: string) => {
@@ -251,62 +308,82 @@ export default function ProductsPage() {
                   <th className="px-4 py-3 text-left text-sm font-medium">Category</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Price</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Rating</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium">Skin Type</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium">Skin Types</th>
                   <th className="px-4 py-3 text-right text-sm font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {products.map((product) => (
-                  <tr key={product.productID} className="border-b">
-                    <td className="px-4 py-3 text-sm">{product.productID}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <Image
-                          src={product.image_url || "/placeholder.png"}
-                          width={48}
-                          height={48}
-                          className="rounded-md object-cover"
-                          alt={`${product.productName}`}
-                        />
-                        <div className="font-medium">{product.productName}</div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm">{product.category}</td>
-                    <td className="px-4 py-3 text-sm">
-                      {product.discountedPrice && product.discountedPrice < product.price ? (
-                        <>
-                          <span className="text-green-600">${product.discountedPrice.toFixed(2)}</span>
-                          <span className="text-sm text-gray-500 line-through ml-2">${product.price.toFixed(2)}</span>
-                        </>
-                      ) : (
-                        `$${product.price.toFixed(2)}`
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-sm">{product.rating || "N/A"}</td>
-                    <td className="px-4 py-3 text-sm">{product.skinType}</td>
-                    <td className="px-4 py-3 text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Actions</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => router.push(`/manager/products/${product.productID}/edit`)}>
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-red-600"
-                            onClick={() => handleDeleteProduct(product.productID)}
-                          >
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
-                  </tr>
-                ))}
+                {products.map((product) => {
+                  const skinTypesArray = parseSkinTypes(product.skinTypes);
+                  return (
+                    <tr key={product.productID} className="border-b">
+                      <td className="px-4 py-3 text-sm">{product.productID}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <Image
+                            src={product.image_url || "/placeholder.png"}
+                            width={48}
+                            height={48}
+                            className="rounded-md object-cover"
+                            alt={`${product.productName}`}
+                          />
+                          <div className="font-medium">{product.productName}</div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-sm">{product.category}</td>
+                      <td className="px-4 py-3 text-sm">
+                        {product.discountedPrice && product.discountedPrice < product.price ? (
+                          <>
+                            <span className="text-green-600">${product.discountedPrice.toFixed(2)}</span>
+                            <span className="text-sm text-gray-500 line-through ml-2">${product.price.toFixed(2)}</span>
+                          </>
+                        ) : (
+                          `$${product.price.toFixed(2)}`
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm">{product.rating || "N/A"}</td>
+                      <td className="px-4 py-3 text-sm">
+                        <div className="flex flex-wrap gap-2">
+                          {skinTypesArray.length > 0 ? (
+                            skinTypesArray.map((type) => (
+                              <Badge
+                                key={type}
+                                className={`${
+                                  skinTypeColors[type] || "bg-gray-100 text-gray-800 border-gray-200"
+                                } px-2 py-1 text-xs font-medium rounded-full border shadow-sm`}
+                              >
+                                {type}
+                              </Badge>
+                            ))
+                          ) : (
+                            <span className="text-gray-500 text-xs">N/A</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Actions</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => router.push(`/manager/products/${product.productID}/edit`)}>
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-red-600"
+                              onClick={() => handleDeleteProduct(product.productID)}
+                            >
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           ) : (
