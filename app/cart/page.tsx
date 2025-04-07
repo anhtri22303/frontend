@@ -53,7 +53,7 @@ export default function CartPage() {
       if (response && response.items) {
         // The response now includes all the details we need
         setCartItems(response.items);
-        
+
         // Add image data from product API if not provided in cart response
         const cartItemsWithImages = await Promise.all(
           response.items.map(async (item) => {
@@ -149,7 +149,7 @@ export default function CartPage() {
       const orderData = {
         customerID: userID,
         orderDate: new Date().toISOString(),
-        status: "COMPLETED",
+        status: "PENDING",
         totalAmount: discountedTotalAmount, // Sử dụng discountedTotalAmount
         orderDetails: cartItems.map((item) => ({
           productID: item.productID,
@@ -279,7 +279,11 @@ export default function CartPage() {
                     {item.discountPercentage ? (
                       <div className="flex items-center gap-2">
                         <span className="text-green-600 font-semibold">
-                          ${(item.productPrice - (item.productPrice * (item.discountPercentage / 100))).toFixed(2)}
+                          $
+                          {(
+                            item.productPrice -
+                            item.productPrice * (item.discountPercentage / 100)
+                          ).toFixed(2)}
                         </span>
                         <span className="text-gray-500 line-through">
                           ${item.productPrice?.toFixed(2)}
@@ -315,12 +319,10 @@ export default function CartPage() {
                 </div>
                 <div className="text-right">
                   <p className="font-medium mb-1">Sales:</p>
-                  {item.discountPercentage ? (
+                  {item.discountPercentage && (
                     <span className="text-xs text-green-600">
                       {item.discountPercentage}% off
                     </span>
-                  ) : (
-                    <span className="font-semibold">${item.totalAmount.toFixed(2)}</span>
                   )}
                 </div>
                 <Button
@@ -346,25 +348,43 @@ export default function CartPage() {
           <div className="space-y-2">
             <div className="flex justify-between">
               <span>PreTotal</span>
-              <span>${cartItems.reduce((sum, item) => sum + item.totalAmount, 0).toFixed(2)}</span>
+              <span>
+                $
+                {cartItems
+                  .reduce((sum, item) => sum + item.totalAmount, 0)
+                  .toFixed(2)}
+              </span>
             </div>
-            
-            {cartItems.some(item => item.discountedTotalAmount) && (
+
+            {cartItems.some((item) => item.discountedTotalAmount) && (
               <div className="flex justify-between text-green-600">
                 <span>Discount</span>
-                <span>-${(
-                  cartItems.reduce((sum, item) => sum + item.totalAmount, 0) - 
-                  cartItems.reduce((sum, item) => sum + (item.discountedTotalAmount || item.totalAmount), 0)
-                ).toFixed(2)}</span>
+                <span>
+                  -$
+                  {(
+                    cartItems.reduce((sum, item) => sum + item.totalAmount, 0) -
+                    cartItems.reduce(
+                      (sum, item) =>
+                        sum + (item.discountedTotalAmount || item.totalAmount),
+                      0
+                    )
+                  ).toFixed(2)}
+                </span>
               </div>
             )}
-            
+
             <div className="flex justify-between font-semibold text-lg border-t pt-2">
               <span>Final Total</span>
-              <span>${cartItems.reduce(
-                (sum, item) => sum + (item.discountedTotalAmount || item.totalAmount), 
-                0
-              ).toFixed(2)}</span>
+              <span>
+                $
+                {cartItems
+                  .reduce(
+                    (sum, item) =>
+                      sum + (item.discountedTotalAmount || item.totalAmount),
+                    0
+                  )
+                  .toFixed(2)}
+              </span>
             </div>
           </div>
 
