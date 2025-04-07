@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fetchRoutineById, updateRoutine } from "@/app/api/routineApi";
+import { fetchProductsBySkinType } from "@/app/api/productApi";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, ArrowLeft, Save } from "lucide-react";
@@ -14,6 +15,7 @@ import { useToast } from "@/components/ui/use-toast";
 interface Product {
   productID: string;
   productName: string;
+  category: string;
 }
 
 interface Routine {
@@ -21,13 +23,13 @@ interface Routine {
   skinType: string;
   routineName: string;
   routineDescription: string;
-  products?: Product[]; 
+  productIDs?: string[]; // Changed from products to productIDs for consistency
 }
 
 interface RoutineEditPageProps {
   params: {
-    routineID: string
-  }
+    routineID: string;
+  };
 }
 
 export default function RoutineEditPage({ params }: RoutineEditPageProps) {
@@ -38,18 +40,20 @@ export default function RoutineEditPage({ params }: RoutineEditPageProps) {
     skinType: "",
     routineName: "",
     routineDescription: "",
-    products: []
+    productIDs: [],
   });
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [isProductListOpen, setIsProductListOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Danh sách các loại da
   const skinTypes = ["Dry", "Oily", "Combination", "Sensitive", "Normal"];
+  const categories = ["Cleanser", "Toner", "Serum", "Moisturizer", "Sunscreen"];
 
+  // Load routine details
   useEffect(() => {
     const loadRoutine = async () => {
-      // Kiểm tra xem routineID có tồn tại không
       if (!params.routineID) {
         setError("Routine ID is missing.");
         setIsLoading(false);
@@ -58,17 +62,19 @@ export default function RoutineEditPage({ params }: RoutineEditPageProps) {
 
       setIsLoading(true);
       setError(null);
-      
+
       try {
         const response = await fetchRoutineById(params.routineID);
-        console.log("Routine data:", response.data);
-        
         if (!response.data) {
           setError("Routine not found.");
           return;
         }
-        
-        setRoutine(response.data);
+
+        // Assuming the API returns productIDs instead of full product objects
+        setRoutine({
+          ...response.data,
+          productIDs: response.data.productIDs || response.data.products?.map((p: Product) => p.productID) || [],
+        });
       } catch (err) {
         console.error("Failed to fetch routine:", err);
         setError("Failed to load routine details. Please try again.");
@@ -80,18 +86,47 @@ export default function RoutineEditPage({ params }: RoutineEditPageProps) {
     loadRoutine();
   }, [params.routineID]);
 
+  // Fetch products when skinType changes
+  useEffect(() => {
+    const fetchFilteredProducts = async () => {
+      if (routine.skinType) {
+        try {
+          const response = await fetchProductsBySkinType(routine.skinType);
+          setAllProducts(response);
+        } catch (error) {
+          console.error("Error fetching products by skin type:", error);
+          setAllProducts([]);
+        }
+      } else {
+        setAllProducts([]);
+      }
+    };
+
+    fetchFilteredProducts();
+  }, [routine.skinType]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setRoutine(prev => ({
+    setRoutine((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handleSkinTypeChange = (value: string) => {
-    setRoutine(prev => ({
+    setRoutine((prev) => ({
       ...prev,
-      skinType: value
+      skinType: value,
+      productIDs: [], // Reset product selection when skin type changes
+    }));
+  };
+
+  const toggleProductSelection = (productID: string) => {
+    setRoutine((prev) => ({
+      ...prev,
+      productIDs: prev.productIDs?.includes(productID)
+        ? prev.productIDs.filter((id) => id !== productID)
+        : [...(prev.productIDs || []), productID],
     }));
   };
 
@@ -100,7 +135,6 @@ export default function RoutineEditPage({ params }: RoutineEditPageProps) {
     setIsSubmitting(true);
     setError(null);
 
-    // Validate form
     if (!routine.routineName.trim()) {
       setError("Routine name is required.");
       setIsSubmitting(false);
@@ -114,23 +148,22 @@ export default function RoutineEditPage({ params }: RoutineEditPageProps) {
     }
 
     try {
-      // Submit form data
       const updatedData = {
         routineID: routine.routineID,
         routineName: routine.routineName,
         routineDescription: routine.routineDescription,
-        skinType: routine.skinType
+        skinType: routine.skinType,
+        productIDs: routine.productIDs,
       };
-      
+
       await updateRoutine(params.routineID, updatedData);
-      
+
       toast({
         title: "Success",
         description: "Routine updated successfully!",
         variant: "default",
       });
-      
-      // Redirect to routine details page
+
       router.push(`/manager/routines/${params.routineID}`);
     } catch (err) {
       console.error("Failed to update routine:", err);
@@ -206,7 +239,7 @@ export default function RoutineEditPage({ params }: RoutineEditPageProps) {
                 className="bg-gray-50"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium mb-1" htmlFor="routineName">
                 Routine Name *
@@ -220,15 +253,12 @@ export default function RoutineEditPage({ params }: RoutineEditPageProps) {
                 required
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium mb-1" htmlFor="skinType">
                 Skin Type *
               </label>
-              <Select
-                value={routine.skinType}
-                onValueChange={handleSkinTypeChange}
-              >
+              <Select value={routine.skinType} onValueChange={handleSkinTypeChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select skin type" />
                 </SelectTrigger>
@@ -241,7 +271,7 @@ export default function RoutineEditPage({ params }: RoutineEditPageProps) {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium mb-1" htmlFor="routineDescription">
                 Description
@@ -255,7 +285,66 @@ export default function RoutineEditPage({ params }: RoutineEditPageProps) {
                 rows={5}
               />
             </div>
-            
+
+            <div className="space-y-2">
+              <label className="block text-sm font-medium mb-1">List Product</label>
+              <div className="border p-4 rounded-md">
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {routine.productIDs?.map((productID) => (
+                    <span key={productID} className="px-2 py-1 bg-primary text-white rounded-md text-sm">
+                      {productID}
+                    </span>
+                  ))}
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsProductListOpen((prev) => !prev)}
+                >
+                  {isProductListOpen ? "Close List" : "Select Products"}
+                </Button>
+
+                {isProductListOpen && (
+                  <div className="mt-4">
+                    {categories.map((category) => (
+                      <div key={category} className="mb-6">
+                        <h3 className="text-lg font-semibold mb-2">{category}</h3>
+                        <div className="max-h-64 overflow-y-auto border-t pt-4">
+                          {allProducts
+                            .filter((product) => product.category === category)
+                            .map((product) => (
+                              <div
+                                key={product.productID}
+                                className="flex items-center justify-between py-2"
+                              >
+                                <span>
+                                  {product.productName} ({product.productID})
+                                </span>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant={
+                                    routine.productIDs?.includes(product.productID)
+                                      ? "secondary"
+                                      : "outline"
+                                  }
+                                  onClick={() => toggleProductSelection(product.productID)}
+                                >
+                                  {routine.productIDs?.includes(product.productID)
+                                    ? "Selected"
+                                    : "Select"}
+                                </Button>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
             <div className="pt-4 flex justify-end gap-2">
               <Button
                 type="button"
@@ -265,11 +354,7 @@ export default function RoutineEditPage({ params }: RoutineEditPageProps) {
               >
                 Cancel
               </Button>
-              <Button 
-                type="submit"
-                disabled={isSubmitting}
-                className="gap-2"
-              >
+              <Button type="submit" disabled={isSubmitting} className="gap-2">
                 {isSubmitting ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (

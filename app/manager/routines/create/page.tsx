@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createRoutine } from "@/app/api/routineApi";
-import { fetchProducts } from "@/app/api/productApi";
+import { fetchProductsBySkinType } from "@/app/api/productApi"; // Import the specific function
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,34 +17,38 @@ export default function CreateRoutinePage() {
     routineName: "",
     routineDescription: "",
   });
-  const [productIDs, setProductIDs] = useState<string[]>([]); // Đổi tên từ products thành productIDs
+  const [productIDs, setProductIDs] = useState<string[]>([]);
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [isProductListOpen, setIsProductListOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Fetch products whenever skinType changes
   useEffect(() => {
-    const fetchAllProducts = async () => {
-      try {
-        const response = await fetchProducts();
-        setAllProducts(response);
-      } catch (error) {
-        console.error("Error fetching products:", error);
+    const fetchFilteredProducts = async () => {
+      if (formData.skinType) {
+        try {
+          const response = await fetchProductsBySkinType(formData.skinType);
+          setAllProducts(response);
+        } catch (error) {
+          console.error("Error fetching products by skin type:", error);
+          setAllProducts([]);
+        }
+      } else {
+        setAllProducts([]); // Clear products if no skin type is selected
       }
     };
 
-    fetchAllProducts();
-  }, []);
+    fetchFilteredProducts();
+  }, [formData.skinType]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Submitting form...");
     setIsLoading(true);
     try {
       const requestBody = {
         ...formData,
-        productIDs: productIDs, // Sử dụng productIDs thay vì products
+        productIDs: productIDs,
       };
-      console.log("Request Body:", requestBody);
       await createRoutine(requestBody);
       router.push("/staff/routines");
     } catch (error) {
@@ -59,6 +63,8 @@ export default function CreateRoutinePage() {
       prev.includes(productID) ? prev.filter((id) => id !== productID) : [...prev, productID]
     );
   };
+
+  const categories = ["Cleanser", "Toner", "Serum", "Moisturizer", "Sunscreen"];
 
   return (
     <div className="container mx-auto p-6">
@@ -81,7 +87,7 @@ export default function CreateRoutinePage() {
                   <SelectItem value="Dry">Dry</SelectItem>
                   <SelectItem value="Oily">Oily</SelectItem>
                   <SelectItem value="Combination">Combination</SelectItem>
-                  <SelectItem value="Sensitive">Sensitive</SelectItem> 
+                  <SelectItem value="Sensitive">Sensitive</SelectItem>
                   <SelectItem value="Normal">Normal</SelectItem>
                 </SelectContent>
               </Select>
@@ -120,25 +126,43 @@ export default function CreateRoutinePage() {
                   ))}
                 </div>
 
-                <Button type="button" variant="outline" onClick={() => setIsProductListOpen((prev) => !prev)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsProductListOpen((prev) => !prev)}
+                >
                   {isProductListOpen ? "Close List" : "Select Products"}
                 </Button>
 
                 {isProductListOpen && (
-                  <div className="mt-4 max-h-64 overflow-y-auto border-t pt-4">
-                    {allProducts.map((product) => (
-                      <div key={product.productID} className="flex items-center justify-between py-2">
-                        <span>
-                          {product.productName} ({product.productID})
-                        </span>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant={productIDs.includes(product.productID) ? "secondary" : "outline"}
-                          onClick={() => toggleProductSelection(product.productID)}
-                        >
-                          {productIDs.includes(product.productID) ? "Selected" : "Select"}
-                        </Button>
+                  <div className="mt-4">
+                    {categories.map((category) => (
+                      <div key={category} className="mb-6">
+                        <h3 className="text-lg font-semibold mb-2">{category}</h3>
+                        <div className="max-h-64 overflow-y-auto border-t pt-4">
+                          {allProducts
+                            .filter((product) => product.category === category)
+                            .map((product) => (
+                              <div
+                                key={product.productID}
+                                className="flex items-center justify-between py-2"
+                              >
+                                <span>
+                                  {product.productName} ({product.productID})
+                                </span>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant={
+                                    productIDs.includes(product.productID) ? "secondary" : "outline"
+                                  }
+                                  onClick={() => toggleProductSelection(product.productID)}
+                                >
+                                  {productIDs.includes(product.productID) ? "Selected" : "Select"}
+                                </Button>
+                              </div>
+                            ))}
+                        </div>
                       </div>
                     ))}
                   </div>
