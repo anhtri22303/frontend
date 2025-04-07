@@ -5,25 +5,37 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { updateOrder } from "@/app/api/orderApi";
-import { fetchOrderDetailsByUserID } from "@/app/api/orderCustomerApi";
+import { fetchOrderDetailsByUserID, Order, OrderDetail } from "@/app/api/orderCustomerApi";
 import toast from "react-hot-toast";
+import { CreditCard, Tag } from "lucide-react";
 
+// Cập nhật interface để phản ánh cấu trúc mới
 interface OrderInfo {
+  orderID?: string;
+  customerID?: string;
   customerInfo?: {
     name?: string;
     email?: string;
     phone?: string;
     address?: string;
   };
-  orderID?: string;
+  orderDate?: string;
+  status?: string;
+  totalAmount?: number;
+  discountedTotalAmount?: number;
+  payment?: string;
+  promotion?: string;
   orderDetails?: {
     productID: string;
-    name?: string;
-    price: number;
+    productName?: string;
     quantity: number;
+    productPrice?: number;
+    discountName?: string;
+    discountPercentage?: number;
+    totalAmount: number;
+    discountedTotalAmount?: number;
     image?: string;
   }[];
-  totalAmount?: number;
 }
 
 export default function SuccessPage() {
@@ -33,9 +45,9 @@ export default function SuccessPage() {
 
   useEffect(() => {
     const orderID = sessionStorage.getItem("orderID");
-    const userID = localStorage.getItem("userID"); // Lấy orderID từ sessionStorage
-    if (orderID) {
-      fetchOrderData(userID!, orderID);
+    const userID = localStorage.getItem("userID");
+    if (orderID && userID) {
+      fetchOrderData(userID, orderID);
     } else {
       setLoading(false);
     }
@@ -48,9 +60,15 @@ export default function SuccessPage() {
       if (orderData && orderData.data) {
         setOrderInfo({
           orderID: orderData.data.orderID,
+          customerID: orderData.data.customerID,
           customerInfo: orderData.data.customerInfo,
-          orderDetails: orderData.data.orderDetails,
+          orderDate: orderData.data.orderDate,
+          status: orderData.data.status,
           totalAmount: orderData.data.totalAmount,
+          discountedTotalAmount: orderData.data.discountedTotalAmount,
+          payment: orderData.data.payment,
+          promotion: orderData.data.promotion,
+          orderDetails: orderData.data.orderDetails,
         });
       }
     } catch (error) {
@@ -68,18 +86,26 @@ export default function SuccessPage() {
         return;
       }
 
-      // Gọi API updateOrder với status là một chuỗi
       await updateOrder(orderID, "COMPLETED");
       toast.success("Order status updated to COMPLETED!");
 
-      // Xóa orderID khỏi sessionStorage
       sessionStorage.removeItem("orderID");
-
-      // Chuyển hướng đến trang shop
       router.push("/shop");
     } catch (error) {
       console.error("Error updating order status:", error);
       toast.error("Failed to update order status. Please try again.");
+    }
+  };
+
+  // Function to render payment badge based on payment method
+  const renderPaymentBadge = (payment: string | undefined) => {
+    if (!payment) return <span className="px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-800">N/A</span>;
+    
+    switch(payment.toUpperCase()) {
+      case 'Stripe':
+        return <span className="px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-800">Stripe</span>;
+      default:
+        return <span className="px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-800">{payment}</span>;
     }
   };
 
@@ -95,9 +121,55 @@ export default function SuccessPage() {
 
         <div className="bg-white shadow-lg rounded-lg p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">Order Information</h2>
-          <p className="text-gray-600">Order ID: {orderInfo.orderID || '-'}</p>
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <p className="text-sm text-muted-foreground">Order ID:</p>
+              <p className="font-medium">{orderInfo.orderID || '-'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Order Date:</p>
+              <p className="font-medium">
+                {orderInfo.orderDate ? new Date(orderInfo.orderDate).toLocaleDateString() : '-'}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Status:</p>
+              <span
+                className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+                  orderInfo.status === "PENDING"
+                    ? "bg-yellow-100 text-yellow-800"
+                    : orderInfo.status === "PROCESSING"
+                    ? "bg-blue-100 text-blue-800"
+                    : orderInfo.status === "COMPLETED"
+                    ? "bg-green-100 text-green-800"
+                    : "bg-red-100 text-red-800"
+                }`}
+              >
+                {orderInfo.status || '-'}
+              </span>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Payment Method:</p>
+              <div className="flex items-center gap-1 mt-1">
+                <CreditCard className="h-4 w-4 text-muted-foreground" />
+                {renderPaymentBadge(orderInfo.payment)}
+              </div>
+            </div>
+          </div>
 
-          <div className="mt-4">
+          {orderInfo.promotion && (
+            <div className="mb-4">
+              <p className="text-sm text-muted-foreground">Order Promotion:</p>
+              <div className="flex items-center gap-1 mt-1">
+                <Tag className="h-4 w-4 text-muted-foreground" />
+                <span className="px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800">
+                  {orderInfo.promotion}
+                </span>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-6">
             <h3 className="font-medium mb-2">Customer Details:</h3>
             <p>Name: {orderInfo.customerInfo?.name || '-'}</p>
             <p>Email: {orderInfo.customerInfo?.email || '-'}</p>
@@ -113,18 +185,36 @@ export default function SuccessPage() {
               <div key={item.productID} className="flex items-center space-x-4 border-b pb-4">
                 <Image
                   src={item.image || "/placeholder.svg"}
-                  alt={item.name || "Product"}
+                  alt={item.productName || "Product"}
                   width={80}
                   height={80}
                   className="rounded-md"
                 />
                 <div className="flex-grow">
-                  <h3 className="font-medium">{item.name || "Product"}</h3>
-                  <p className="text-gray-600">
-                    ${item.price.toFixed(2)} x {item.quantity}
-                  </p>
+                  <h3 className="font-medium">{item.productName || item.productID}</h3>
+                  <div>
+                    {item.productPrice && (
+                      <p className="text-gray-600">
+                        ${item.productPrice.toFixed(2)} x {item.quantity}
+                      </p>
+                    )}
+                    {item.discountPercentage && (
+                      <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                        {item.discountPercentage}% {item.discountName ? `(${item.discountName})` : ""}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <p className="font-medium">${(item.price * item.quantity).toFixed(2)}</p>
+                <div className="text-right">
+                  {item.discountedTotalAmount ? (
+                    <>
+                      <p className="font-medium text-green-600">${item.discountedTotalAmount.toFixed(2)}</p>
+                      <p className="text-sm text-gray-500 line-through">${item.totalAmount.toFixed(2)}</p>
+                    </>
+                  ) : (
+                    <p className="font-medium">${item.totalAmount.toFixed(2)}</p>
+                  )}
+                </div>
               </div>
             ))}
 
@@ -132,11 +222,18 @@ export default function SuccessPage() {
               <span>Total</span>
               <span>${orderInfo.totalAmount?.toFixed(2) || "0.00"}</span>
             </div>
+
+            {orderInfo.discountedTotalAmount && (
+              <div className="flex justify-between pt-2 font-semibold text-green-600">
+                <span>Discounted Total</span>
+                <span>${orderInfo.discountedTotalAmount.toFixed(2)}</span>
+              </div>
+            )}
           </div>
         </div>
 
         <div className="text-center">
-          <Button onClick={handleContinueShopping} className="px-8">
+          <Button onClick={handleContinueShopping} className="px-8 bg-green-600 hover:bg-green-700">
             Continue Shopping
           </Button>
         </div>

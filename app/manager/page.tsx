@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Package, ShoppingCart, Users, Star, Clock, CheckCircle, Calendar } from "lucide-react";
+import { Package, ShoppingCart, Users, Star, Calendar, DollarSign } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { fetchProducts } from "@/app/api/productApi";
 import { fetchOrders } from "@/app/api/orderApi";
@@ -36,6 +36,11 @@ export default function ManagerDashboard() {
   const [filteredPendingOrders, setFilteredPendingOrders] = useState([]);
   const [filteredCompletedOrders, setFilteredCompletedOrders] = useState([]);
 
+  // Total amounts
+  const [totalCompletedAmount, setTotalCompletedAmount] = useState(0);
+  const [filteredPendingAmount, setFilteredPendingAmount] = useState(0);
+  const [filteredCompletedAmount, setFilteredCompletedAmount] = useState(0);
+
   useEffect(() => {
     const fetchAllData = async () => {
       try {
@@ -58,6 +63,12 @@ export default function ManagerDashboard() {
         setCompletedOrders(completedOrdersData);
         setFilteredPendingOrders(pendingOrdersData);
         setFilteredCompletedOrders(completedOrdersData);
+
+        // Calculate total discounted amount for completed orders
+        const completedTotal = completedOrdersData.reduce(
+          (sum, order) => sum + (order.discountedTotalAmount || order.totalAmount), 0
+        );
+        setTotalCompletedAmount(completedTotal);
         
         setStaffAndManagers(staffData?.data || []);
         setCustomers(customersData?.data || []);
@@ -100,6 +111,13 @@ export default function ManagerDashboard() {
     }
     
     setFilteredPendingOrders(filtered);
+    
+    // Calculate total amount for filtered pending orders
+    const filteredTotal = filtered.reduce(
+      (sum, order) => sum + (order.discountedTotalAmount || order.totalAmount), 0
+    );
+    setFilteredPendingAmount(filteredTotal);
+    
     setPendingPage(1); // Reset to first page when filter changes
   };
 
@@ -119,6 +137,13 @@ export default function ManagerDashboard() {
     }
     
     setFilteredCompletedOrders(filtered);
+    
+    // Calculate total amount for filtered completed orders
+    const filteredTotal = filtered.reduce(
+      (sum, order) => sum + (order.discountedTotalAmount || order.totalAmount), 0
+    );
+    setFilteredCompletedAmount(filteredTotal);
+    
     setCompletedPage(1); // Reset to first page when filter changes
   };
 
@@ -150,8 +175,7 @@ export default function ManagerDashboard() {
       <h1 className="text-2xl font-bold mb-6">Manager Dashboard</h1>
 
       {/* Overview Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6 mb-6">
-        {/* ...existing card components... */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5 mb-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Products</CardTitle>
@@ -174,21 +198,12 @@ export default function ManagerDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Completed Orders Revenue</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{pendingOrders.length}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed Orders</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{completedOrders.length}</div>
+            <div className="text-2xl font-bold">${totalCompletedAmount.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">From {completedOrders.length} completed orders</p>
           </CardContent>
         </Card>
 
@@ -215,199 +230,225 @@ export default function ManagerDashboard() {
 
       {/* Tables */}
       <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Pending Orders</CardTitle>
-            <div className="flex flex-col space-y-2 sm:flex-row sm:space-x-2 sm:space-y-0 mt-2">
-              <div className="flex items-center space-x-2">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm">Filter by date:</span>
-              </div>
-              <div className="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
-                <input
-                  type="date"
-                  value={pendingStartDate}
-                  onChange={(e) => setPendingStartDate(e.target.value)}
-                  className="border rounded px-2 py-1 text-sm"
-                />
-                <span className="text-sm hidden sm:inline">to</span>
-                <input
-                  type="date"
-                  value={pendingEndDate}
-                  onChange={(e) => setPendingEndDate(e.target.value)}
-                  className="border rounded px-2 py-1 text-sm"
-                />
-                <button
-                  onClick={clearPendingFilters}
-                  className="px-2 py-1 text-sm bg-gray-200 rounded hover:bg-gray-300"
-                >
-                  Clear
-                </button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {filteredPendingOrders.length > 0 ? (
-              <div className="rounded-md border">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b bg-muted/50">
-                      <th className="p-4 text-left font-medium">Order ID</th>
-                      <th className="p-4 text-left font-medium">Customer ID</th>
-                      <th className="p-4 text-left font-medium">Order Date</th>
-                      <th className="p-4 text-left font-medium">Status</th>
-                      <th className="p-4 text-left font-medium">Total Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pendingOrdersToShow.map((order) => (
-                      <tr key={order.orderID} className="border-b">
-                        <td className="p-4">{order.orderID}</td>
-                        <td className="p-4">{order.customerID || "N/A"}</td>
-                        <td className="p-4">{new Date(order.orderDate).toLocaleDateString()}</td>
-                        <td className="p-4">
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs ${
-                              order.status === "PENDING"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-red-100 text-red-800"
-                            }`}
-                          >
-                            {order.status}
-                          </span>
-                        </td>
-                        <td className="p-4">${order.totalAmount.toFixed(2)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {/* Pagination Controls */}
-                <div className="flex justify-between items-center mt-4">
+        <div>
+          <Card className="mb-4">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Filtered Pending Orders Amount</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">${filteredPendingAmount.toFixed(2)}</div>
+              <p className="text-xs text-muted-foreground">From {filteredPendingOrders.length} filtered orders</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Pending Orders</CardTitle>
+              <div className="flex flex-col space-y-2 sm:flex-row sm:space-x-2 sm:space-y-0 mt-2">
+                <div className="flex items-center space-x-2">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm">Filter by date:</span>
+                </div>
+                <div className="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
+                  <input
+                    type="date"
+                    value={pendingStartDate}
+                    onChange={(e) => setPendingStartDate(e.target.value)}
+                    className="border rounded px-2 py-1 text-sm"
+                  />
+                  <span className="text-sm hidden sm:inline">to</span>
+                  <input
+                    type="date"
+                    value={pendingEndDate}
+                    onChange={(e) => setPendingEndDate(e.target.value)}
+                    className="border rounded px-2 py-1 text-sm"
+                  />
                   <button
-                    className="px-4 py-2 text-sm bg-gray-200 rounded disabled:opacity-50"
-                    onClick={() => setPendingPage((prev) => Math.max(prev - 1, 1))}
-                    disabled={pendingPage === 1}
+                    onClick={clearPendingFilters}
+                    className="px-2 py-1 text-sm bg-gray-200 rounded hover:bg-gray-300"
                   >
-                    Previous
-                  </button>
-                  <span className="text-sm">
-                    Page {pendingPage} of {Math.ceil(filteredPendingOrders.length / ordersPerPage)}
-                  </span>
-                  <button
-                    className="px-4 py-2 text-sm bg-gray-200 rounded disabled:opacity-50"
-                    onClick={() =>
-                      setPendingPage((prev) =>
-                        Math.min(prev + 1, Math.ceil(filteredPendingOrders.length / ordersPerPage))
-                      )
-                    }
-                    disabled={pendingPage === Math.ceil(filteredPendingOrders.length / ordersPerPage)}
-                  >
-                    Next
+                    Clear
                   </button>
                 </div>
               </div>
-            ) : (
-              <p>No pending orders available within the selected date range.</p>
-            )}
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent>
+              {filteredPendingOrders.length > 0 ? (
+                <div className="rounded-md border">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b bg-muted/50">
+                        <th className="p-4 text-left font-medium">Order ID</th>
+                        <th className="p-4 text-left font-medium">Customer ID</th>
+                        <th className="p-4 text-left font-medium">Order Date</th>
+                        <th className="p-4 text-left font-medium">Status</th>
+                        <th className="p-4 text-left font-medium">Total Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pendingOrdersToShow.map((order) => (
+                        <tr key={order.orderID} className="border-b">
+                          <td className="p-4">{order.orderID}</td>
+                          <td className="p-4">{order.customerID || "N/A"}</td>
+                          <td className="p-4">{new Date(order.orderDate).toLocaleDateString()}</td>
+                          <td className="p-4">
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs ${
+                                order.status === "PENDING"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : "bg-red-100 text-red-800"
+                              }`}
+                            >
+                              {order.status}
+                            </span>
+                          </td>
+                          <td className="p-4">${(order.discountedTotalAmount || order.totalAmount).toFixed(2)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {/* Pagination Controls */}
+                  <div className="flex justify-between items-center mt-4">
+                    <button
+                      className="px-4 py-2 text-sm bg-gray-200 rounded disabled:opacity-50"
+                      onClick={() => setPendingPage((prev) => Math.max(prev - 1, 1))}
+                      disabled={pendingPage === 1}
+                    >
+                      Previous
+                    </button>
+                    <span className="text-sm">
+                      Page {pendingPage} of {Math.ceil(filteredPendingOrders.length / ordersPerPage)}
+                    </span>
+                    <button
+                      className="px-4 py-2 text-sm bg-gray-200 rounded disabled:opacity-50"
+                      onClick={() =>
+                        setPendingPage((prev) =>
+                          Math.min(prev + 1, Math.ceil(filteredPendingOrders.length / ordersPerPage))
+                        )
+                      }
+                      disabled={pendingPage === Math.ceil(filteredPendingOrders.length / ordersPerPage)}
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <p>No pending orders available within the selected date range.</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Completed Orders</CardTitle>
-            <div className="flex flex-col space-y-2 sm:flex-row sm:space-x-2 sm:space-y-0 mt-2">
-              <div className="flex items-center space-x-2">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm">Filter by date:</span>
-              </div>
-              <div className="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
-                <input
-                  type="date"
-                  value={completedStartDate}
-                  onChange={(e) => setCompletedStartDate(e.target.value)}
-                  className="border rounded px-2 py-1 text-sm"
-                />
-                <span className="text-sm hidden sm:inline">to</span>
-                <input
-                  type="date"
-                  value={completedEndDate}
-                  onChange={(e) => setCompletedEndDate(e.target.value)}
-                  className="border rounded px-2 py-1 text-sm"
-                />
-                <button
-                  onClick={clearCompletedFilters}
-                  className="px-2 py-1 text-sm bg-gray-200 rounded hover:bg-gray-300"
-                >
-                  Clear
-                </button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {filteredCompletedOrders.length > 0 ? (
-              <div className="rounded-md border">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b bg-muted/50">
-                      <th className="p-4 text-left font-medium">Order ID</th>
-                      <th className="p-4 text-left font-medium">Customer ID</th>
-                      <th className="p-4 text-left font-medium">Order Date</th>
-                      <th className="p-4 text-left font-medium">Status</th>
-                      <th className="p-4 text-left font-medium">Total Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {completedOrdersToShow.map((order) => (
-                      <tr key={order.orderID} className="border-b">
-                        <td className="p-4">{order.orderID}</td>
-                        <td className="p-4">{order.customerID || "N/A"}</td>
-                        <td className="p-4">{new Date(order.orderDate).toLocaleDateString()}</td>
-                        <td className="p-4">
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs ${
-                              order.status === "COMPLETED"
-                                ? "bg-green-100 text-green-800"
-                                : "bg-red-100 text-red-800"
-                            }`}
-                          >
-                            {order.status}
-                          </span>
-                        </td>
-                        <td className="p-4">${order.totalAmount.toFixed(2)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {/* Pagination Controls */}
-                <div className="flex justify-between items-center mt-4">
+        <div>
+          <Card className="mb-4">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Filtered Completed Orders Amount</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">${filteredCompletedAmount.toFixed(2)}</div>
+              <p className="text-xs text-muted-foreground">From {filteredCompletedOrders.length} filtered orders</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Completed Orders</CardTitle>
+              <div className="flex flex-col space-y-2 sm:flex-row sm:space-x-2 sm:space-y-0 mt-2">
+                <div className="flex items-center space-x-2">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm">Filter by date:</span>
+                </div>
+                <div className="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
+                  <input
+                    type="date"
+                    value={completedStartDate}
+                    onChange={(e) => setCompletedStartDate(e.target.value)}
+                    className="border rounded px-2 py-1 text-sm"
+                  />
+                  <span className="text-sm hidden sm:inline">to</span>
+                  <input
+                    type="date"
+                    value={completedEndDate}
+                    onChange={(e) => setCompletedEndDate(e.target.value)}
+                    className="border rounded px-2 py-1 text-sm"
+                  />
                   <button
-                    className="px-4 py-2 text-sm bg-gray-200 rounded disabled:opacity-50"
-                    onClick={() => setCompletedPage((prev) => Math.max(prev - 1, 1))}
-                    disabled={completedPage === 1}
+                    onClick={clearCompletedFilters}
+                    className="px-2 py-1 text-sm bg-gray-200 rounded hover:bg-gray-300"
                   >
-                    Previous
-                  </button>
-                  <span className="text-sm">
-                    Page {completedPage} of {Math.ceil(filteredCompletedOrders.length / ordersPerPage)}
-                  </span>
-                  <button
-                    className="px-4 py-2 text-sm bg-gray-200 rounded disabled:opacity-50"
-                    onClick={() =>
-                      setCompletedPage((prev) =>
-                        Math.min(prev + 1, Math.ceil(filteredCompletedOrders.length / ordersPerPage))
-                      )
-                    }
-                    disabled={completedPage === Math.ceil(filteredCompletedOrders.length / ordersPerPage)}
-                  >
-                    Next
+                    Clear
                   </button>
                 </div>
               </div>
-            ) : (
-              <p>No completed orders available within the selected date range.</p>
-            )}
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent>
+              {filteredCompletedOrders.length > 0 ? (
+                <div className="rounded-md border">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b bg-muted/50">
+                        <th className="p-4 text-left font-medium">Order ID</th>
+                        <th className="p-4 text-left font-medium">Customer ID</th>
+                        <th className="p-4 text-left font-medium">Order Date</th>
+                        <th className="p-4 text-left font-medium">Status</th>
+                        <th className="p-4 text-left font-medium">Total Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {completedOrdersToShow.map((order) => (
+                        <tr key={order.orderID} className="border-b">
+                          <td className="p-4">{order.orderID}</td>
+                          <td className="p-4">{order.customerID || "N/A"}</td>
+                          <td className="p-4">{new Date(order.orderDate).toLocaleDateString()}</td>
+                          <td className="p-4">
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs ${
+                                order.status === "COMPLETED"
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-red-100 text-red-800"
+                              }`}
+                            >
+                              {order.status}
+                            </span>
+                          </td>
+                          <td className="p-4">${(order.discountedTotalAmount || order.totalAmount).toFixed(2)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {/* Pagination Controls */}
+                  <div className="flex justify-between items-center mt-4">
+                    <button
+                      className="px-4 py-2 text-sm bg-gray-200 rounded disabled:opacity-50"
+                      onClick={() => setCompletedPage((prev) => Math.max(prev - 1, 1))}
+                      disabled={completedPage === 1}
+                    >
+                      Previous
+                    </button>
+                    <span className="text-sm">
+                      Page {completedPage} of {Math.ceil(filteredCompletedOrders.length / ordersPerPage)}
+                    </span>
+                    <button
+                      className="px-4 py-2 text-sm bg-gray-200 rounded disabled:opacity-50"
+                      onClick={() =>
+                        setCompletedPage((prev) =>
+                          Math.min(prev + 1, Math.ceil(filteredCompletedOrders.length / ordersPerPage))
+                        )
+                      }
+                      disabled={completedPage === Math.ceil(filteredCompletedOrders.length / ordersPerPage)}
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <p>No completed orders available within the selected date range.</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

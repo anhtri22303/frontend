@@ -210,9 +210,9 @@ export default function ProductPage() {
           </div>
 
           <div className="text-2xl font-bold">
-            {product.discountedPrice ? (
+            {product.discountedPrice && product.discountedPrice < product.price ? (
               <div className="flex items-center gap-2">
-                <p className="text-red-500">${product.discountedPrice.toFixed(2)}</p>
+                <p className="text-green-600">${product.discountedPrice.toFixed(2)}</p>
                 <p className="text-gray-500 line-through">${product.price.toFixed(2)}</p>
               </div>
             ) : (
@@ -349,7 +349,20 @@ export default function ProductPage() {
                   <p className="text-sm text-muted-foreground mt-1">
                     Skin Type: {relatedProduct.skinType || "N/A"}
                   </p>
-                  <p className="font-semibold mt-2">${relatedProduct.price}</p>
+                  <div className="mt-2">
+                    {relatedProduct.discountedPrice && relatedProduct.discountedPrice < relatedProduct.price ? (
+                      <>
+                        <span className="text-green-600 font-semibold">
+                          ${relatedProduct.discountedPrice.toFixed(2)}
+                        </span>
+                        <span className="text-sm text-gray-500 line-through ml-2">
+                          ${relatedProduct.price.toFixed(2)}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="font-semibold">${relatedProduct.price.toFixed(2)}</span>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             ))}

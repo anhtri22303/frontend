@@ -281,25 +281,44 @@ export default function EditProductPage({ params }: EditProductPageProps) {
 
           <div>
             <label className="text-sm font-medium mb-1 block">Product Image</label>
-            <div className="flex items-center gap-4">
-              <Input
+            <div className="flex flex-col gap-4">
+              {/* Hidden actual file input */}
+              <input
                 type="file"
+                id="image-upload"
                 accept="image/*"
                 onChange={handleFileChange}
                 disabled={isSubmitting}
-                className="flex-1"
+                className="hidden"
               />
-            </div>
-            {previewImage && (
-              <div className="mt-4">
-                <p className="text-sm font-medium mb-2">Image Preview:</p>
-                <img
-                  src={previewImage}
-                  alt="Product preview"
-                  className="h-48 object-contain rounded-md border"
-                />
+              
+              {/* Custom styled button */}
+              <div className="flex gap-4">
+                <label 
+                  htmlFor="image-upload" 
+                  className="cursor-pointer bg-pink-500 hover:bg-blue-700 text-white py-2 px-4 rounded-md font-medium flex items-center justify-center transition-colors"
+                >
+                  {imageFile ? 'Change Image' : 'Choose File'}
+                </label>
+                
+                {imageFile && (
+                  <span className="text-sm self-center">
+                    {imageFile.name}
+                  </span>
+                )}
               </div>
-            )}
+              
+              {previewImage && (
+                <div className="mt-2">
+                  <p className="text-sm font-medium mb-2">Image Preview:</p>
+                  <img
+                    src={previewImage}
+                    alt="Product preview"
+                    className="h-48 object-contain rounded-md border"
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex gap-4 pt-4">

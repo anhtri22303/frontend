@@ -104,17 +104,13 @@ export function FeaturedProducts() {
             <CardContent className="pt-4">
               <h3 className="font-medium truncate w-full">{product.productName}</h3>
               <div className="mt-2">
-                {product.discountedPrice ? (
-                  <div className="flex items-center gap-2">
-                    <p className="text-red-500 font-semibold">
-                      ${product.discountedPrice.toFixed(2)}
-                    </p>
-                    <p className="text-gray-500 line-through">
-                      ${product.price.toFixed(2)}
-                    </p>
-                  </div>
+                {product.discountedPrice && product.discountedPrice < product.price ? (
+                  <>
+                    <span className="text-green-600">${product.discountedPrice.toFixed(2)}</span>
+                    <span className="text-sm text-gray-500 line-through ml-2">${product.price.toFixed(2)}</span>
+                  </>
                 ) : (
-                  <p className="font-semibold">${product.price.toFixed(2)}</p>
+                  <span className="font-semibold">${product.price.toFixed(2)}</span>
                 )}
               </div>
               <div className="mt-2 text-sm">
