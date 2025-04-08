@@ -15,9 +15,20 @@ interface OrderDetailsProps {
   };
 }
 
+// Extend OrderDetail type to include necessary fields
+interface ExtendedOrderDetail extends OrderDetail {
+  discountPrice?: number; // Price after applying the discount
+  discountedTotalAmount?: number; // Total after discount for this product
+  discount?: number; // Discount percentage
+}
+
+interface ExtendedOrder extends Order {
+  orderDetails: ExtendedOrderDetail[];
+}
+
 export default function OrderDetails({ params }: OrderDetailsProps) {
   const router = useRouter();
-  const [order, setOrder] = useState<Order | null>(null);
+  const [order, setOrder] = useState<ExtendedOrder | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
@@ -41,16 +52,44 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
       const data = await fetchOrderByIdForUser(userID, params.orderId);
       console.log("Fetched order:", data);
       
-      // If totalAmount is missing, calculate it from orderDetails
-      if (data && !data.totalAmount && data.orderDetails) {
-        const calculatedTotal = data.orderDetails.reduce(
-          (sum, detail) => sum + detail.quantity * detail.totalAmount,
+      // Process order details to calculate discountPrice and discountedTotalAmount
+      if (data && data.orderDetails) {
+        const processedOrderDetails = data.orderDetails.map((detail: ExtendedOrderDetail) => {
+          // If there's a promotion (discount), calculate discountPrice and discountedTotalAmount
+          if (detail.discount && detail.discount > 0 && typeof detail.productPrice === 'number') {
+            const discountPrice = detail.productPrice * (1 - detail.discount / 100);
+            const discountedTotalAmount = discountPrice * detail.quantity;
+            return {
+              ...detail,
+              discountPrice,
+              discountedTotalAmount,
+            };
+          }
+          // If no promotion, use the original price
+          return {
+            ...detail,
+            discountPrice: undefined, // No discount price
+            discountedTotalAmount: typeof detail.productPrice === 'number' 
+              ? detail.productPrice * detail.quantity 
+              : 0, // Use original price * quantity or 0 if price is undefined
+          };
+        });
+
+        // Calculate totalAmount based on processed order details
+        const calculatedTotal = processedOrderDetails.reduce(
+          (sum: number, detail: ExtendedOrderDetail) =>
+            sum + (detail.discountedTotalAmount || 0),
           0
         );
-        data.totalAmount = calculatedTotal;
+
+        setOrder({
+          ...data,
+          orderDetails: processedOrderDetails,
+          totalAmount: calculatedTotal,
+        });
+      } else {
+        setOrder(data);
       }
-      
-      setOrder(data);
     } catch (error) {
       console.error("Error loading order details:", error);
       toast.error("Failed to load order details");
@@ -255,7 +294,7 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
                 </tr>
               </thead>
               <tbody>
-                {order.orderDetails?.map((detail) => (
+                {order.orderDetails?.map((detail: ExtendedOrderDetail) => (
                   <tr key={detail.productID} className="border-b">
                     <td className="p-4">
                       <div>
@@ -270,19 +309,14 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
                     <td className="p-4">{detail.quantity}</td>
                     <td className="p-4">
                       $
-                      {detail.productPrice
+                      {typeof detail.productPrice === 'number'
                         ? detail.productPrice.toFixed(2)
-                        : detail.totalAmount.toFixed(2)}
+                        : "0.00"}
                     </td>
                     <td className="p-4">
-                      {detail.productPrice && detail.discountPercentage ? (
+                      {detail.discountPrice ? (
                         <span className="text-green-600">
-                          $
-                          {(
-                            detail.productPrice -
-                            detail.productPrice *
-                              (detail.discountPercentage / 100)
-                          ).toFixed(2)}
+                          ${detail.discountPrice.toFixed(2)}
                         </span>
                       ) : (
                         <span className="text-gray-400">N/A</span>
@@ -298,12 +332,10 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
                       )}
                     </td>
                     <td className="p-4">
-                      {detail.discountPercentage ? (
+                      {detail.discount ? (
                         <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
-                          {detail.discountPercentage}%{" "}
-                          {detail.discountName
-                            ? `(${detail.discountName})`
-                            : ""}
+                          {detail.discount}%{" "}
+                          {detail.discountName ? `(${detail.discountName})` : ""}
                         </span>
                       ) : (
                         <span className="text-gray-400">N/A</span>
