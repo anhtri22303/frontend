@@ -1,49 +1,117 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import Image from "next/image"
-import { Button } from "@/components/ui/button"
-import { useRouter } from "next/navigation"
-import { fetchCartByUserId, updateCartItem, removeFromCart } from "@/app/api/cartApi"
-import { fetchProductById } from "@/app/api/productApi"
-import toast from "react-hot-toast"
-import { createCustomerOrder } from "@/app/api/orderCustomerApi"
-import stripePromise from "@/lib/stripe-client"
+import { useState, useEffect } from "react";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import { fetchCartByUserId, updateCartItem, removeFromCart } from "@/app/api/cartApi";
+import { fetchProductById } from "@/app/api/productApi";
+import toast from "react-hot-toast";
+import { createOrderWithPayment } from "@/app/api/orderCustomerApi";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
+
+// Khởi tạo Stripe với public key
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "");
 
 interface CartItem {
-  userID: string
-  productID: string
-  quantity: number
-  totalAmount: number
-  discountedTotalAmount?: number
-  name?: string
-  image?: string
-  price: number; // Giá gốc
-  discountedPrice?: number; // Giá sau khi giảm (nếu có)
+  userID: string;
+  productID: string;
+  quantity: number;
+  totalAmount: number;
+  discountedTotalAmount?: number;
+  image?: string;
+  productPrice: number;
+  discountedPrice?: number;
+  discountPercentage?: number;
+  productName?: string;
 }
 
+// Component con để hiển thị form thanh toán
+const CheckoutForm = ({ clientSecret, onSuccess }: { clientSecret: string; onSuccess: () => void }) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (!stripe || !elements) {
+      return;
+    }
+
+    setPaymentLoading(true);
+
+    const cardElement = elements.getElement(CardElement);
+    if (!cardElement) {
+      setError("Card element not found.");
+      setPaymentLoading(false);
+      return;
+    }
+
+    const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+      payment_method: {
+        card: cardElement,
+      },
+    });
+
+    if (error) {
+      setError(error.message || "Payment failed.");
+      toast.error(error.message || "Payment failed.");
+    } else if (paymentIntent?.status === "succeeded") {
+      toast.success("Payment successful!");
+      onSuccess(); // Gọi hàm khi thanh toán thành công
+    }
+
+    setPaymentLoading(false);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <CardElement
+        options={{
+          style: {
+            base: {
+              fontSize: "16px",
+              color: "#424770",
+              "::placeholder": { color: "#aab7c4" },
+            },
+            invalid: { color: "#9e2146" },
+          },
+        }}
+      />
+      {error && <p className="text-red-500">{error}</p>}
+      <Button type="submit" disabled={!stripe || paymentLoading} className="w-full">
+        {paymentLoading ? "Processing..." : "Pay Now"}
+      </Button>
+    </form>
+  );
+};
+
 export default function CartPage() {
-  const [cartItems, setCartItems] = useState<CartItem[]>([])
-  const [userID, setUserID] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [isProcessing, setIsProcessing] = useState(false)
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [userID, setUserID] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [address, setAddress] = useState("");
-  const router = useRouter()
+  const [clientSecret, setClientSecret] = useState<string | null>(null); // Lưu clientSecret từ Stripe
+  const router = useRouter();
 
   useEffect(() => {
-    const storedUserID = localStorage.getItem("userID")
+    const storedUserID = localStorage.getItem("userID");
     if (storedUserID) {
-      setUserID(storedUserID)
+      setUserID(storedUserID);
     } else {
-      console.error("User ID not found in localStorage")
+      console.error("User ID not found in localStorage");
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
     if (userID) {
-      loadCartItems()
+      loadCartItems();
     }
-  }, [userID])
+  }, [userID]);
 
   const loadCartItems = async () => {
     try {
@@ -51,10 +119,6 @@ export default function CartPage() {
       const response = await fetchCartByUserId(userID!);
 
       if (response && response.items) {
-        // The response now includes all the details we need
-        setCartItems(response.items);
-
-        // Add image data from product API if not provided in cart response
         const cartItemsWithImages = await Promise.all(
           response.items.map(async (item) => {
             if (!item.image) {
@@ -75,7 +139,6 @@ export default function CartPage() {
             return item;
           })
         );
-
         setCartItems(cartItemsWithImages);
       }
       console.log("Cart items loaded:", response.items);
@@ -97,8 +160,6 @@ export default function CartPage() {
 
         const cartData = await fetchCartByUserId(userId);
         setCartItems(cartData.items || []);
-
-        // Lấy thông tin address từ localStorage hoặc API
         const storedAddress = localStorage.getItem("userAddress") || "";
         setAddress(storedAddress);
       } catch (error) {
@@ -113,12 +174,11 @@ export default function CartPage() {
   }, []);
 
   const handleUpdateQuantity = async (productID: string, newQuantity: number) => {
-    if (newQuantity < 1) return; // Không cho phép số lượng nhỏ hơn 1
-
+    if (newQuantity < 1) return;
     try {
-      await updateCartItem(userID!, productID, newQuantity); // Gọi API cập nhật số lượng
+      await updateCartItem(userID!, productID, newQuantity);
       toast.success("Quantity updated successfully!");
-      await loadCartItems(); // Tải lại danh sách giỏ hàng
+      await loadCartItems();
     } catch (error) {
       console.error("Error updating quantity:", error);
       toast.error("Failed to update quantity.");
@@ -146,102 +206,62 @@ export default function CartPage() {
         return;
       }
 
+      if (!address) {
+        toast.error("Please add your address before proceeding to checkout.");
+        return;
+      }
+
       const orderData = {
         customerID: userID,
         orderDate: new Date().toISOString(),
         status: "PENDING",
-        totalAmount: discountedTotalAmount, // Sử dụng discountedTotalAmount
+        totalAmount: discountedTotalAmount,
         orderDetails: cartItems.map((item) => ({
           productID: item.productID,
           quantity: item.quantity,
-          price: item.totalAmount,
+          productPrice: item.productPrice,
+          totalAmount: item.totalAmount,
         })),
       };
 
-      console.log("Creating order with data:", orderData);
-      const orderResponse = await createCustomerOrder(userID, orderData);
-      console.log("Order created response:", orderResponse);
-
-      if (!orderResponse?.data) {
-        throw new Error("Invalid response from API");
+      // Gọi createOrderWithPayment để tạo đơn hàng và lấy clientSecret
+      const { orderID, clientSecret } = await createOrderWithPayment(userID, orderData);
+      if (!orderID || !clientSecret) {
+        throw new Error("Failed to create order or payment intent.");
       }
 
-      if (!orderResponse.data.orderID) {
-        throw new Error("Order ID is undefined. Check API response.");
-      }
       toast.success("Order created successfully!");
-
-      sessionStorage.setItem("orderID", orderResponse.data.orderID);
-
-      const stripe = await stripePromise;
-      if (!stripe) {
-        console.error("Stripe failed to initialize.");
-        return;
-      }
-      console.log("discountedTotalAmount" , discountedTotalAmount);
-      console.log("Sending request to /api/stripe", {
-        totalAmount: orderResponse.data.discountedTotalAmount, // Sử dụng discountedTotalAmount
-        orderID: orderResponse.data.orderID,
-      });
-
-      const response = await fetch("/api/stripe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          totalAmount: orderResponse.data.discountedTotalAmount, // Sử dụng discountedTotalAmount
-          orderID: orderResponse.data.orderID,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Payment failed");
-      }
-
-      const data = await response.json();
-      if (!data.sessionId) {
-        throw new Error("Invalid response from server");
-      }
-
-      const result = await stripe.redirectToCheckout({ sessionId: data.sessionId });
-
-      if (result.error) {
-        throw new Error(result.error.message);
-      }
-
-      toast.success("Checkout successful!");
+      sessionStorage.setItem("orderID", orderID);
+      setClientSecret(clientSecret); // Lưu clientSecret để hiển thị form thanh toán
     } catch (error: any) {
       console.error("Checkout error:", error);
-      toast.error(error.message || "Payment failed. Please try again.");
+      toast.error(error.message || "Failed to initiate checkout.");
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const handleProceedToCheckout = () => {
-    if (!address) {
-      toast.error("Please add your address before proceeding to checkout.");
-      return;
-    }
-    router.push("/checkout");
+  const handlePaymentSuccess = () => {
+    setClientSecret(null); // Đóng form thanh toán
+    router.push("/success"); // Chuyển hướng sau khi thanh toán thành công
   };
 
   const subtotal = cartItems.reduce(
     (sum, item) =>
       sum +
-      (item.discountedPrice ? item.discountedPrice : item.price) * item.quantity,
+      (item.discountedPrice ? item.discountedPrice : item.productPrice) * item.quantity,
     0
   );
 
   const totalAmount = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
+    (sum, item) => sum + item.productPrice * item.quantity,
     0
   );
 
   const discountedTotalAmount = cartItems.reduce(
     (sum, item) =>
       sum +
-      (item.discountedPrice ? item.discountedPrice : item.price) * item.quantity,
+      (item.discountedPrice ? item.discountedPrice : item.productPrice) * item.quantity,
     0
   );
 
@@ -408,6 +428,16 @@ export default function CartPage() {
               </p>
             )}
           </div>
+
+          {/* Hiển thị form thanh toán khi có clientSecret */}
+          {clientSecret && (
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold mb-2">Payment Details</h3>
+              <Elements stripe={stripePromise}>
+                <CheckoutForm clientSecret={clientSecret} onSuccess={handlePaymentSuccess} />
+              </Elements>
+            </div>
+          )}
         </div>
       </div>
     </div>

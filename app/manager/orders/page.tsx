@@ -69,7 +69,7 @@ export default function OrdersPage() {
         case 'order':
           response = await fetchOrderByID(orderIdSearch)
           console.log("response", response)
-          setFilteredOrder(response.data || null) // Set filteredOrder
+          setFilteredOrder(response || null) // Set filteredOrder
           setOrders([]) // Clear orders list
           break
         case 'status':
