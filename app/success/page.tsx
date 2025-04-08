@@ -55,7 +55,6 @@ export default function SuccessPage() {
   const fetchOrderData = async (userID: string, orderID: string) => {
     try {
       const orderData = await fetchOrderDetailsByUserID(userID, orderID);
-      console.log("API Response:", orderData);
       if (orderData && orderData.data) {
         // Tính toán lại totalAmount và discountedTotalAmount dựa trên orderDetails
         const orderDetails = orderData.data.orderDetails || [];

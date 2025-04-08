@@ -51,7 +51,7 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
         }, 0);
 
         data.orderDetails = updatedOrderDetails;
-        data.totalAmount = calculatedTotal;
+        // data.totalAmount = calculatedTotal;
       }
       setOrder(data);
     } catch (error) {

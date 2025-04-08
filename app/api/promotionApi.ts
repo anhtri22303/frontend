@@ -90,3 +90,16 @@ export const searchPromotionsByName = async (name: string) => {
     throw error
   }
 }
+
+export const fetchPromotionsByProductIDs = async (productIDs: string[]) => {
+  try {
+    const response = await axiosInstance.get(`/promotions/product`, {
+      params: { ids: productIDs.join(",") }, // Join productIDs into a comma-separated string
+    });
+    console.log("Get promotions by product IDs success", response.data.data);
+    return response.data.data || [];
+  } catch (error) {
+    console.error("Error fetching promotions by product IDs:", error);
+    throw error;
+  }
+};

@@ -1,7 +1,31 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Search, X } from "lucide-react";
+import { createPromotion } from "@/app/api/promotionApi";
+import { fetchProducts } from "@/app/api/productApi";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+
+interface Product {
+  productID: string;
+  productName: string;
+  description?: string;
+  price: number;
+  image_url?: string;
+  skinType?: string;
+  category?: string;
+}
 import { Search, X } from "lucide-react";
 import { createPromotion } from "@/app/api/promotionApi";
 import { fetchProducts } from "@/app/api/productApi";
@@ -31,7 +55,18 @@ export default function CreatePromotionForm() {
   const [formData, setFormData] = useState({
     promotionName: "",
     productIDs: [] as string[],
+    productIDs: [] as string[],
     discount: "",
+    startDate: new Date().toISOString().split("T")[0],
+    endDate: new Date().toISOString().split("T")[0],
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedProductIDs, setSelectedProductIDs] = useState<string[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
+  const [error, setError] = useState<string | null>(null);
     startDate: new Date().toISOString().split("T")[0],
     endDate: new Date().toISOString().split("T")[0],
   });
@@ -44,15 +79,23 @@ export default function CreatePromotionForm() {
   const [error, setError] = useState<string | null>(null);
 
   // Fetch products on mount
+  // Fetch products on mount
   useEffect(() => {
     const loadProducts = async () => {
       try {
         const data = await fetchProducts();
         setProducts(data || []);
+        const data = await fetchProducts();
+        setProducts(data || []);
       } catch (error) {
         console.error("Failed to load products:", error);
         setError("Failed to load products. Please try again.");
+        console.error("Failed to load products:", error);
+        setError("Failed to load products. Please try again.");
       }
+    };
+    loadProducts();
+  }, []);
     };
     loadProducts();
   }, []);
@@ -80,9 +123,43 @@ export default function CreatePromotionForm() {
 
   const filteredGroupedProducts = filteredProducts.reduce((acc, product) => {
     const skinType = product.skinType || "Other";
+    const skinType = product.skinType || "Other";
     if (!acc[skinType]) {
       acc[skinType] = [];
     }
+    acc[skinType].push(product);
+    return acc;
+  }, {} as Record<string, Product[]>);
+
+  // Filter products based on search term
+  const filteredProducts = searchTerm
+    ? products.filter(
+        (p) =>
+          p.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          p.productID.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (p.category &&
+            p.category.toLowerCase().includes(searchTerm.toLowerCase()))
+      )
+    : products;
+
+  const filteredGroupedProducts = filteredProducts.reduce((acc, product) => {
+    const skinType = product.skinType || "Other";
+    if (!acc[skinType]) {
+      acc[skinType] = [];
+      acc[skinType] = [];
+    }
+    acc[skinType].push(product);
+    return acc;
+  }, {} as Record<string, Product[]>);
+
+  // Handle input changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
     acc[skinType].push(product);
     return acc;
   }, {} as Record<string, Product[]>);
@@ -105,14 +182,29 @@ export default function CreatePromotionForm() {
       setSelectedProducts(
         selectedProducts.filter((p) => p.productID !== product.productID)
       );
+      setSelectedProductIDs(
+        selectedProductIDs.filter((id) => id !== product.productID)
+      );
+      setSelectedProducts(
+        selectedProducts.filter((p) => p.productID !== product.productID)
+      );
     } else {
+      setSelectedProductIDs([...selectedProductIDs, product.productID]);
+      setSelectedProducts([...selectedProducts, product]);
       setSelectedProductIDs([...selectedProductIDs, product.productID]);
       setSelectedProducts([...selectedProducts, product]);
     }
   };
+  };
 
   // Apply selected products to formData
   const handleApplySelection = () => {
+    setFormData({
+      ...formData,
+      productIDs: selectedProductIDs,
+    });
+    setIsDialogOpen(false);
+  };
     setFormData({
       ...formData,
       productIDs: selectedProductIDs,
@@ -126,19 +218,33 @@ export default function CreatePromotionForm() {
     setSelectedProducts(
       selectedProducts.filter((p) => p.productID !== productID)
     );
+    setSelectedProductIDs(selectedProductIDs.filter((id) => id !== productID));
+    setSelectedProducts(
+      selectedProducts.filter((p) => p.productID !== productID)
+    );
     setFormData({
       ...formData,
       productIDs: formData.productIDs.filter((id) => id !== productID),
     });
   };
+      productIDs: formData.productIDs.filter((id) => id !== productID),
+    });
+  };
 
+  // Handle form submission
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.productIDs.length === 0) {
       setError("Please select at least one product for this promotion.");
       return;
+    e.preventDefault();
+    if (formData.productIDs.length === 0) {
+      setError("Please select at least one product for this promotion.");
+      return;
     }
+
+    setIsLoading(true);
 
     setIsLoading(true);
     try {
@@ -147,9 +253,16 @@ export default function CreatePromotionForm() {
         discount: parseFloat(formData.discount),
       });
       router.push("/manager/promotions");
+      await createPromotion({
+        ...formData,
+        discount: parseFloat(formData.discount),
+      });
+      router.push("/manager/promotions");
     } catch (error) {
       console.error("Failed to create promotion:", error);
       setError("Failed to create promotion. Please try again.");
+    } finally {
+      setIsLoading(false);
     } finally {
       setIsLoading(false);
     }
@@ -165,6 +278,12 @@ export default function CreatePromotionForm() {
             Promotion Name
           </label>
           <Input
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            Promotion Name
+          </label>
+          <Input
             type="text"
             name="promotionName"
             value={formData.promotionName}
@@ -172,10 +291,14 @@ export default function CreatePromotionForm() {
             className="border p-2 w-full rounded"
             required
             disabled={isLoading}
+            required
+            disabled={isLoading}
           />
         </div>
         <div>
+        <div>
           <label className="block text-sm font-medium mb-1">Discount (%)</label>
+          <Input
           <Input
             type="number"
             name="discount"
@@ -186,10 +309,14 @@ export default function CreatePromotionForm() {
             max="100"
             required
             disabled={isLoading}
+            required
+            disabled={isLoading}
           />
         </div>
         <div>
+        <div>
           <label className="block text-sm font-medium mb-1">Start Date</label>
+          <Input
           <Input
             type="date"
             name="startDate"
@@ -198,10 +325,14 @@ export default function CreatePromotionForm() {
             className="border p-2 w-full rounded"
             required
             disabled={isLoading}
+            required
+            disabled={isLoading}
           />
         </div>
         <div>
+        <div>
           <label className="block text-sm font-medium mb-1">End Date</label>
+          <Input
           <Input
             type="date"
             name="endDate"
@@ -211,8 +342,12 @@ export default function CreatePromotionForm() {
             min={formData.startDate}
             required
             disabled={isLoading}
+            min={formData.startDate}
+            required
+            disabled={isLoading}
           />
         </div>
+        <div>
         <div>
           <label className="block text-sm font-medium mb-1">Products</label>
 
@@ -342,14 +477,22 @@ export default function CreatePromotionForm() {
           )}
         </div>
 
+
         <div className="flex justify-end gap-2">
+          <Button
           <Button
             type="button"
             variant="outline"
+            variant="outline"
             onClick={() => router.back()}
+            disabled={isLoading}
             disabled={isLoading}
           >
             Cancel
+          </Button>
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? "Creating..." : "Create Promotion"}
+          </Button>
           </Button>
           <Button type="submit" disabled={isLoading}>
             {isLoading ? "Creating..." : "Create Promotion"}

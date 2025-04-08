@@ -26,8 +26,20 @@ interface ExtendedOrder extends Order {
   orderDetails: ExtendedOrderDetail[];
 }
 
+// Extend OrderDetail type to include necessary fields
+interface ExtendedOrderDetail extends OrderDetail {
+  discountPrice?: number; // Price after applying the discount
+  discountedTotalAmount?: number; // Total after discount for this product
+  discount?: number; // Discount percentage
+}
+
+interface ExtendedOrder extends Order {
+  orderDetails: ExtendedOrderDetail[];
+}
+
 export default function OrderDetails({ params }: OrderDetailsProps) {
   const router = useRouter();
+  const [order, setOrder] = useState<ExtendedOrder | null>(null);
   const [order, setOrder] = useState<ExtendedOrder | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
@@ -79,6 +91,15 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
             sum + (detail.discountedTotalAmount || 0),
           0
         );
+
+        setOrder({
+          ...data,
+          orderDetails: processedOrderDetails,
+          totalAmount: calculatedTotal,
+        });
+      } else {
+        setOrder(data);
+      }
 
         setOrder({
           ...data,
@@ -283,6 +304,7 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
               </thead>
               <tbody>
                 {order.orderDetails?.map((detail: ExtendedOrderDetail) => (
+                {order.orderDetails?.map((detail: ExtendedOrderDetail) => (
                   <tr key={detail.productID} className="border-b">
                     <td className="p-4">
                       <div>
@@ -298,12 +320,16 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
                     <td className="p-4">
                       $
                       {typeof detail.productPrice === 'number'
+                      {typeof detail.productPrice === 'number'
                         ? detail.productPrice.toFixed(2)
+                        : "0.00"}
                         : "0.00"}
                     </td>
                     <td className="p-4">
                       {detail.discountPrice ? (
+                      {detail.discountPrice ? (
                         <span className="text-green-600">
+                          ${detail.discountPrice.toFixed(2)}
                           ${detail.discountPrice.toFixed(2)}
                         </span>
                       ) : (
@@ -321,7 +347,10 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
                     </td>
                     <td className="p-4">
                       {detail.discount ? (
+                      {detail.discount ? (
                         <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                          {detail.discount}%{" "}
+                          {detail.discountName ? `(${detail.discountName})` : ""}
                           {detail.discount}%{" "}
                           {detail.discountName ? `(${detail.discountName})` : ""}
                         </span>

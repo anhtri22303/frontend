@@ -1,5 +1,6 @@
 "use client";
 
+
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -8,12 +9,14 @@ import { Slider } from "@/components/ui/slider";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { fetchProductsWithActive , fetchProductsByFiltersWithActive , fetchProductsByName, fetchProductsBySkinType } from "@/app/api/productApi";
+import { fetchProductsWithActive , fetchProductsByFiltersWithActive , fetchProductsByName, fetchProductsBySkinType } from "@/app/api/productApi";
 import { addToCart } from "@/app/api/cartApi";
 import toast from "react-hot-toast";
 import { useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 
 interface Product {
   productID: string;
@@ -28,6 +31,7 @@ interface Product {
   discountedPrice?: number;
 }
 
+
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
@@ -38,19 +42,21 @@ export default function ProductsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
   const searchParams = useSearchParams();
-  
+ 
   // Add the searchSkinType state
   const [searchSkinType, setSearchSkinType] = useState("");
   const [searchName, setSearchName] = useState("");
   const [searchId, setSearchId] = useState("");
-  
+ 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const itemsPerPage = 8; // Show 8 products per page
 
+
   const categories = ["Cleanser", "Toner", "Serum", "Moisturizer", "Mask", "Sunscreen"];
   const skinTypes = ["Dry", "Oily", "Combination", "Normal", "Sensitive"];
+
 
   useEffect(() => {
     loadProducts();
@@ -60,6 +66,7 @@ export default function ProductsPage() {
     }
   }, [searchParams]);
 
+
   useEffect(() => {
     // Calculate total pages whenever filtered products array changes
     setTotalPages(Math.ceil(filteredProducts.length / itemsPerPage));
@@ -67,9 +74,11 @@ export default function ProductsPage() {
     setCurrentPage(1);
   }, [filteredProducts]);
 
+
   const loadProducts = async () => {
     setIsLoading(true);
     try {
+      const data = await fetchProductsWithActive();
       const data = await fetchProductsWithActive();
       setProducts(data);
       setFilteredProducts(data);
@@ -84,6 +93,7 @@ export default function ProductsPage() {
       setIsLoading(false);
     }
   };
+
 
   const applyFilters = async () => {
     setIsLoading(true);
@@ -105,9 +115,11 @@ export default function ProductsPage() {
     }
   };
 
+
   useEffect(() => {
     applyFilters();
   }, [selectedCategories, selectedSkinTypes, priceRange]);
+
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategories((prev) =>
@@ -115,15 +127,18 @@ export default function ProductsPage() {
     );
   };
 
+
   const handleSkinTypeChange = (skinType: string) => {
     setSelectedSkinTypes((prev) =>
       prev.includes(skinType) ? prev.filter((s) => s !== skinType) : [...prev, skinType]
     );
   };
 
+
   const handlePriceChange = (newPriceRange: number[]) => {
     setPriceRange(newPriceRange as [number, number]);
   };
+
 
   const handleQuantityChange = (productId: string, value: string) => {
     const newQuantity = parseInt(value) || 1;
@@ -133,6 +148,7 @@ export default function ProductsPage() {
     }));
   };
 
+
   const handleAddToCart = async (productId: string) => {
     setIsLoading(true);
     try {
@@ -141,6 +157,7 @@ export default function ProductsPage() {
         toast.error("Please log in to add items to your cart!");
         return;
       }
+
 
       const quantity = quantities[productId] || 1;
       await addToCart(userId, productId, quantity);
@@ -153,13 +170,14 @@ export default function ProductsPage() {
     }
   };
 
+
   // New search functions
   const handleSearchByName = async () => {
     if (!searchName.trim()) {
       applyFilters();
       return;
     }
-    
+   
     setIsLoading(true);
     try {
       const response = await fetchProductsByName(searchName);
@@ -187,7 +205,7 @@ export default function ProductsPage() {
       applyFilters();
       return;
     }
-    
+   
     setIsLoading(true);
     try {
       const response = await fetchProductsBySkinType(searchSkinType);
@@ -207,19 +225,21 @@ export default function ProductsPage() {
     }
   };
 
+
   const handleResetFilters = () => {
     setSearchName("");
     setSearchId("");
     setSearchSkinType("");
     setSelectedCategories([]);
     setSelectedSkinTypes([]);
-    
+   
     const maxProductPrice = Math.max(...products.map((product: Product) => product.price), 1000);
     setPriceRange([0, maxProductPrice]);
-    
+   
     setFilteredProducts(products);
     toast.success("Filters reset");
   };
+
 
   // Pagination handlers
   const nextPage = () => {
@@ -228,17 +248,20 @@ export default function ProductsPage() {
     }
   };
 
+
   const prevPage = () => {
     if (currentPage > 1) {
       setCurrentPage(currentPage - 1);
     }
   };
 
+
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
     }
   };
+
 
   // Get current page data
   const getCurrentPageProducts = () => {
@@ -247,11 +270,12 @@ export default function ProductsPage() {
     return filteredProducts.slice(startIndex, endIndex);
   };
 
+
   // Generate page numbers for pagination
   const getPageNumbers = () => {
     const pages = [];
     const maxPagesToShow = 5;
-    
+   
     if (totalPages <= maxPagesToShow) {
       // Show all pages if total pages are less than or equal to maxPagesToShow
       for (let i = 1; i <= totalPages; i++) {
@@ -260,45 +284,47 @@ export default function ProductsPage() {
     } else {
       // Always add first page
       pages.push(1);
-      
+     
       // Calculate start and end pages to show
       let startPage = Math.max(2, currentPage - 1);
       let endPage = Math.min(totalPages - 1, currentPage + 1);
-      
+     
       // Adjust if we're near the start or end
       if (currentPage <= 2) {
         endPage = 3;
       } else if (currentPage >= totalPages - 1) {
         startPage = totalPages - 2;
       }
-      
+     
       // Add ellipsis if needed before middle pages
       if (startPage > 2) {
         pages.push('...');
       }
-      
+     
       // Add middle pages
       for (let i = startPage; i <= endPage; i++) {
         pages.push(i);
       }
-      
+     
       // Add ellipsis if needed after middle pages
       if (endPage < totalPages - 1) {
         pages.push('...');
       }
-      
+     
       // Always add last page
       if (totalPages > 1) {
         pages.push(totalPages);
       }
     }
-    
+   
     return pages;
   };
+
 
   return (
     <div className="container py-8 mx-auto max-w-screen-xl">
       {/* Enhanced Search Filters Row */}
+      <div className="mb-8 bg-gray-50 p-6 rounded-lg border shadow-sm">
       <div className="mb-8 bg-gray-50 p-6 rounded-lg border shadow-sm">
         <h2 className="text-xl font-bold mb-4">Find Products</h2>
 
@@ -367,6 +393,7 @@ export default function ProductsPage() {
             ))}
           </div>
 
+
           {/* <h3 className="text-lg font-semibold mt-6 mb-4">Skin Type</h3>
           <div className="flex flex-col gap-2">
             {skinTypes.map((skinType) => (
@@ -382,6 +409,7 @@ export default function ProductsPage() {
             ))}
           </div> */}
 
+
           <h3 className="text-lg font-semibold mt-6 mb-4">Price Range</h3>
           <Slider
             value={priceRange}
@@ -396,6 +424,7 @@ export default function ProductsPage() {
             <span>${priceRange[1]}</span>
           </div>
         </div>
+
 
         {/* Products Grid */}
         <div className="w-full md:w-3/4">
@@ -474,7 +503,7 @@ export default function ProductsPage() {
                             type="number"
                             min="1"
                             value={quantities[product.productID] || 1}
-                            onChange={(e) => handleQuantityChange(product.productID, e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleQuantityChange(product.productID, e.target.value)}
                             className="w-16 border rounded px-2 py-1"
                           />
                         </div>
@@ -497,7 +526,7 @@ export default function ProductsPage() {
                   </div>
                 )}
               </div>
-              
+             
               {/* Pagination Controls */}
               {filteredProducts.length > 0 && totalPages > 1 && (
                 <div className="flex items-center justify-between mt-8 border-t pt-4">
@@ -508,7 +537,7 @@ export default function ProductsPage() {
                     </span> of{" "}
                     <span className="font-medium">{filteredProducts.length}</span> products
                   </div>
-                  
+                 
                   <div className="flex items-center space-x-2">
                     <Button
                       variant="outline"
@@ -519,7 +548,7 @@ export default function ProductsPage() {
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
-                    
+                   
                     {getPageNumbers().map((page, index) => (
                       typeof page === 'number' ? (
                         <Button
@@ -537,7 +566,7 @@ export default function ProductsPage() {
                         </span>
                       )
                     ))}
-                    
+                   
                     <Button
                       variant="outline"
                       size="sm"
