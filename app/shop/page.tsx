@@ -335,8 +335,8 @@ export default function ProductsPage() {
               type="text"
               placeholder="Search by product name"
               value={searchName}
-              onChange={(e) => setSearchName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearchByName()}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchName(e.target.value)}
+              onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === "Enter" && handleSearchByName()}
               className="flex-1"
             />
             <Button onClick={handleSearchByName} className="bg-red-500 hover:bg-red-600">
@@ -505,7 +505,7 @@ export default function ProductsPage() {
                             type="number"
                             min="1"
                             value={quantities[product.productID] || 1}
-                            onChange={(e) => handleQuantityChange(product.productID, e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleQuantityChange(product.productID, e.target.value)}
                             className="w-16 border rounded px-2 py-1"
                           />
                         </div>

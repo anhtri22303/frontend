@@ -146,3 +146,40 @@ export const fetchProductsByFilters = async (filters: {
     return [];
   }
 };
+
+export const fetchProductsWithActive = async () => {
+  try {
+    const response = await axiosInstance.get("/products", {
+      params: { active: true }
+    });
+    console.log("Get active products success", response.data.data);
+    return response.data.data || [];
+  } catch (error) {
+    console.error("Error fetching active products:", error);
+    return [];
+  }
+};
+
+export const fetchProductsByFiltersWithActive = async (filters: {
+  categories?: string;
+  skinTypes?: string;
+  minPrice?: number;
+  maxPrice?: number;
+}) => {
+  try {
+    const response = await axiosInstance.get("/products/filter", {
+      params: {
+        ...filters,
+        active: true
+      },
+    });
+    console.log("Get active products by filters success", response.data);
+    if (response.data.success) {
+      return response.data.data || [];
+    }
+    return [];
+  } catch (error) {
+    console.error("Error fetching active products by filters:", error);
+    return [];
+  }
+};
