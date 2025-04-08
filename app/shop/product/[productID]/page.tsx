@@ -338,7 +338,7 @@ export default function ProductPage() {
                 onClick={() => router.push(`/shop/product/${productID}/create`)}
                 variant="outline"
               >
-                Create Feedback
+                Give Feedback
               </Button>
             </div>
             <div className="space-y-6">

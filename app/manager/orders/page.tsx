@@ -69,7 +69,7 @@ export default function OrdersPage() {
         case 'order':
           response = await fetchOrderByID(orderIdSearch)
           console.log("response", response)
-          setFilteredOrder(response.data || null) // Set filteredOrder
+          setFilteredOrder(response || null) // Set filteredOrder
           setOrders([]) // Clear orders list
           break
         case 'status':
@@ -308,105 +308,118 @@ export default function OrdersPage() {
               <th className="p-4 text-left font-medium">Order Date</th>
               <th className="p-4 text-left font-medium">Status</th>
               <th className="p-4 text-left font-medium">Payment</th>
-              <th className="p-4 text-left font-medium">Total Amount</th>
+              <th className="p-4 text-left font-medium">Total</th>
               <th className="p-4 text-left font-medium">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {filteredOrder ? (
-              <tr className="border-b">
-                <td className="p-4">{filteredOrder.orderID}</td>
-                <td className="p-4">{filteredOrder.customerID || 'N/A'}</td>
-                <td className="p-4">{filteredOrder.orderDate ? new Date(filteredOrder.orderDate).toLocaleDateString() : 'N/A'}</td>
-                <td className="p-4">
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs ${
-                      filteredOrder.status === 'PENDING'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : filteredOrder.status === 'PROCESSING'
-                        ? 'bg-blue-100 text-blue-800'
-                        : filteredOrder.status === 'COMPLETED'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}
-                  >
-                    {filteredOrder.status}
-                  </span>
-                </td>
-                <td className="p-4">
-                  {renderPaymentBadge(filteredOrder.payment)}
-                </td>
-                <td className="p-4">${filteredOrder.totalAmount ? filteredOrder.totalAmount.toFixed(2) : '0.00'}</td>
-                <td className="p-4">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleViewDetails(filteredOrder.orderID)}>
-                        View Details
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDeleteOrder(filteredOrder.orderID)}>
-                        Delete Order
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </td>
-              </tr>
-            ) : orders.length > 0 ? (
-              getCurrentPageData().map((order) => (
-                <tr key={order.orderID} className="border-b">
-                  <td className="p-4">{order.orderID}</td>
-                  <td className="p-4">{order.customerID || 'N/A'}</td>
-                  <td className="p-4">{new Date(order.orderDate).toLocaleDateString()}</td>
-                  <td className="p-4">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs ${
-                        order.status === 'PENDING'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : order.status === 'PROCESSING'
-                          ? 'bg-blue-100 text-blue-800'
-                          : order.status === 'COMPLETED'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}
-                    >
-                      {order.status}
-                    </span>
-                  </td>
-                  <td className="p-4">
-                    {renderPaymentBadge(order.payment)}
-                  </td>
-                  <td className="p-4">${order.totalAmount.toFixed(2)}</td>
-                  <td className="p-4">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleViewDetails(order.orderID)}>
-                          View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDeleteOrder(order.orderID)}>
-                          Delete Order
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={7} className="p-4 text-center text-muted-foreground">
-                  No orders found
-                </td>
-              </tr>
-            )}
-          </tbody>
+  {filteredOrder ? (
+    <tr className="border-b">
+      <td className="p-4">{filteredOrder.orderID}</td>
+      <td className="p-4">{filteredOrder.customerID || 'N/A'}</td>
+      <td className="p-4">{filteredOrder.orderDate ? new Date(filteredOrder.orderDate).toLocaleDateString() : 'N/A'}</td>
+      <td className="p-4">
+        <span
+          className={`px-2 py-1 rounded-full text-xs ${
+            filteredOrder.status === 'PENDING'
+              ? 'bg-yellow-100 text-yellow-800'
+              : filteredOrder.status === 'PROCESSING'
+              ? 'bg-blue-100 text-blue-800'
+              : filteredOrder.status === 'COMPLETED'
+              ? 'bg-green-100 text-green-800'
+              : 'bg-red-100 text-red-800'
+          }`}
+        >
+          {filteredOrder.status}
+        </span>
+      </td>
+      <td className="p-4">
+        {renderPaymentBadge(filteredOrder.payment)}
+      </td>
+      <td className="p-4">
+        ${filteredOrder.discountedTotalAmount 
+          ? filteredOrder.discountedTotalAmount.toFixed(2) 
+          : filteredOrder.totalAmount 
+          ? filteredOrder.totalAmount.toFixed(2) 
+          : "0.00"}
+      </td>
+      <td className="p-4">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => handleViewDetails(filteredOrder.orderID)}>
+              View Details
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleDeleteOrder(filteredOrder.orderID)}>
+              Delete Order
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </td>
+    </tr>
+  ) : orders.length > 0 ? (
+    getCurrentPageData().map((order) => (
+      <tr key={order.orderID} className="border-b">
+        <td className="p-4">{order.orderID}</td>
+        <td className="p-4">{order.customerID || 'N/A'}</td>
+        <td className="p-4">{new Date(order.orderDate).toLocaleDateString()}</td>
+        <td className="p-4">
+          <span
+            className={`px-2 py-1 rounded-full text-xs ${
+              order.status === 'PENDING'
+                ? 'bg-yellow-100 text-yellow-800'
+                : order.status === 'PROCESSING'
+                ? 'bg-blue-100 text-blue-800'
+                : order.status === 'COMPLETED'
+                ? 'bg-green-100 text-green-800'
+                : 'bg-red-100 text-red-800'
+            }`}
+          >
+            {order.status}
+          </span>
+        </td>
+        <td className="p-4">
+          {renderPaymentBadge(order.payment)}
+        </td>
+        <td className="p-4">
+          ${order.discountedTotalAmount 
+            ? order.discountedTotalAmount.toFixed(2) 
+            : order.totalAmount 
+            ? order.totalAmount.toFixed(2) 
+            : "0.00"}
+        </td>
+        <td className="p-4">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleViewDetails(order.orderID)}>
+                View Details
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleDeleteOrder(order.orderID)}>
+                Delete Order
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </td>
+      </tr>
+    ))
+  ) : (
+    <tr>
+      <td colSpan={7} className="p-4 text-center text-muted-foreground">
+        No orders found
+      </td>
+    </tr>
+  )}
+</tbody>
+
         </table>
       </div>
 

@@ -26,8 +26,20 @@ interface ExtendedOrder extends Order {
   orderDetails: ExtendedOrderDetail[];
 }
 
+// Extend OrderDetail type to include necessary fields
+interface ExtendedOrderDetail extends OrderDetail {
+  discountPrice?: number; // Price after applying the discount
+  discountedTotalAmount?: number; // Total after discount for this product
+  discount?: number; // Discount percentage
+}
+
+interface ExtendedOrder extends Order {
+  orderDetails: ExtendedOrderDetail[];
+}
+
 export default function OrderDetails({ params }: OrderDetailsProps) {
   const router = useRouter();
+  const [order, setOrder] = useState<ExtendedOrder | null>(null);
   const [order, setOrder] = useState<ExtendedOrder | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
@@ -42,21 +54,21 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
     try {
       setIsLoading(true);
       const userID = localStorage.getItem("userID");
-      
+
       if (!userID) {
         toast.error("You need to be logged in to view orders.");
         router.push("/login");
         return;
       }
-      
+
       const data = await fetchOrderByIdForUser(userID, params.orderId);
       console.log("Fetched order:", data);
-      
+
       // Process order details to calculate discountPrice and discountedTotalAmount
       if (data && data.orderDetails) {
         const processedOrderDetails = data.orderDetails.map((detail: ExtendedOrderDetail) => {
           // If there's a promotion (discount), calculate discountPrice and discountedTotalAmount
-          if (detail.discount && detail.discount > 0 && typeof detail.productPrice === 'number') {
+          if (detail.discount && detail.discount > 0) {
             const discountPrice = detail.productPrice * (1 - detail.discount / 100);
             const discountedTotalAmount = discountPrice * detail.quantity;
             return {
@@ -69,9 +81,7 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
           return {
             ...detail,
             discountPrice: undefined, // No discount price
-            discountedTotalAmount: typeof detail.productPrice === 'number' 
-              ? detail.productPrice * detail.quantity 
-              : 0, // Use original price * quantity or 0 if price is undefined
+            discountedTotalAmount: detail.productPrice * detail.quantity, // Use original price * quantity
           };
         });
 
@@ -81,6 +91,15 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
             sum + (detail.discountedTotalAmount || 0),
           0
         );
+
+        setOrder({
+          ...data,
+          orderDetails: processedOrderDetails,
+          totalAmount: calculatedTotal,
+        });
+      } else {
+        setOrder(data);
+      }
 
         setOrder({
           ...data,
@@ -101,17 +120,16 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
   // Function to handle payment for a pending order
   const handlePayOrder = async () => {
     if (!order) return;
-    
+
     try {
       setIsProcessingPayment(true);
       const userID = localStorage.getItem("userID");
-      
+
       if (!userID) {
         toast.error("User ID not found. Please log in.");
         return;
       }
 
-      // Store the order ID in session storage for reference after payment
       sessionStorage.setItem("orderID", order.orderID);
 
       const stripe = await stripePromise;
@@ -120,7 +138,6 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
         return;
       }
 
-      // Use the discountedTotalAmount if available, otherwise use totalAmount
       const amountToCharge = order.discountedTotalAmount || order.totalAmount;
 
       console.log("Sending request to /api/stripe", {
@@ -162,11 +179,10 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
     }
   };
 
-  // Function to render payment badge based on payment method
   const renderPaymentBadge = (payment: string | undefined) => {
     if (!payment) return <span className="px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-800">N/A</span>;
-    
-    switch(payment.toUpperCase()) {
+
+    switch (payment.toUpperCase()) {
       case 'Stripe':
         return <span className="px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-800">Stripe</span>;
       default:
@@ -197,10 +213,8 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
         <div className="rounded-lg border p-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold">Order Information</h2>
-            
-            {/* Add Pay Order button only if status is PENDING */}
             {order.status === "PENDING" && (
-              <Button 
+              <Button
                 onClick={handlePayOrder}
                 disabled={isProcessingPayment}
                 className="bg-green-600 hover:bg-green-700"
@@ -209,7 +223,7 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
               </Button>
             )}
           </div>
-          
+
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
               <p className="text-sm text-muted-foreground">Order ID</p>
@@ -257,17 +271,14 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
             )}
             {order.discountedTotalAmount && (
               <div>
-                <p className="text-sm text-muted-foreground">
-                  Discounted Total
-                </p>
+                <p className="text-sm text-muted-foreground">Discounted Total</p>
                 <p className="font-medium text-green-600">
                   ${order.discountedTotalAmount.toFixed(2)}
                 </p>
               </div>
             )}
           </div>
-          
-          {/* Add Pay Now notification for pending orders */}
+
           {order.status === "PENDING" && (
             <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
               <p className="text-yellow-800">
@@ -287,13 +298,12 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
                   <th className="p-4 text-left font-medium">Quantity</th>
                   <th className="p-4 text-left font-medium">Price</th>
                   <th className="p-4 text-left font-medium">Discount Price</th>
-                  <th className="p-4 text-left font-medium">
-                    Discounted Total
-                  </th>
+                  <th className="p-4 text-left font-medium">Discounted Total</th>
                   <th className="p-4 text-left font-medium">Promotion</th>
                 </tr>
               </thead>
               <tbody>
+                {order.orderDetails?.map((detail: ExtendedOrderDetail) => (
                 {order.orderDetails?.map((detail: ExtendedOrderDetail) => (
                   <tr key={detail.productID} className="border-b">
                     <td className="p-4">
@@ -310,12 +320,16 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
                     <td className="p-4">
                       $
                       {typeof detail.productPrice === 'number'
+                      {typeof detail.productPrice === 'number'
                         ? detail.productPrice.toFixed(2)
+                        : "0.00"}
                         : "0.00"}
                     </td>
                     <td className="p-4">
                       {detail.discountPrice ? (
+                      {detail.discountPrice ? (
                         <span className="text-green-600">
+                          ${detail.discountPrice.toFixed(2)}
                           ${detail.discountPrice.toFixed(2)}
                         </span>
                       ) : (
@@ -333,7 +347,10 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
                     </td>
                     <td className="p-4">
                       {detail.discount ? (
+                      {detail.discount ? (
                         <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                          {detail.discount}%{" "}
+                          {detail.discountName ? `(${detail.discountName})` : ""}
                           {detail.discount}%{" "}
                           {detail.discountName ? `(${detail.discountName})` : ""}
                         </span>

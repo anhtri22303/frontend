@@ -40,7 +40,7 @@ export const fetchOrdersByUserID = async (userID: string) => {
 // Create new order Customer
 export const createCustomerOrder = async (userID: string, orderData: Omit<Order, 'orderID'>) => {
   try {
-    const response = await axiosInstance.post(`/orders/customer/${userID}`, {
+    const response = await axiosInstance.post(`/orders/customer/${userID}/create`, {
       customerID: orderData.customerID,
       orderDate: orderData.orderDate,
       status: orderData.status,
@@ -98,7 +98,7 @@ export const fetchOrderDetailsByUserID = async (userID: string, orderID: string)
 // Get order by ID for a specific user
 export const fetchOrderByIdForUser = async (userID: string, orderID: string) => {
   try {
-    const response = await axiosInstance.get(`/orders/customer/${userID}/${orderID}`)
+    const response = await axiosInstance.get(`/orders/customer/${userID}/${orderID}/details`)
     console.log("Order Success: ", response.data.data)
     return response.data.data
   } catch (error) {
@@ -106,3 +106,40 @@ export const fetchOrderByIdForUser = async (userID: string, orderID: string) => 
     return null
   }
 }
+
+export const createOrderWithPayment = async (
+  userID: string,
+  orderData: any
+): Promise<{ orderID: string; clientSecret: string }> => {
+  try {
+    // Đầu tiên, tạo order
+    const orderResponse = await createCustomerOrder(userID, orderData);
+
+    if (!orderResponse?.data?.orderID) {
+      throw new Error("Failed to create order");
+    }
+
+    // Gọi API Stripe create-intent
+    const stripeResponse = await axiosInstance.post(
+      "/payment/stripe/create-intent",
+      {
+        amount: (orderResponse.data.discountedTotalAmount || orderResponse.data.totalAmount) * 100, // Convert to cents
+        currency: "usd",
+      }
+    );
+
+    const stripeData = stripeResponse.data;
+
+    if (!stripeData?.data?.clientSecret) {
+      throw new Error(stripeData.message || "Failed to create payment intent");
+    }
+
+    return {
+      orderID: orderResponse.data.orderID,
+      clientSecret: stripeData.data.clientSecret,
+    };
+  } catch (error) {
+    console.error("Error in createOrderWithPayment:", error);
+    throw error;
+  }
+};

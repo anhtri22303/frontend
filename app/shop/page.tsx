@@ -9,6 +9,7 @@ import { Slider } from "@/components/ui/slider";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { fetchProductsWithActive , fetchProductsByFiltersWithActive , fetchProductsByName, fetchProductsBySkinType } from "@/app/api/productApi";
+import { fetchProductsWithActive , fetchProductsByFiltersWithActive , fetchProductsByName, fetchProductsBySkinType } from "@/app/api/productApi";
 import { addToCart } from "@/app/api/cartApi";
 import toast from "react-hot-toast";
 import { useSearchParams } from "next/navigation";
@@ -78,6 +79,7 @@ export default function ProductsPage() {
     setIsLoading(true);
     try {
       const data = await fetchProductsWithActive();
+      const data = await fetchProductsWithActive();
       setProducts(data);
       setFilteredProducts(data);
       const maxProductPrice = Math.max(...data.map((product: Product) => product.price), 1000);
@@ -102,7 +104,6 @@ export default function ProductsPage() {
         minPrice: priceRange[0],
         maxPrice: priceRange[1],
       };
-
 
       const data = await fetchProductsByFiltersWithActive(filters);
       setFilteredProducts(data);
@@ -197,7 +198,6 @@ export default function ProductsPage() {
       setIsLoading(false);
     }
   };
-
 
   // Add this new function to handle search by skin type
   const handleSearchBySkinType = async () => {
@@ -325,8 +325,8 @@ export default function ProductsPage() {
     <div className="container py-8 mx-auto max-w-screen-xl">
       {/* Enhanced Search Filters Row */}
       <div className="mb-8 bg-gray-50 p-6 rounded-lg border shadow-sm">
+      <div className="mb-8 bg-gray-50 p-6 rounded-lg border shadow-sm">
         <h2 className="text-xl font-bold mb-4">Find Products</h2>
-
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {/* Search by name */}
@@ -335,15 +335,14 @@ export default function ProductsPage() {
               type="text"
               placeholder="Search by product name"
               value={searchName}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchName(e.target.value)}
-              onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === "Enter" && handleSearchByName()}
+              onChange={(e) => setSearchName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSearchByName()}
               className="flex-1"
             />
             <Button onClick={handleSearchByName} className="bg-red-500 hover:bg-red-600">
               Search
             </Button>
           </div>
-
 
           {/* Search by skin type */}
           <div className="flex items-center gap-2">
@@ -363,7 +362,6 @@ export default function ProductsPage() {
               Search
             </Button>
           </div>
-
 
           {/* Reset button */}
           <div className="flex items-center justify-end">
