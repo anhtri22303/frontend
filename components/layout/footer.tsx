@@ -31,27 +31,27 @@ export default function Footer() {
             <h3 className="text-lg font-semibold mb-4">Shop</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/shop?category=Cleanser" className="text-muted-foreground hover:text-primary">
+                <Link href="/shop/cleansers" className="text-muted-foreground hover:text-primary">
                   Cleansers
                 </Link>
               </li>
               <li>
-                <Link href="/shop?category=Moisturizer" className="text-muted-foreground hover:text-primary">
+                <Link href="/shop/moisturizers" className="text-muted-foreground hover:text-primary">
                   Moisturizers
                 </Link>
               </li>
               <li>
-                <Link href="/shop?category=Serum" className="text-muted-foreground hover:text-primary">
+                <Link href="/shop/serums" className="text-muted-foreground hover:text-primary">
                   Serums
                 </Link>
               </li>
               <li>
-                <Link href="/shop?category=Mask" className="text-muted-foreground hover:text-primary">
+                <Link href="/shop/masks" className="text-muted-foreground hover:text-primary">
                   Masks
                 </Link>
               </li>
               <li>
-                <Link href="/shop?category=Sunscreen" className="text-muted-foreground hover:text-primary">
+                <Link href="/shop/sunscreens" className="text-muted-foreground hover:text-primary">
                   Sunscreens
                 </Link>
               </li>
