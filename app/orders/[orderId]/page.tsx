@@ -40,7 +40,6 @@ interface ExtendedOrder extends Order {
 export default function OrderDetails({ params }: OrderDetailsProps) {
   const router = useRouter();
   const [order, setOrder] = useState<ExtendedOrder | null>(null);
-  const [order, setOrder] = useState<ExtendedOrder | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
@@ -67,12 +66,14 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
       // Process order details to calculate discountPrice and discountedTotalAmount
       if (data && data.orderDetails) {
         const processedOrderDetails = data.orderDetails.map((detail: ExtendedOrderDetail) => {
+          const productPrice = detail.productPrice || 0;
           // If there's a promotion (discount), calculate discountPrice and discountedTotalAmount
           if (detail.discount && detail.discount > 0) {
-            const discountPrice = detail.productPrice * (1 - detail.discount / 100);
+            const discountPrice = productPrice * (1 - detail.discount / 100);
             const discountedTotalAmount = discountPrice * detail.quantity;
             return {
               ...detail,
+              productPrice,
               discountPrice,
               discountedTotalAmount,
             };
@@ -80,8 +81,9 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
           // If no promotion, use the original price
           return {
             ...detail,
+            productPrice,
             discountPrice: undefined, // No discount price
-            discountedTotalAmount: detail.productPrice * detail.quantity, // Use original price * quantity
+            discountedTotalAmount: productPrice * detail.quantity, // Use original price * quantity
           };
         });
 
@@ -91,15 +93,6 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
             sum + (detail.discountedTotalAmount || 0),
           0
         );
-
-        setOrder({
-          ...data,
-          orderDetails: processedOrderDetails,
-          totalAmount: calculatedTotal,
-        });
-      } else {
-        setOrder(data);
-      }
 
         setOrder({
           ...data,
@@ -304,7 +297,6 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
               </thead>
               <tbody>
                 {order.orderDetails?.map((detail: ExtendedOrderDetail) => (
-                {order.orderDetails?.map((detail: ExtendedOrderDetail) => (
                   <tr key={detail.productID} className="border-b">
                     <td className="p-4">
                       <div>
@@ -320,16 +312,12 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
                     <td className="p-4">
                       $
                       {typeof detail.productPrice === 'number'
-                      {typeof detail.productPrice === 'number'
                         ? detail.productPrice.toFixed(2)
-                        : "0.00"}
                         : "0.00"}
                     </td>
                     <td className="p-4">
                       {detail.discountPrice ? (
-                      {detail.discountPrice ? (
                         <span className="text-green-600">
-                          ${detail.discountPrice.toFixed(2)}
                           ${detail.discountPrice.toFixed(2)}
                         </span>
                       ) : (
@@ -347,10 +335,7 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
                     </td>
                     <td className="p-4">
                       {detail.discount ? (
-                      {detail.discount ? (
                         <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
-                          {detail.discount}%{" "}
-                          {detail.discountName ? `(${detail.discountName})` : ""}
                           {detail.discount}%{" "}
                           {detail.discountName ? `(${detail.discountName})` : ""}
                         </span>
