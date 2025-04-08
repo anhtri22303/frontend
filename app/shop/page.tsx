@@ -8,8 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { fetchProductsWithActive , fetchProductsByFiltersWithActive , fetchProductsByName, fetchProductsBySkinType } from "@/app/api/productApi";
-import { fetchProductsWithActive , fetchProductsByFiltersWithActive , fetchProductsByName, fetchProductsBySkinType } from "@/app/api/productApi";
+import { fetchProducts, fetchProductsByFilters, fetchProductsByName, fetchProductsBySkinType } from "@/app/api/productApi";
 import { addToCart } from "@/app/api/cartApi";
 import toast from "react-hot-toast";
 import { useSearchParams } from "next/navigation";
@@ -78,17 +77,20 @@ export default function ProductsPage() {
   const loadProducts = async () => {
     setIsLoading(true);
     try {
-      const data = await fetchProductsWithActive();
-      const data = await fetchProductsWithActive();
-      setProducts(data);
-      setFilteredProducts(data);
-      const maxProductPrice = Math.max(...data.map((product: Product) => product.price), 1000);
+      const productsData = await fetchProducts();
+      if (!Array.isArray(productsData)) {
+        throw new Error("Invalid products data");
+      }
+      setProducts(productsData);
+      setFilteredProducts(productsData);
+      
+      // Set max price for price range filter
+      const maxProductPrice = Math.max(...productsData.map((p) => p.price));
       setMaxPrice(maxProductPrice);
       setPriceRange([0, maxProductPrice]);
     } catch (error) {
-      console.error("Error fetching products:", error);
-      setMaxPrice(1000);
-      setPriceRange([0, 1000]);
+      console.error("Error loading products:", error);
+      toast.error("Failed to load products");
     } finally {
       setIsLoading(false);
     }
@@ -105,7 +107,7 @@ export default function ProductsPage() {
         maxPrice: priceRange[1],
       };
 
-      const data = await fetchProductsByFiltersWithActive(filters);
+      const data = await fetchProductsByFilters(filters);
       setFilteredProducts(data);
     } catch (error) {
       console.error("Error applying filters:", error);
@@ -325,7 +327,6 @@ export default function ProductsPage() {
     <div className="container py-8 mx-auto max-w-screen-xl">
       {/* Enhanced Search Filters Row */}
       <div className="mb-8 bg-gray-50 p-6 rounded-lg border shadow-sm">
-      <div className="mb-8 bg-gray-50 p-6 rounded-lg border shadow-sm">
         <h2 className="text-xl font-bold mb-4">Find Products</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -335,8 +336,8 @@ export default function ProductsPage() {
               type="text"
               placeholder="Search by product name"
               value={searchName}
-              onChange={(e) => setSearchName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearchByName()}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchName(e.target.value)}
+              onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === "Enter" && handleSearchByName()}
               className="flex-1"
             />
             <Button onClick={handleSearchByName} className="bg-red-500 hover:bg-red-600">
