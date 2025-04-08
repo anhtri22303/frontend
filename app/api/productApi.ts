@@ -4,7 +4,7 @@ export const fetchProducts = async () => {
   try {
     const response = await axiosInstance.get("/products");
     console.log("Get product success", response.data.data);
-      return response.data.data || [];
+    return response.data.data || [];
   } catch (error) {
     console.error("Error fetching products:", error);
     return [];
@@ -16,7 +16,7 @@ export const createProduct = async (productData: {
   description: string;
   price: number;
   category: string;
-  skinType: string;
+  skinTypes: string[]; // Changed to skinTypes: string[]
   rating: number;
   imageFile: File | null;
   imagePreview: string;
@@ -24,7 +24,14 @@ export const createProduct = async (productData: {
   try {
     const formData = new FormData();
     const { imageFile, imagePreview, ...productInfo } = productData;
-    formData.append("product", JSON.stringify(productInfo));
+    // Join skinTypes array into a comma-separated string for the API
+    formData.append(
+      "product",
+      JSON.stringify({
+        ...productInfo,
+        skinTypes: productInfo.skinTypes.join(","), // Convert array to string
+      })
+    );
     if (imageFile) {
       formData.append("image", imageFile);
     }
@@ -73,7 +80,7 @@ export const fetchProductsByCategory = async (category: string) => {
   try {
     const response = await axiosInstance.get(`/products/category/${category}`);
     console.log("Get by category success", response.data);
-      return response.data || [];
+    return response.data || [];
   } catch (error) {
     console.error("Error fetching products by category:", error);
     return [];
@@ -84,7 +91,7 @@ export const fetchProductsByName = async (productName: string) => {
   try {
     const response = await axiosInstance.get(`/products/name/${productName}`);
     console.log("Get by name success", response.data);
-      return response.data || [];
+    return response.data || [];
   } catch (error) {
     console.error("Error fetching products by name:", error);
     return [];
@@ -95,7 +102,7 @@ export const fetchProductById = async (id: string) => {
   try {
     const response = await axiosInstance.get(`/products/${id}`);
     console.log("Get by ID success", response.data);
-    if (response.data.success) { // Sửa từ isSuccess thành success
+    if (response.data.success) {
       return response.data.data || null;
     }
     return null;
@@ -109,7 +116,7 @@ export const fetchProductsBySkinType = async (skinType: string) => {
   try {
     const response = await axiosInstance.get(`/products/skinType/${skinType}`);
     console.log("Get by skin type success", response.data);
-    if (response.data.success) { // Sửa từ isSuccess thành success
+    if (response.data.success) {
       return response.data.data || [];
     }
     return [];
@@ -130,7 +137,7 @@ export const fetchProductsByFilters = async (filters: {
       params: filters,
     });
     console.log("Get by filters success", response.data);
-    if (response.data.success) { // Sửa từ status === 200 thành success
+    if (response.data.success) {
       return response.data.data || [];
     }
     return [];

@@ -37,7 +37,7 @@ export const fetchFeedbackById = async (id: string) => {
   try {
     const response = await axiosInstance.get(`/feedbacks/${id}`)
     console.log("Get feedback success")
-    return response.data
+    return response.data.data
   } catch (error) {
     console.error("Error fetching feedback:", error)
     throw error

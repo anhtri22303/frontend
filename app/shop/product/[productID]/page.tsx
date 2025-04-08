@@ -32,7 +32,7 @@ interface Product {
   price: number;
   discountedPrice?: number;
   category: string;
-  skinType: string;
+  skinTypes: string | string[]; // Changed from skinType to skinTypes
   rating: number;
   reviewCount: number;
   image_url: string;
@@ -138,6 +138,67 @@ export default function ProductPage() {
     if (quantity > 1) setQuantity((prev) => prev - 1);
   };
 
+  // Add skinTypeColors object like in products page
+  const skinTypeColors: { [key: string]: string } = {
+    Dry: "bg-blue-100 text-blue-800 border-blue-200",
+    Oily: "bg-green-100 text-green-800 border-green-200",
+    Combination: "bg-purple-100 text-purple-800 border-purple-200",
+    Sensitive: "bg-pink-100 text-pink-800 border-pink-200",
+    Normal: "bg-gray-100 text-gray-800 border-gray-200",
+  };
+
+  // Add parseSkinTypes function from products page
+  const parseSkinTypes = (skinTypes: string | string[]): string[] => {
+    // If skinTypes is an array, return it directly
+    if (Array.isArray(skinTypes)) {
+      return skinTypes;
+    }
+
+    // If skinTypes doesn't exist or is an empty string, return empty array
+    if (!skinTypes) return [];
+
+    try {
+      // Handle JSON string like "[\"Dry\",\"Oily\"]"
+      if (typeof skinTypes === "string" && skinTypes.startsWith('[')) {
+        return JSON.parse(skinTypes);
+      }
+      // Handle comma-separated string like "Dry,Oily,Combination"
+      if (typeof skinTypes === "string" && skinTypes.includes(',')) {
+        return skinTypes.split(',').map(type => type.trim());
+      }
+      // Handle concatenated string like "OilySensitiveCombination"
+      if (typeof skinTypes === "string") {
+        const result: string[] = [];
+        let currentWord = '';
+
+        for (let i = 0; i < skinTypes.length; i++) {
+          const char = skinTypes[i];
+          // If uppercase letter and we already have a word, add current word to results
+          if (/[A-Z]/.test(char) && currentWord) {
+            result.push(currentWord);
+            currentWord = char;
+          } else {
+            currentWord += char;
+          }
+        }
+        // Add the last word to results
+        if (currentWord) {
+          result.push(currentWord);
+        }
+
+        // If no separation was possible, return original as single value
+        return result.length > 0 ? result : [skinTypes.trim()];
+      }
+
+      // Fallback: return original string as single value
+      return [skinTypes.toString()];
+    } catch (error) {
+      console.error("Error parsing skinTypes:", error);
+      // Fallback: treat as single value
+      return [skinTypes.toString()];
+    }
+  };
+
   if (isLoading) {
     return <div className="container py-8">Loading...</div>;
   }
@@ -197,11 +258,13 @@ export default function ProductPage() {
 
           <div>
             <h3 className="text-xl font-bold text-black">Skin Type</h3>
-            <div className="flex gap-2 mt-1">
-              {(product.skinType || "All").split(",").map((type, index) => (
+            <div className="flex flex-wrap gap-2 mt-1">
+              {parseSkinTypes(product.skinTypes).map((type, index) => (
                 <span
                   key={index}
-                  className="px-2 py-1 text-sm border rounded-md text-muted-foreground"
+                  className={`px-2 py-1 text-sm rounded-md ${
+                    skinTypeColors[type] || "bg-gray-100 text-gray-800 border-gray-200"
+                  }`}
                 >
                   {type.trim()}
                 </span>
@@ -210,9 +273,9 @@ export default function ProductPage() {
           </div>
 
           <div className="text-2xl font-bold">
-            {product.discountedPrice ? (
+            {product.discountedPrice && product.discountedPrice < product.price ? (
               <div className="flex items-center gap-2">
-                <p className="text-red-500">${product.discountedPrice.toFixed(2)}</p>
+                <p className="text-green-600">${product.discountedPrice.toFixed(2)}</p>
                 <p className="text-gray-500 line-through">${product.price.toFixed(2)}</p>
               </div>
             ) : (
@@ -347,9 +410,24 @@ export default function ProductPage() {
                   </Link>
                   <p className="text-sm text-muted-foreground">{relatedProduct.category}</p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Skin Type: {relatedProduct.skinType || "N/A"}
+                    Skin Type: {relatedProduct.skinTypes && parseSkinTypes(relatedProduct.skinTypes).length > 0
+                      ? [...new Set(parseSkinTypes(relatedProduct.skinTypes))].join("/")
+                      : "All"}
                   </p>
-                  <p className="font-semibold mt-2">${relatedProduct.price}</p>
+                  <div className="mt-2">
+                    {relatedProduct.discountedPrice && relatedProduct.discountedPrice < relatedProduct.price ? (
+                      <>
+                        <span className="text-green-600 font-semibold">
+                          ${relatedProduct.discountedPrice.toFixed(2)}
+                        </span>
+                        <span className="text-sm text-gray-500 line-through ml-2">
+                          ${relatedProduct.price.toFixed(2)}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="font-semibold">${relatedProduct.price.toFixed(2)}</span>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             ))}

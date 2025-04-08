@@ -3,19 +3,30 @@ import axiosInstance from "@/lib/axiosInstance"
 export interface OrderDetail {
   orderID: string | null
   productID: string
+  productName?: string
   quantity: number
+  productPrice?: number
+  discountName?: string
+  discountPercentage?: number
   totalAmount: number
+  discountedTotalAmount?: number
 }
 
 export interface Order {
   orderID: string
   customerID: string | null
+  customerName?: string
   orderDate: string
   status: string
   totalAmount: number
+  discountedTotalAmount?: number
+  payment?: string
+  promotion?: string
   orderDetails?: OrderDetail[]
 }
 
+// Rest of the file remains unchanged
+// ...
 // Get all orders
 export const fetchOrders = async () => {
   try {

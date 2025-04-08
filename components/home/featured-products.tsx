@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -15,7 +15,7 @@ interface Product {
   image_url: string;
   category?: string;
   rating: number;
-  skinType: string;
+  skinTypes: string[]; // Changed to string[] to reflect that it's an array
   isNew?: boolean;
 }
 
@@ -23,7 +23,7 @@ export function FeaturedProducts() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const productsPerPage = 4; // Số sản phẩm hiển thị trên mỗi trang
+  const productsPerPage = 4;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -41,21 +41,18 @@ export function FeaturedProducts() {
     fetchData();
   }, []);
 
-  // Tính toán các sản phẩm hiển thị dựa trên trang hiện tại
   const indexOfLastProduct = currentPage * productsPerPage;
   const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
   const currentProducts = Array.isArray(products)
     ? products.slice(indexOfFirstProduct, indexOfLastProduct)
     : [];
 
-  // Hàm chuyển sang trang trước
   const handlePrevPage = () => {
     if (currentPage > 1) {
       setCurrentPage(currentPage - 1);
     }
   };
 
-  // Hàm chuyển sang trang tiếp theo
   const handleNextPage = () => {
     if (indexOfLastProduct < products.length) {
       setCurrentPage(currentPage + 1);
@@ -104,17 +101,13 @@ export function FeaturedProducts() {
             <CardContent className="pt-4">
               <h3 className="font-medium truncate w-full">{product.productName}</h3>
               <div className="mt-2">
-                {product.discountedPrice ? (
-                  <div className="flex items-center gap-2">
-                    <p className="text-red-500 font-semibold">
-                      ${product.discountedPrice.toFixed(2)}
-                    </p>
-                    <p className="text-gray-500 line-through">
-                      ${product.price.toFixed(2)}
-                    </p>
-                  </div>
+                {product.discountedPrice && product.discountedPrice < product.price ? (
+                  <>
+                    <span className="text-green-600">${product.discountedPrice.toFixed(2)}</span>
+                    <span className="text-sm text-gray-500 line-through ml-2">${product.price.toFixed(2)}</span>
+                  </>
                 ) : (
-                  <p className="font-semibold">${product.price.toFixed(2)}</p>
+                  <span className="font-semibold">${product.price.toFixed(2)}</span>
                 )}
               </div>
               <div className="mt-2 text-sm">
@@ -122,7 +115,11 @@ export function FeaturedProducts() {
               </div>
               <div className="mt-2 text-sm">
                 <p className="block">Skin Type:</p>
-                <p className="text-muted-foreground">{product.skinType || "All"}</p>
+                <p className="text-muted-foreground">
+                  {product.skinTypes && product.skinTypes.length > 0
+                    ? [...new Set(product.skinTypes)].join(", ") // Remove duplicates and join with commas
+                    : "All"}
+                </p>
               </div>
               <div className="flex items-center mt-2">
                 <span>Rating: {product.rating}/5</span>

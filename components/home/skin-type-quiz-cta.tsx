@@ -3,25 +3,28 @@
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import { toast } from "@/components/ui/use-toast"
 
 export function SkinTypeQuizCTA() {
-  const router = useRouter()
   const [isClient, setIsClient] = useState(false)
+  const [quizLink, setQuizLink] = useState("/skin-quiz")
 
   useEffect(() => {
     setIsClient(true)
+    const jwtToken = localStorage.getItem("jwtToken")
+    if (!jwtToken) {
+      setQuizLink("/login?redirect=/skin-quiz")
+    }
   }, [])
 
-  const handleQuizStart = () => {
-    if (isClient) {
-      const userID = localStorage.getItem("userID")
-      if (userID) {
-        router.push("/skin-quiz")
-      } else {
-        router.push("/login?redirect=/skin-quiz")
-      }
+  const handleQuizClick = () => {
+    if (!localStorage.getItem("jwtToken")) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to take the skin quiz.",
+        variant: "default",
+      })
     }
   }
 
@@ -38,9 +41,11 @@ export function SkinTypeQuizCTA() {
               get personalized product recommendations tailored just for you.
             </p>
             <div className="mt-8">
-              <Button onClick={handleQuizStart} size="lg">
-                Start Skin Quiz
-              </Button>
+              <Link href={quizLink}>
+                <Button onClick={handleQuizClick} size="lg">
+                  Start Skin Quiz
+                </Button>
+              </Link>
             </div>
           </div>
           <div className="relative min-h-[300px]">
@@ -54,5 +59,5 @@ export function SkinTypeQuizCTA() {
         </div>
       </div>
     </section>
-  );
+  )
 }

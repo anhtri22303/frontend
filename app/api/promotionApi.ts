@@ -3,7 +3,7 @@ import axiosInstance from "@/lib/axiosInstance"
 export interface Promotion {
   promotionID: string
   promotionName: string
-  productID: string
+  productIDs: string[] // Changed from productID to productIDs to match API expectations
   discount: number
   startDate?: string
   endDate?: string
@@ -22,12 +22,25 @@ export const fetchPromotions = async () => {
 
 export const createPromotion = async (promotion: Omit<Promotion, 'promotionID'>) => {
   try {
-    const response = await axiosInstance.post("/promotions", promotion)
-    console.log("Create promotion success", response.data)
-    return response.data
+    // Make sure productIDs is an array, even if it's coming from older code as productID
+    const requestData = {
+      ...promotion,
+      productIDs: Array.isArray(promotion.productIDs) ? promotion.productIDs : 
+                 (promotion.productID ? Array.isArray(promotion.productID) ? promotion.productID : [promotion.productID] : [])
+    };
+    
+    // Remove the old productID field if it exists to avoid confusion
+    if ('productID' in requestData) {
+      delete requestData.productID;
+    }
+    
+    console.log("Sending promotion data:", requestData);
+    const response = await axiosInstance.post("/promotions", requestData);
+    console.log("Create promotion success", response.data);
+    return response.data;
   } catch (error) {
-    console.error("Error creating promotion:", error)
-    throw error
+    console.error("Error creating promotion:", error);
+    throw error;
   }
 }
 
@@ -58,7 +71,7 @@ export const fetchPromotionById = async (id: string) => {
   try {
     const response = await axiosInstance.get(`/promotions/${id}`)
     console.log("Get promotion by ID success" ,response.data)
-    return response.data
+    return response.data.data
   } catch (error) {
     console.error("Error fetching promotion:", error)
     throw error

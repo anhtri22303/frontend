@@ -40,7 +40,7 @@ export default function OrdersPage() {
       setOrders(response.data || []);
     } catch (error) {
       console.error("Error loading orders:", error);
-      toast.error("Failed to load orders.");
+      toast.error("Order not found.");
     } finally {
       setIsLoading(false);
     }

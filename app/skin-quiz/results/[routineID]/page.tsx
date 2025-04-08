@@ -1,107 +1,89 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { useParams } from "next/navigation";
+import { fetchRoutineById } from "@/app/api/routineApi";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-hot-toast";
+import { applyRoutineToUser } from "@/app/api/routineApi";
 import { addToCart } from "@/app/api/cartApi";
-import { fetchCustomerByID } from "@/app/api/customerApi";
 
 interface Product {
-  id: string;
   productID: string;
   productName: string;
   description: string;
   price: number;
+  image_url: string;
   category?: string;
   rating?: number;
-  image_url: string;
-  status?: string;
 }
 
-interface SkinCareRoutine {
-  id: string;
+interface Routine {
   routineID: string;
-  skinType: string;
   routineName: string;
   routineDescription: string;
-  status: string;
-  products: Product[];
-}
-
-interface UserData {
-  fullName: string;
-  email: string;
-  phone: string;
-  address: string;
-  skinType: string;
-  avatar_url: string;
-  skinCareRoutine: SkinCareRoutine;
+  productDTOS?: Product[];
 }
 
 export default function RoutineDetailPage() {
-  const router = useRouter();
-  const [userData, setUserData] = useState<UserData | null>(null);
+  const { routineID } = useParams();
+  const [routine, setRoutine] = useState<Routine | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
   const [isLoading, setIsLoading] = useState(false);
   const categoryOrder = ["Cleanser", "Toner", "Serum", "Moisturizer", "Sunscreen", "Mask"];
 
   useEffect(() => {
-    const fetchUserData = async () => {
+    const fetchRoutineData = async () => {
       try {
-        const userID = localStorage.getItem("userID");
-        if (!userID) {
-          toast.error("User not logged in!");
-          router.push("/login");
-          return;
-        }
+        if (!routineID) return;
 
-        const userData = await fetchCustomerByID(userID);
-        if (!userData) {
-          toast.error("Failed to fetch user data");
-          return;
-        }
-        
-        setUserData(userData);
-        console.log("Fetched user data:", userData);
-        
-        if (!userData.skinCareRoutine) {
-          toast.info("Please complete the skin quiz first to get personalized routines");
-          router.push("/skin-quiz");
-          return;
-        }
+        const routineData = await fetchRoutineById(routineID);
+        setRoutine(routineData.data);
+        console.log("Fetched routine data:", routineData);
       } catch (error) {
-        console.error("Error fetching user data:", error);
-        toast.error("Error loading your skin care routine");
+        console.error("Error fetching routine data:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUserData();
-  }, [router]);
+    fetchRoutineData();
+  }, [routineID]);
 
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="text-center">Loading your personalized routine...</div>
+        <div className="text-center">Loading routine details...</div>
       </div>
     );
   }
 
-  if (!userData || !userData.skinCareRoutine) {
+  if (!routine) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="text-center">No skin care routine found. Please complete the skin quiz.</div>
-        <div className="mt-4 text-center">
-          <Button onClick={() => router.push("/skin-quiz")}>Take Skin Quiz</Button>
-        </div>
+        <div className="text-center">Routine not found.</div>
       </div>
     );
   }
+
+  const handleApplyRoutine = async (routineID: string) => {
+    try {
+      const userID = localStorage.getItem("userID");
+      if (!userID) {
+        toast.error("User not logged in!");
+        return;
+      }
+
+      await applyRoutineToUser(userID, routineID);
+      toast.success("Routine applied successfully!");
+    } catch (error) {
+      console.error("Error applying routine:", error);
+      toast.error("Failed to apply routine.");
+    }
+  };
 
   const handleQuantityChange = (productId: string, value: string) => {
     const newQuantity = parseInt(value) || 1;
@@ -131,35 +113,55 @@ export default function RoutineDetailPage() {
     }
   };
 
-  const routine = userData.skinCareRoutine;
-
-  const groupedProducts = routine.products.reduce((acc, product) => {
+  const groupedProducts = routine.productDTOS?.reduce((acc, product) => {
     const category = product.category || "Other";
     if (!acc[category]) {
       acc[category] = [];
     }
     acc[category].push(product);
     return acc;
-  }, {} as { [key: string]: Product[] });
+  }, {} as { [key: string]: Product[] }) || {};
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">Loading your personalized recommendations...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* User Skin Info */}
-      <div className="mb-6 p-4 bg-slate-50 rounded-lg">
-        <h2 className="text-lg font-semibold mb-2">Your Skin Profile</h2>
-        <p className="text-muted-foreground">Skin Type: <span className="font-medium text-primary">{userData.skinType}</span></p>
-      </div>
-
       {/* Routine Details */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-center mb-4">{routine.routineName}</h1>
         <p className="text-center text-muted-foreground">{routine.routineDescription}</p>
-        <p className="text-center text-green-600 mt-2">✓ This routine is customized for your {userData.skinType} skin</p>
       </div>
+
+      <Button
+        className="mt-4"
+        onClick={async () => {
+          try {
+            const userID = localStorage.getItem("userID");
+            if (!userID) {
+              toast.error("User not logged in!");
+              return;
+            }
+
+            await applyRoutineToUser(userID, routine.routineID);
+            toast.success("Routine applied successfully!");
+          } catch (error) {
+            console.error("Error applying routine:", error);
+            toast.error("Failed to apply routine.");
+          }
+        }}
+      >
+        Apply
+      </Button>
 
       {/* Products Section */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">Products in Your Routine</h2>
+        <h2 className="text-xl font-semibold mb-4">Products in this Routine</h2>
         {Object.keys(groupedProducts)
           .sort((a, b) => {
             const indexA = categoryOrder.indexOf(a);
@@ -195,7 +197,7 @@ export default function RoutineDetailPage() {
                               <svg
                                 key={i}
                                 className={`w-4 h-4 ${
-                                  i < (product.rating || 0)
+                                  i < product.rating
                                     ? "text-yellow-400 fill-current"
                                     : "text-gray-300"
                                 }`}

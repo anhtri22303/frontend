@@ -1,10 +1,10 @@
-promotion chưa có ID
-product cần gắn feedback đi theo
-product đang bị lẫn category với skinquiz
-routine cần gắn theo các kiểu product nào
-routine cần thêm 1 biến skinquiz
-routine cần thêm 1 biến timeUsing (DAY, NIGHT)
-GET order by orderID hoặc GET orderDetail by orderID chưa chạy
+# Account test
+Manager : tricnase173284@fpt.edu.vn  (GOOGLE)
+	 MK : @nhTri22303
+Staff   : anhtri22303
+	 MK : @nhTri22303
+Customer : anhtri22303@gmail.com   (GOOGLE)
+	 MK : Phuonglinh@123
 
 
 # SWP-GlowCorner

@@ -2,16 +2,21 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { fetchRoutinesByCategory } from "@/app/api/routineApi";
-import { fetchProductsByCategory } from "@/app/api/productApi";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { fetchRoutinesBySkinType } from "@/app/api/routineApi";
 import { Button } from "@/components/ui/button";
+import { addToCart } from "@/app/api/cartApi";
+import toast from "react-hot-toast";
+import Link from "next/link";
+import { fetchCustomerByID, updateCustomer } from "@/app/api/customerApi";
+import { applyRoutineToUser } from "@/app/api/routineApi";
 
 interface Routine {
   routineID: string;
   category?: string;
   routineName: string;
   routineDescription: string;
+  productDTOS?: Product[];
 }
 
 interface Product {
@@ -20,22 +25,77 @@ interface Product {
   description: string;
   price: number;
   image_url: string;
-  skinType: string; // Đổi từ skinType thành skinType (đã chuẩn hóa)
-  isNew?: boolean;
   category?: string;
   rating?: number;
 }
 
+interface Customer {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  address: string;
+  skinType: string;
+  loyalPoints: number;
+}
+
 export default function QuizResults() {
   const searchParams = useSearchParams();
-  const skinTypes = searchParams.get("skinTypes")?.split(",") || [];
-  const categories = searchParams.get("categories")?.split(",") || [];
+  const skinType = searchParams.get("skinType");
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [customer, setCustomer] = useState<Customer | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const skinType = searchParams.get("skinType");
+  useEffect(() => {
+    const fetchAndUpdateCustomer = async () => {
+      try {
+        const userId = localStorage.getItem("userID");
+        if (!userId) {
+          toast.error("User not logged in!");
+          return;
+        }
 
+        // Fetch customer data
+        const customerData = await fetchCustomerByID(userId);
+        if (!customerData) {
+          console.error("Customer data is missing or invalid.");
+          return;
+        }
+
+        // Gán userId vào customer.id nếu thiếu
+        const updatedCustomerData = { ...customerData, id: userId };
+        setCustomer(updatedCustomerData);
+        console.log("Fetched customer data:", updatedCustomerData);
+
+        // Update skin type if needed
+        if (skinType && updatedCustomerData.skinType !== skinType) {
+          const formData = new FormData();
+          const { id, ...updatedCustomer } = updatedCustomerData; // Loại bỏ trường `id`
+          updatedCustomer.skinType = skinType; // Cập nhật skinType
+
+          formData.append("user", JSON.stringify(updatedCustomer));
+
+          const response = await updateCustomer(userId, formData);
+          if (response) {
+            setCustomer(response); // Cập nhật state với dữ liệu mới
+            console.log("Customer updated skinType successfully:", response);
+            toast.success("Skin type updated successfully!");
+          } else {
+            toast.error("Failed to update customer.");
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching or updating customer data:", error);
+        toast.error("Failed to fetch or update customer data.");
+      }
+    };
+
+    fetchAndUpdateCustomer();
+  }, [skinType]);
+
+
+  // Fetch routines and products
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -45,17 +105,12 @@ export default function QuizResults() {
         }
 
         // Fetch routines for the given skin type
-        const routineResults = await fetchRoutinesByCategory(skinType.toUpperCase());
-        // Kiểm tra dữ liệu trả về từ API
-        const filteredRoutines = routineResults.data?.filter(
-          (routine: Routine) => routine.category?.toUpperCase() === skinType.toUpperCase()
-        ) || [];
-        setRoutines(filteredRoutines);
+        const routineResults = await fetchRoutinesBySkinType(skinType);
+        setRoutines(routineResults || []);
 
-        // Fetch products for the given skin type
-        const productResults = await fetchProductsByCategory(skinType.toUpperCase());
-        // Kiểm tra dữ liệu trả về từ API
-        setProducts(productResults.data || []);
+        // Extract products from routines
+        const allProducts = routineResults.flatMap((routine) => routine.productDTOS || []);
+        setProducts(allProducts);
       } catch (error) {
         console.error("Error fetching data:", error);
         setRoutines([]);
@@ -68,54 +123,11 @@ export default function QuizResults() {
     fetchData();
   }, [skinType]);
 
-  if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">Loading your personalized recommendations...</div>
-      </div>
-    );
-  }
-
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-center mb-8">Your Quiz Results</h1>
-
-      {/* Hiển thị Skin Types */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">Your Skin Type</h2>
-        <div className="flex gap-2">
-          {skinTypes.length > 0 ? (
-            skinTypes.map((type) => (
-              <span
-                key={type}
-                className="px-3 py-1 text-sm border rounded-md text-muted-foreground"
-              >
-                {type}
-              </span>
-            ))
-          ) : (
-            <span className="text-sm text-muted-foreground">No skin type selected</span>
-          )}
-        </div>
-      </div>
-
-      {/* Hiển thị Categories */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">Your Preferred Categories</h2>
-        <div className="flex gap-2">
-          {categories.length > 0 ? (
-            categories.map((category) => (
-              <span
-                key={category}
-                className="px-3 py-1 text-sm border rounded-md text-muted-foreground"
-              >
-                {category}
-              </span>
-            ))
-          ) : (
-            <span className="text-sm text-muted-foreground">No categories selected</span>
-          )}
-        </div>
+      {/* Your Skin Type */}
+      <div className="text-center mb-8">
+        <h2 className="text-2xl font-bold">Your Skin Type: {skinType}</h2>
       </div>
 
       {/* Routines Section */}
@@ -130,6 +142,9 @@ export default function QuizResults() {
                 </CardHeader>
                 <CardContent>
                   <p>{routine.routineDescription}</p>
+                  <Link href={`/skin-quiz/results/${routine.routineID}`}>
+                    <Button className="mt-4">View Detail</Button>
+                  </Link>
                 </CardContent>
               </Card>
             ))}
@@ -137,58 +152,6 @@ export default function QuizResults() {
         ) : (
           <p className="text-center text-muted-foreground">
             No routines found for your skin type.
-          </p>
-        )}
-      </div>
-
-      {/* Products Section */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">Recommended Products</h2>
-        {products.length > 0 ? (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {products.map((product) => (
-              <Card
-                key={product.productID}
-                className="shadow-lg hover:shadow-xl transition-shadow duration-300"
-              >
-                <div className="relative">
-                  <img
-                    src={product.image_url || "/placeholder.svg"}
-                    alt={product.productName}
-                    className="w-full h-48 object-cover rounded-t-lg"
-                  />
-                  <div className="absolute top-2 right-2 bg-white text-gray-800 text-xs font-semibold px-2 py-1 rounded">
-                    ${product.price.toFixed(2)}
-                  </div>
-                </div>
-                <CardContent className="p-4">
-                  <h3 className="text-lg font-bold text-gray-800 truncate">
-                    {product.productName}
-                  </h3>
-                  <p className="text-sm text-gray-600 mt-2 line-clamp-2">
-                    {product.description}
-                  </p>
-                  <p className="text-sm text-gray-600 mt-1">
-                    For {product.skinType || "All"} skin
-                  </p>
-                  {product.rating && (
-                    <p className="text-sm text-gray-600 mt-1">
-                      Rating: {product.rating}/5
-                    </p>
-                  )}
-                  <Button
-                    variant="outline"
-                    className="mt-4 w-full text-sm font-medium text-blue-600 border-blue-600 hover:bg-blue-50"
-                  >
-                    View Details
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <p className="text-center text-muted-foreground">
-            No products found for your skin type.
           </p>
         )}
       </div>

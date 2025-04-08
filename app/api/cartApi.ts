@@ -1,9 +1,15 @@
 import axiosInstance from "@/lib/axiosInstance"
 
-interface CartItem {
+export interface CartItem {
+  userID: string
   productID: string
+  productName?: string
   quantity: number
-  price?: number
+  productPrice?: number
+  totalAmount: number
+  discountPercentage?: number | null
+  discountedTotalAmount?: number | null
+  image?: string
 }
 
 interface Cart {
@@ -16,7 +22,7 @@ interface Cart {
 export const fetchCartByUserId = async (userID: string) => {
   try {
     const response = await axiosInstance.get(`/cart/${userID}`)
-    console.log("Get cart success")
+    console.log("Get cart success", response.data)
     return response.data
   } catch (error) {
     console.error("Error fetching cart:", error)
