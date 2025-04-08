@@ -25,8 +25,7 @@ export interface Order {
   orderDetails?: OrderDetail[]
 }
 
-// Rest of the file remains unchanged
-// ...
+
 // Get all orders
 export const fetchOrders = async () => {
   try {

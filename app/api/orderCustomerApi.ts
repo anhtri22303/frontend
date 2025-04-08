@@ -40,7 +40,7 @@ export const fetchOrdersByUserID = async (userID: string) => {
 // Create new order Customer
 export const createCustomerOrder = async (userID: string, orderData: Omit<Order, 'orderID'>) => {
   try {
-    const response = await axiosInstance.post(`/orders/customer/${userID}`, {
+    const response = await axiosInstance.post(`/orders/customer/${userID}/create`, {
       customerID: orderData.customerID,
       orderDate: orderData.orderDate,
       status: orderData.status,

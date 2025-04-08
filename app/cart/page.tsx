@@ -178,9 +178,9 @@ export default function CartPage() {
         console.error("Stripe failed to initialize.");
         return;
       }
-
+      console.log("discountedTotalAmount" , discountedTotalAmount);
       console.log("Sending request to /api/stripe", {
-        totalAmount: discountedTotalAmount, // Sử dụng discountedTotalAmount
+        totalAmount: orderResponse.data.discountedTotalAmount, // Sử dụng discountedTotalAmount
         orderID: orderResponse.data.orderID,
       });
 
@@ -188,7 +188,7 @@ export default function CartPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          totalAmount: discountedTotalAmount, // Sử dụng discountedTotalAmount
+          totalAmount: orderResponse.data.discountedTotalAmount, // Sử dụng discountedTotalAmount
           orderID: orderResponse.data.orderID,
         }),
       });

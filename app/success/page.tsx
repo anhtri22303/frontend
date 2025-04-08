@@ -56,7 +56,6 @@ export default function SuccessPage() {
   const fetchOrderData = async (userID: string, orderID: string) => {
     try {
       const orderData = await fetchOrderDetailsByUserID(userID, orderID);
-      console.log("API Response:", orderData);
       if (orderData && orderData.data) {
         setOrderInfo({
           orderID: orderData.data.orderID,
@@ -208,11 +207,17 @@ export default function SuccessPage() {
                 <div className="text-right">
                   {item.discountedTotalAmount ? (
                     <>
-                      <p className="font-medium text-green-600">${item.discountedTotalAmount.toFixed(2)}</p>
-                      <p className="text-sm text-gray-500 line-through">${item.totalAmount.toFixed(2)}</p>
+                      <p className="font-medium text-green-600">
+                        ${item.discountedTotalAmount?.toFixed(2) || "0.00"}
+                      </p>
+                      <p className="text-sm text-gray-500 line-through">
+                        ${item.totalAmount?.toFixed(2) || "0.00"}
+                      </p>
                     </>
                   ) : (
-                    <p className="font-medium">${item.totalAmount.toFixed(2)}</p>
+                    <p className="font-medium">
+                      ${item.totalAmount?.toFixed(2) || "0.00"}
+                    </p>
                   )}
                 </div>
               </div>

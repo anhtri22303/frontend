@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { fetchPromotions, deletePromotion, searchPromotionsByName, fetchPromotionById } from "@/app/api/promotionApi"
+import { fetchPromotions, deletePromotion, searchPromotionsByName, fetchPromotionById, fetchPromotionsByProductIDs } from "@/app/api/promotionApi"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -24,7 +24,8 @@ export default function PromotionsPage() {
   const [promotions, setPromotions] = useState<Promotion[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
-  const [searchId, setSearchId] = useState("")
+  const [searchPromotionId, setSearchPromotionId] = useState("") // State for Promotion ID
+  const [searchProductId, setSearchProductId] = useState("") // State for Product ID
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1)
@@ -89,13 +90,13 @@ export default function PromotionsPage() {
   }
 
   const handleSearchById = async () => {
-    if (!searchId.trim()) {
+    if (!searchPromotionId.trim()) {
       toast.error("Please enter a promotion ID to search.");
       return;
     }
     setIsLoading(true);
     try {
-      const response = await fetchPromotionById(searchId);
+      const response = await fetchPromotionById(searchPromotionId);
       console.log("Search by ID result:", response);
       setPromotions(response ? [response] : []);
       if (response) {
@@ -112,9 +113,34 @@ export default function PromotionsPage() {
     }
   };
 
+  const handleSearchByProductID = async () => {
+    if (!searchProductId.trim()) {
+      toast.error("Please enter a product ID to search.");
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const response = await fetchPromotionsByProductIDs([searchProductId]); // Call the new API
+      console.log("Search by Product ID result:", response);
+      setPromotions(response); // Update promotions state with the result
+      if (response.length > 0) {
+        toast.success(`Found ${response.length} promotions for product ID ${searchProductId}`);
+      } else {
+        toast.error("No promotions found for the given product ID");
+      }
+    } catch (error) {
+      console.error("Failed to search promotions by product ID:", error);
+      setPromotions([]);
+      toast.error("Failed to search promotions by product ID");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleResetFilters = () => {
     setSearchTerm("");
-    setSearchId("");
+    setSearchPromotionId("");
+    setSearchProductId("");
     loadPromotions();
     toast.success("Filters reset")
   };
@@ -222,12 +248,22 @@ export default function PromotionsPage() {
 
         {/* Filter by Promotion ID */}
         <Input
-          value={searchId}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchId(e.target.value)}
+          value={searchPromotionId} // Sử dụng state riêng cho Promotion ID
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchPromotionId(e.target.value)}
           placeholder="Enter promotion ID"
         />
         <Button onClick={handleSearchById} disabled={isLoading}>
           {isLoading ? "Searching..." : "Search by ID"}
+        </Button>
+
+        {/* Filter by Product ID */}
+        <Input
+          value={searchProductId} // Sử dụng state riêng cho Product ID
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchProductId(e.target.value)}
+          placeholder="Enter product ID"
+        />
+        <Button onClick={handleSearchByProductID} disabled={isLoading}>
+          {isLoading ? "Searching..." : "Search by Product ID"}
         </Button>
       </div>
 
