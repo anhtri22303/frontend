@@ -204,9 +204,9 @@ export default function Header() {
                     <DropdownMenuItem asChild>
                       <Link href="/orders">Orders</Link>
                     </DropdownMenuItem>
-                    {/* <DropdownMenuItem asChild>
+                    <DropdownMenuItem asChild>
                       <Link href="/routines">Routines</Link>
-                    </DropdownMenuItem> */}
+                    </DropdownMenuItem>
                   </>
                 )}
                 <DropdownMenuSeparator />

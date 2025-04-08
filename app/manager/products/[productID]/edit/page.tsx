@@ -27,7 +27,7 @@ export default function EditProductPage({ params }: EditProductPageProps) {
     description: "",
     price: 0,
     category: "",
-    skinType: "",
+    skinTypes: [] as string[], // Changed from skinType string to skinTypes array
     rating: 0,
     image_url: "",
   });
@@ -65,7 +65,10 @@ export default function EditProductPage({ params }: EditProductPageProps) {
           description: productData.description || "",
           price: productData.price || 0,
           category: productData.category || "",
-          skinType: productData.skinType || "",
+          // Handle both new array format and legacy single string format
+          skinTypes: Array.isArray(productData.skinTypes) 
+            ? productData.skinTypes 
+            : productData.skinType ? [productData.skinType] : [],
           rating: productData.rating || 0,
           image_url: productData.image_url || "",
         });
@@ -117,7 +120,7 @@ export default function EditProductPage({ params }: EditProductPageProps) {
         description: product.description,
         price: product.price,
         category: product.category,
-        skinType: product.skinType,
+        skinTypes: product.skinTypes,
         rating: product.rating,
       };
       
@@ -146,6 +149,23 @@ export default function EditProductPage({ params }: EditProductPageProps) {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const addSkinType = (value: string) => {
+    // Only add if the skin type isn't already selected
+    if (!product.skinTypes.includes(value)) {
+      setProduct({
+        ...product,
+        skinTypes: [...product.skinTypes, value],
+      });
+    }
+  };
+
+  const removeSkinType = (skinTypeToRemove: string) => {
+    setProduct({
+      ...product,
+      skinTypes: product.skinTypes.filter((type) => type !== skinTypeToRemove),
+    });
   };
 
   if (isLoading) {
@@ -224,8 +244,8 @@ export default function EditProductPage({ params }: EditProductPageProps) {
 
           <div>
             <label className="text-sm font-medium mb-1 block">Category</label>
-            <Select 
-              value={product.category} 
+            <Select
+              value={product.category}
               onValueChange={(value) => setProduct({ ...product, category: value })}
               disabled={isSubmitting}
             >
@@ -243,23 +263,45 @@ export default function EditProductPage({ params }: EditProductPageProps) {
           </div>
 
           <div>
-            <label className="text-sm font-medium mb-1 block">Skin Type</label>
-            <Select 
-              value={product.skinType} 
-              onValueChange={(value) => setProduct({ ...product, skinType: value })}
-              disabled={isSubmitting}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a skin type" />
-              </SelectTrigger>
-              <SelectContent>
-                {skinTypes.map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {type}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <label className="text-sm font-medium mb-1 block">Skin Types</label>
+            <div className="flex items-center gap-2">
+              <Select
+                onValueChange={addSkinType}
+                disabled={isSubmitting}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Select skin type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {skinTypes.map((type) => (
+                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {/* Display selected skin types */}
+            <div className="mt-2 flex flex-wrap gap-2">
+              {product.skinTypes.map((type) => (
+                <div
+                  key={type}
+                  className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded-md text-sm"
+                >
+                  {type}
+                  <button
+                    type="button"
+                    onClick={() => removeSkinType(type)}
+                    className="text-red-500 hover:text-red-700"
+                    disabled={isSubmitting}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+              {product.skinTypes.length === 0 && (
+                <span className="text-gray-500 text-sm italic">No skin types selected</span>
+              )}
+            </div>
           </div>
 
             <div>
