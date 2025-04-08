@@ -38,8 +38,8 @@ const formSchema = z.object({
   email: z.string().email("Invalid email address"),
   phone: z.string().min(10, "Phone number must be at least 10 digits"),
   address: z.string().min(1, "Address is required"),
-  role: z.enum(["CUSTOMER", "STAFF", "MANAGER", "BEAUTY_ADVISOR"]),
-  skinType: z.enum(["DRY", "OILY", "COMBINATION", "NORMAL", "SENSITIVE"]),
+  role: z.enum(["CUSTOMER", "STAFF", "MANAGER"]),
+  skinType: z.enum(["Dry", "Oily", "Combination", "Normal", "Sensitive"]),
 })
 
 export default function CreateUserPage() {
@@ -50,7 +50,7 @@ export default function CreateUserPage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       role: "CUSTOMER",
-      skinType: "DRY",
+      skinType: "Dry",
     },
   })
 
@@ -161,7 +161,6 @@ export default function CreateUserPage() {
                         <SelectItem value="CUSTOMER">Customer</SelectItem>
                         <SelectItem value="STAFF">Staff</SelectItem>
                         <SelectItem value="MANAGER">Manager</SelectItem>
-                        <SelectItem value="BEAUTY_ADVISOR">Beauty Advisor</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -182,11 +181,11 @@ export default function CreateUserPage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="DRY">Dry</SelectItem>
-                        <SelectItem value="OILY">Oily</SelectItem>
-                        <SelectItem value="COMBINATION">Combination</SelectItem>
-                        <SelectItem value="NORMAL">Normal</SelectItem>
-                        <SelectItem value="SENSITIVE">Sensitive</SelectItem>
+                        <SelectItem value="Dry">Dry</SelectItem>
+                        <SelectItem value="Oily">Oily</SelectItem>
+                        <SelectItem value="Combination">Combination</SelectItem>
+                        <SelectItem value="Normal">Normal</SelectItem>
+                        <SelectItem value="Sensitive">Sensitive</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { fetchProducts, fetchProductsByFilters, fetchProductsByName, fetchProductById, fetchProductsBySkinType } from "@/app/api/productApi";
+import { fetchProductsWithActive , fetchProductsByFiltersWithActive , fetchProductsByName, fetchProductsBySkinType } from "@/app/api/productApi";
 import { addToCart } from "@/app/api/cartApi";
 import toast from "react-hot-toast";
 import { useSearchParams } from "next/navigation";
@@ -70,7 +70,7 @@ export default function ProductsPage() {
   const loadProducts = async () => {
     setIsLoading(true);
     try {
-      const data = await fetchProducts();
+      const data = await fetchProductsWithActive();
       setProducts(data);
       setFilteredProducts(data);
       const maxProductPrice = Math.max(...data.map((product: Product) => product.price), 1000);
@@ -95,7 +95,7 @@ export default function ProductsPage() {
         maxPrice: priceRange[1],
       };
 
-      const data = await fetchProductsByFilters(filters);
+      const data = await fetchProductsByFiltersWithActive(filters);
       setFilteredProducts(data);
     } catch (error) {
       console.error("Error applying filters:", error);
@@ -175,30 +175,6 @@ export default function ProductsPage() {
     } catch (error) {
       console.error("Error searching products by name:", error);
       toast.error("Failed to search products");
-      setFilteredProducts([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSearchById = async () => {
-    if (!searchId.trim()) {
-      applyFilters();
-      return;
-    }
-    
-    setIsLoading(true);
-    try {
-      const product = await fetchProductById(searchId);
-      if (product) {
-        setFilteredProducts([product]);
-      } else {
-        setFilteredProducts([]);
-        toast.error("No product found with that ID");
-      }
-    } catch (error) {
-      console.error("Error searching product by ID:", error);
-      toast.error("Failed to search product by ID");
       setFilteredProducts([]);
     } finally {
       setIsLoading(false);
@@ -323,62 +299,56 @@ export default function ProductsPage() {
   return (
     <div className="container py-8 mx-auto max-w-screen-xl">
       {/* Enhanced Search Filters Row */}
-      <div className="mb-8 bg-gray-50 p-4 rounded-lg border shadow-sm">
+      <div className="mb-8 bg-gray-50 p-6 rounded-lg border shadow-sm">
         <h2 className="text-xl font-bold mb-4">Find Products</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <Input
-                type="text"
-                placeholder="Search by product name"
-                value={searchName}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchName(e.target.value)}
-                onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === "Enter" && handleSearchByName()}
-              />
-              <Button onClick={handleSearchByName} className="whitespace-nowrap">Search</Button>
-            </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {/* Search by name */}
+          <div className="flex items-center gap-2">
+            <Input
+              type="text"
+              placeholder="Search by product name"
+              value={searchName}
+              onChange={(e) => setSearchName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSearchByName()}
+              className="flex-1"
+            />
+            <Button onClick={handleSearchByName} className="bg-red-500 hover:bg-red-600">
+              Search
+            </Button>
           </div>
-          
-          <div>
-            <div className="flex items-center gap-2">
-              <Input
-                type="text"
-                placeholder="Enter Product ID"
-                value={searchId}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchId(e.target.value)}
-                onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === "Enter" && handleSearchById()}
-              />
-              <Button onClick={handleSearchById}>Search</Button>
-            </div>
+
+          {/* Search by skin type */}
+          <div className="flex items-center gap-2">
+            <Select value={searchSkinType} onValueChange={setSearchSkinType}>
+              <SelectTrigger className="flex-1">
+                <SelectValue placeholder="Select Skin Type" />
+              </SelectTrigger>
+              <SelectContent>
+                {skinTypes.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {type}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button onClick={handleSearchBySkinType} className="bg-red-500 hover:bg-red-600">
+              Search
+            </Button>
           </div>
-          
-          {/* Add the Skin Type Select component */}
-          <div>
-            <div className="flex items-center gap-2">
-              <Select value={searchSkinType} onValueChange={setSearchSkinType}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select Skin Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {skinTypes.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button onClick={handleSearchBySkinType}>Search</Button>
-            </div>
-          </div>
-          
-          <div className="flex justify-end">
-            <Button variant="outline" onClick={handleResetFilters} className="w-full md:w-auto">
+
+          {/* Reset button */}
+          <div className="flex items-center justify-end">
+            <Button
+              variant="outline"
+              onClick={handleResetFilters}
+              className="w-full md:w-auto border-gray-300"
+            >
               Reset All Filters
             </Button>
           </div>
         </div>
       </div>
-
       <div className="flex gap-6 justify-center flex-col md:flex-row">
         {/* Sidebar */}
         <div className="w-full md:w-1/4">

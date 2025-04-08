@@ -210,11 +210,6 @@ export default function CustomerList() {
 
   return (
     <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Customer Management</h1>
-        <Button onClick={() => router.push("/manager/users/create")}>Create New Customer</Button>
-      </div>
-
       {/* Filters */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div>

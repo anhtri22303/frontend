@@ -69,7 +69,7 @@ export default function RoutineDetailPage() {
         console.log("Fetched user data:", userData);
         
         if (!userData.skinCareRoutine) {
-          toast.info("Please complete the skin quiz first to get personalized routines");
+          toast("Please complete the skin quiz first to get personalized routines");
           router.push("/skin-quiz");
           return;
         }

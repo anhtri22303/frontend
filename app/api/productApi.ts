@@ -11,6 +11,17 @@ export const fetchProducts = async () => {
   }
 };
 
+export const fetchProductsWithActive = async () => {
+  try {
+    const response = await axiosInstance.get("/customer/products");
+    console.log("Get product success", response.data.data);
+    return response.data.data || [];
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    return [];
+  }
+};
+
 export const createProduct = async (productData: {
   productName: string;
   description: string;
@@ -134,6 +145,27 @@ export const fetchProductsByFilters = async (filters: {
 }) => {
   try {
     const response = await axiosInstance.get("/products/filter", {
+      params: filters,
+    });
+    console.log("Get by filters success", response.data);
+    if (response.data.success) {
+      return response.data.data || [];
+    }
+    return [];
+  } catch (error) {
+    console.error("Error fetching products by filters:", error);
+    return [];
+  }
+};
+
+export const fetchProductsByFiltersWithActive = async (filters: {
+  categories?: string;
+  skinTypes?: string;
+  minPrice?: number;
+  maxPrice?: number;
+}) => {
+  try {
+    const response = await axiosInstance.get("/customer/products/filter", {
       params: filters,
     });
     console.log("Get by filters success", response.data);

@@ -5,16 +5,25 @@ import { useRouter } from "next/navigation";
 import { MoreHorizontal } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { fetchOrdersByUserID } from "@/app/api/orderCustomerApi";
 import toast from "react-hot-toast";
 
+// Updated Order interface to include the new fields
 interface Order {
   orderID: string;
   customerID: string;
   orderDate: string;
   status: string;
   totalAmount: number;
+  discountedTotalAmount: number; // New field
+  paymentMethodType: string; // New field
+  paymentBrand: string; // New field
 }
 
 export default function OrdersPage() {
@@ -30,13 +39,13 @@ export default function OrdersPage() {
       return;
     }
     loadOrders(userID);
-  }, []);
+  }, [router]);
 
   const loadOrders = async (userID: string) => {
     setIsLoading(true);
     try {
       const response = await fetchOrdersByUserID(userID);
-      console.log("", response.data);
+      console.log("Orders fetched:", response.data);
       setOrders(response.data || []);
     } catch (error) {
       console.error("Error loading orders:", error);
@@ -51,37 +60,47 @@ export default function OrdersPage() {
   };
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">My Orders</h1>
+    <div className="p-6 bg-gray-50 min-h-screen">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-4xl font-extrabold text-gray-800">My Orders</h1>
       </div>
 
-      <div className="rounded-md border">
-        <table className="w-full">
+      {/* Orders Table */}
+      <div className="rounded-lg border shadow-lg bg-white overflow-hidden">
+        <table className="w-full table-auto">
           <thead>
-            <tr className="border-b bg-muted/50">
-              <th className="p-4 text-left font-medium">Order ID</th>
-              <th className="p-4 text-left font-medium">Order Date</th>
-              <th className="p-4 text-left font-medium">Status</th>
-              <th className="p-4 text-left font-medium">Total Amount</th>
-              <th className="p-4 text-left font-medium">Actions</th>
+            <tr className="bg-gray-100 text-gray-600 uppercase text-sm border-b">
+              <th className="p-4 text-left font-semibold">Order ID</th>
+              <th className="p-4 text-left font-semibold">Order Date</th>
+              <th className="p-4 text-left font-semibold">Status</th>
+              <th className="p-4 text-left font-semibold">Total Amount</th>
+              <th className="p-4 text-left font-semibold">Discounted Total</th>
+              <th className="p-4 text-left font-semibold">Payment Method</th>
+              <th className="p-4 text-left font-semibold">Payment Brand</th>
+              <th className="p-4 text-left font-semibold">Actions</th>
             </tr>
           </thead>
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={5} className="p-4 text-center text-muted-foreground">
+                <td colSpan={8} className="p-6 text-center text-gray-500">
                   Loading...
                 </td>
               </tr>
             ) : orders.length > 0 ? (
               orders.map((order) => (
-                <tr key={order.orderID} className="border-b">
-                  <td className="p-4">{order.orderID}</td>
-                  <td className="p-4">{new Date(order.orderDate).toLocaleDateString()}</td>
+                <tr
+                  key={order.orderID}
+                  className="border-b hover:bg-gray-50 transition-colors"
+                >
+                  <td className="p-4 text-gray-700">{order.orderID}</td>
+                  <td className="p-4 text-gray-700">
+                    {new Date(order.orderDate).toLocaleDateString()}
+                  </td>
                   <td className="p-4">
                     <span
-                      className={`px-2 py-1 rounded-full text-xs ${
+                      className={`px-3 py-1 rounded-full text-xs font-medium shadow-sm ${
                         order.status === "PENDING"
                           ? "bg-yellow-100 text-yellow-800"
                           : order.status === "PROCESSING"
@@ -94,16 +113,33 @@ export default function OrdersPage() {
                       {order.status}
                     </span>
                   </td>
-                  <td className="p-4">${order.totalAmount.toFixed(2)}</td>
+                  <td className="p-4 text-gray-700">
+                    ${order.totalAmount.toFixed(2)}
+                  </td>
+                  <td className="p-4 text-gray-700">
+                    ${order.discountedTotalAmount.toFixed(2)}
+                  </td>
+                  <td className="p-4 text-gray-700">
+                    {order.paymentMethodType || "N/A"}
+                  </td>
+                  <td className="p-4 text-gray-700">
+                    {order.paymentBrand || "N/A"}
+                  </td>
                   <td className="p-4">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
+                        <Button
+                          variant="ghost"
+                          className="h-9 w-9 p-0 rounded-full hover:bg-gray-200 transition-colors"
+                        >
+                          <MoreHorizontal className="h-5 w-5 text-gray-600" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleViewDetails(order.orderID)}>
+                      <DropdownMenuContent align="end" className="bg-white shadow-md">
+                        <DropdownMenuItem
+                          onClick={() => handleViewDetails(order.orderID)}
+                          className="text-gray-700 hover:bg-gray-100"
+                        >
                           View Details
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -113,7 +149,7 @@ export default function OrdersPage() {
               ))
             ) : (
               <tr>
-                <td colSpan={5} className="p-4 text-center text-muted-foreground">
+                <td colSpan={8} className="p-6 text-center text-gray-500">
                   No orders found.
                 </td>
               </tr>
