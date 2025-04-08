@@ -133,7 +133,7 @@ export default function SuccessPage() {
   };
 
   const handleViewOrderHistory = () => {
-    router.push("/order-history");
+    router.push("/orders");
   };
 
   const renderPaymentBadge = (payment: string | undefined) => {
@@ -190,13 +190,6 @@ export default function SuccessPage() {
             >
               {orderInfo.status || "-"}
             </span>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500 mb-1">Payment Method</p>
-            <div className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-gray-500" />
-              {renderPaymentBadge(orderInfo.payment)}
-            </div>
           </div>
         </div>
 
@@ -309,13 +302,13 @@ export default function SuccessPage() {
         >
           Continue Shopping
         </Button>
-        <Button
+        {/* <Button
           onClick={handleViewOrderHistory}
           variant="outline"
           className="px-8 py-3 border-gray-300 text-gray-700 hover:bg-gray-100 rounded-lg transition-all duration-300"
         >
           View Order History
-        </Button>
+        </Button> */}
       </div>
     </div>
   );

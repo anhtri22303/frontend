@@ -123,13 +123,6 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
                 {order.status}
               </span>
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Payment Method</p>
-              <div className="flex items-center gap-1 mt-1">
-                <CreditCard className="h-4 w-4 text-muted-foreground" />
-                {renderPaymentBadge(order.payment)}
-              </div>
-            </div>
             {order.discountPercentage && (
               <div>
                 <p className="text-sm text-muted-foreground">Order Promotion</p>
@@ -211,7 +204,13 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
                           ${detail.discountedTotalAmount.toFixed(2)}
                         </span>
                       ) : (
-                        <span className="text-gray-400">N/A</span>
+                        <span className="text-green-600">
+                          $
+                          {(
+                            (detail.discountPrice || detail.productPrice || 0) *
+                            detail.quantity
+                          ).toFixed(2)}
+                        </span>
                       )}
                     </td>
                     <td className="p-4">

@@ -244,13 +244,6 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
                 {order.status}
               </span>
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Payment Method</p>
-              <div className="flex items-center gap-1 mt-1">
-                <CreditCard className="h-4 w-4 text-muted-foreground" />
-                {renderPaymentBadge(order.payment)}
-              </div>
-            </div>
             {order.promotion && (
               <div>
                 <p className="text-sm text-muted-foreground">Order Promotion</p>

@@ -307,7 +307,6 @@ export default function OrdersPage() {
               <th className="p-4 text-left font-medium">Customer ID</th>
               <th className="p-4 text-left font-medium">Order Date</th>
               <th className="p-4 text-left font-medium">Status</th>
-              <th className="p-4 text-left font-medium">Payment</th>
               <th className="p-4 text-left font-medium">Total</th>
               <th className="p-4 text-left font-medium">Actions</th>
             </tr>
@@ -332,9 +331,6 @@ export default function OrdersPage() {
         >
           {filteredOrder.status}
         </span>
-      </td>
-      <td className="p-4">
-        {renderPaymentBadge(filteredOrder.payment)}
       </td>
       <td className="p-4">
         ${filteredOrder.discountedTotalAmount 
@@ -383,9 +379,6 @@ export default function OrdersPage() {
           </span>
         </td>
         <td className="p-4">
-          {renderPaymentBadge(order.payment)}
-        </td>
-        <td className="p-4">
           ${order.discountedTotalAmount 
             ? order.discountedTotalAmount.toFixed(2) 
             : order.totalAmount 
@@ -413,13 +406,12 @@ export default function OrdersPage() {
     ))
   ) : (
     <tr>
-      <td colSpan={7} className="p-4 text-center text-muted-foreground">
+      <td colSpan={6} className="p-4 text-center text-muted-foreground">
         No orders found
       </td>
     </tr>
   )}
 </tbody>
-
         </table>
       </div>
 

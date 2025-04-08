@@ -76,8 +76,6 @@ export default function OrdersPage() {
               <th className="p-4 text-left font-semibold">Status</th>
               <th className="p-4 text-left font-semibold">Total Amount</th>
               <th className="p-4 text-left font-semibold">Discounted Total</th>
-              <th className="p-4 text-left font-semibold">Payment Method</th>
-              <th className="p-4 text-left font-semibold">Payment Brand</th>
               <th className="p-4 text-left font-semibold">Actions</th>
             </tr>
           </thead>
@@ -118,12 +116,6 @@ export default function OrdersPage() {
                   </td>
                   <td className="p-4 text-gray-700">
                     ${order.discountedTotalAmount.toFixed(2)}
-                  </td>
-                  <td className="p-4 text-gray-700">
-                    {order.paymentMethodType || "N/A"}
-                  </td>
-                  <td className="p-4 text-gray-700">
-                    {order.paymentBrand || "N/A"}
                   </td>
                   <td className="p-4">
                     <DropdownMenu>
