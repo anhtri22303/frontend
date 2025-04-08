@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { PlusCircle, MoreHorizontal } from "lucide-react";
+import { PlusCircle, MoreHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { fetchProducts, deleteProduct, fetchProductsByCategory, fetchProductsByName, fetchProductsBySkinType, fetchProductById } from "@/app/api/productApi";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import toast from "react-hot-toast";
 
 interface Product {
   productID: string;
@@ -31,6 +32,11 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const itemsPerPage = 10;
 
   const categories = ["Cleanser", "Toner", "Serum", "Moisturizer", "Sunscreen", "Mask"];
   const skinTypes = ["Dry", "Oily", "Combination", "Sensitive", "Normal"];
@@ -38,6 +44,13 @@ export default function ProductsPage() {
   useEffect(() => {
     loadProducts();
   }, []);
+  
+  useEffect(() => {
+    // Calculate total pages whenever products array changes
+    setTotalPages(Math.ceil(products.length / itemsPerPage));
+    // Reset to first page when data changes
+    setCurrentPage(1);
+  }, [products]);
 
   const loadProducts = async () => {
     try {
@@ -50,6 +63,7 @@ export default function ProductsPage() {
       console.error("Error loading products:", error);
       setError("Failed to load products. Please try again.");
       setProducts([]);
+      toast.error("Failed to load products");
     } finally {
       setLoading(false);
     }
@@ -117,13 +131,16 @@ export default function ProductsPage() {
       const response = await fetchProductsByName(searchName);
       if (response.success) {
         setProducts(response.data);
+        toast.success(`Found ${response.data.length} products`);
       } else {
         setProducts([]);
+        toast.error("No products found with that name");
       }
     } catch (error) {
       console.error("Error searching products:", error);
       setError("Failed to search products.");
       setProducts([]);
+      toast.error("Failed to search products");
     } finally {
       setLoading(false);
     }
@@ -139,10 +156,12 @@ export default function ProductsPage() {
       setLoading(true);
       const response = await fetchProductsByCategory(category);
       setProducts(response.data || []);
+      toast.success(`Found ${response.data.length} products in ${category} category`);
     } catch (error) {
       console.error("Error filtering products by category:", error);
       setError("Failed to filter products by category.");
       setProducts([]);
+      toast.error("Failed to filter products by category");
     } finally {
       setLoading(false);
     }
@@ -161,10 +180,12 @@ export default function ProductsPage() {
       try {
         setLoading(true);
         await deleteProduct(productId);
+        toast.success("Product deleted successfully");
         await loadProducts();
       } catch (error) {
         console.error("Error deleting product:", error);
         setError("Failed to delete product.");
+        toast.error("Failed to delete product");
       } finally {
         setLoading(false);
       }
@@ -179,11 +200,18 @@ export default function ProductsPage() {
     try {
       setLoading(true);
       const product = await fetchProductById(searchId);
-      setProducts(product ? [product] : []);
+      if (product) {
+        setProducts([product]);
+        toast.success("Product found");
+      } else {
+        setProducts([]);
+        toast.error("No product found with that ID");
+      }
     } catch (error) {
       console.error("Error searching product by ID:", error);
       setError("Failed to search product by ID.");
       setProducts([]);
+      toast.error("Failed to search product by ID");
     } finally {
       setLoading(false);
     }
@@ -198,10 +226,12 @@ export default function ProductsPage() {
       setLoading(true);
       const response = await fetchProductsBySkinType(searchSkinType);
       setProducts(response);
+      toast.success(`Found ${response.length} products for ${searchSkinType} skin type`);
     } catch (error) {
       console.error("Error searching products by skin type:", error);
       setError("Failed to search products by skin type.");
       setProducts([]);
+      toast.error("Failed to search products by skin type");
     } finally {
       setLoading(false);
     }
@@ -212,6 +242,82 @@ export default function ProductsPage() {
     setSearchSkinType("");
     setSelectedCategory("");
     loadProducts();
+    toast.success("Filters reset");
+  };
+  
+  // Get current page data
+  const getCurrentPageData = () => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return products.slice(startIndex, endIndex);
+  };
+
+  // Handle pagination
+  const nextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const prevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  // Generate page numbers for pagination
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxPagesToShow = 5;
+    
+    if (totalPages <= maxPagesToShow) {
+      // Show all pages if total pages are less than or equal to maxPagesToShow
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Always add first page
+      pages.push(1);
+      
+      // Calculate start and end pages to show
+      let startPage = Math.max(2, currentPage - 1);
+      let endPage = Math.min(totalPages - 1, currentPage + 1);
+      
+      // Adjust if we're near the start or end
+      if (currentPage <= 2) {
+        endPage = 3;
+      } else if (currentPage >= totalPages - 1) {
+        startPage = totalPages - 2;
+      }
+      
+      // Add ellipsis if needed before middle pages
+      if (startPage > 2) {
+        pages.push('...');
+      }
+      
+      // Add middle pages
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+      
+      // Add ellipsis if needed after middle pages
+      if (endPage < totalPages - 1) {
+        pages.push('...');
+      }
+      
+      // Always add last page
+      if (totalPages > 1) {
+        pages.push(totalPages);
+      }
+    }
+    
+    return pages;
   };
 
   if (loading) {
@@ -313,7 +419,7 @@ export default function ProductsPage() {
                 </tr>
               </thead>
               <tbody>
-                {products.map((product) => {
+                {getCurrentPageData().map((product) => {
                   const skinTypesArray = parseSkinTypes(product.skinTypes);
                   return (
                     <tr key={product.productID} className="border-b">
@@ -398,20 +504,59 @@ export default function ProductsPage() {
             </div>
           )}
         </div>
+        
+        {/* Pagination */}
         {products.length > 0 && (
           <div className="flex items-center justify-between px-4 py-3 border-t">
             <div className="text-sm text-muted-foreground">
-              Showing <span className="font-medium">1</span> to <span className="font-medium">{products.length}</span> of{" "}
+              Showing <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> to{" "}
+              <span className="font-medium">
+                {Math.min(currentPage * itemsPerPage, products.length)}
+              </span> of{" "}
               <span className="font-medium">{products.length}</span> products
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" disabled>
-                Previous
-              </Button>
-              <Button variant="outline" size="sm" disabled>
-                Next
-              </Button>
-            </div>
+            
+            {totalPages > 1 && (
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={prevPage}
+                  disabled={currentPage === 1}
+                  className="w-8 h-8 p-0"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                
+                {getPageNumbers().map((page, index) => (
+                  typeof page === 'number' ? (
+                    <Button
+                      key={index}
+                      variant={currentPage === page ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => goToPage(page)}
+                      className="w-8 h-8 p-0"
+                    >
+                      {page}
+                    </Button>
+                  ) : (
+                    <span key={index} className="px-1">
+                      {page}
+                    </span>
+                  )
+                ))}
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={nextPage}
+                  disabled={currentPage === totalPages}
+                  className="w-8 h-8 p-0"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>
