@@ -44,7 +44,7 @@ interface SidebarLink {
 
 
 const managerLinks: SidebarLink[] = [
-  { href: "/manager", label: "Dasboard", icon: <Database className="h-6 w-6" /> },
+  { href: "/manager", label: "Dashboard", icon: <Database className="h-6 w-6" /> },
   { href: "/manager/users", label: "Users", icon: <Users className="h-6 w-6" /> },
   { href: "/manager/customers", label: "Customers", icon: <Users className="h-6 w-6" /> },
   { href: "/manager/orders", label: "Orders", icon: <ShoppingCart className="h-6 w-6" /> },
@@ -58,7 +58,7 @@ const managerLinks: SidebarLink[] = [
 
 
 const staffLinks: SidebarLink[] = [
-  { href: "/staff", label: "Dasboard", icon: <Database className="h-6 w-6" /> },
+  { href: "/staff", label: "Dashboard", icon: <Database className="h-6 w-6" /> },
   { href: "/staff/products", label: "Products", icon: <Package className="h-6 w-6" /> },
   { href: "/staff/feedbacks", label: "Feedbacks", icon: <Command className="h-6 w-6" /> },
   // { href: "/staff/orders", label: "Orders", icon: <ShoppingCart className="h-6 w-6" /> },

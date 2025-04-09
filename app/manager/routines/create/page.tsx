@@ -5,8 +5,6 @@ import { useRouter } from "next/navigation";
 import { createRoutine } from "@/app/api/routineApi";
 import { fetchProductsBySkinType } from "@/app/api/productApi";
 import { Search, X } from "lucide-react";
-import { fetchProductsBySkinType } from "@/app/api/productApi";
-import { Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,22 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -54,15 +37,12 @@ export default function CreateRoutinePage() {
   const [isProductListOpen, setIsProductListOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
 
-  // Fetch products whenever skinType changes
   useEffect(() => {
     const fetchFilteredProducts = async () => {
       if (formData.skinType) {
         try {
           const response = await fetchProductsBySkinType(formData.skinType);
-          setAllProducts(response || []);
           setAllProducts(response || []);
         } catch (error) {
           console.error("Error fetching products by skin type:", error);
@@ -70,30 +50,12 @@ export default function CreateRoutinePage() {
         }
       } else {
         setAllProducts([]);
-        setAllProducts([]);
       }
     };
 
     fetchFilteredProducts();
   }, [formData.skinType]);
 
-  // Filter products based on search term
-  const filteredProducts = searchTerm
-    ? allProducts.filter(
-        (product) =>
-          product.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          product.productID.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (product.category &&
-            product.category.toLowerCase().includes(searchTerm.toLowerCase()))
-      )
-    : allProducts;
-
-  const categories = ["Cleanser", "Toner", "Serum", "Moisturizer", "Sunscreen"];
-  const filteredCategories = categories.filter((category) =>
-    filteredProducts.some((product) => product.category === category)
-  );
-
-  // Filter products based on search term
   const filteredProducts = searchTerm
     ? allProducts.filter(
         (product) =>
@@ -131,9 +93,6 @@ export default function CreateRoutinePage() {
       prev.includes(productID)
         ? prev.filter((id) => id !== productID)
         : [...prev, productID]
-      prev.includes(productID)
-        ? prev.filter((id) => id !== productID)
-        : [...prev, productID]
     );
   };
 
@@ -147,12 +106,8 @@ export default function CreateRoutinePage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <label className="block text-sm font-medium">Skin type</label>
-              <label className="block text-sm font-medium">Skin type</label>
               <Select
                 value={formData.skinType}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, skinType: value })
-                }
                 onValueChange={(value) =>
                   setFormData({ ...formData, skinType: value })
                 }
@@ -172,7 +127,6 @@ export default function CreateRoutinePage() {
 
             <div className="space-y-2">
               <label className="block text-sm font-medium">Routine Name</label>
-              <label className="block text-sm font-medium">Routine Name</label>
               <Input
                 value={formData.routineName}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
@@ -180,12 +134,10 @@ export default function CreateRoutinePage() {
                 }
                 placeholder="Enter routine name"
                 disabled={isLoading}
-                disabled={isLoading}
               />
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium">Description</label>
               <label className="block text-sm font-medium">Description</label>
               <Textarea
                 value={formData.routineDescription}
@@ -194,13 +146,11 @@ export default function CreateRoutinePage() {
                 }
                 placeholder="Enter routine description"
                 disabled={isLoading}
-                disabled={isLoading}
               />
             </div>
 
             <div className="space-y-2">
               <label className="block text-sm font-medium">List Product</label>
-
               <Dialog open={isProductListOpen} onOpenChange={setIsProductListOpen}>
                 <DialogTrigger asChild>
                   <Button
@@ -217,7 +167,6 @@ export default function CreateRoutinePage() {
                   <DialogHeader>
                     <DialogTitle>Select Products</DialogTitle>
                   </DialogHeader>
-
                   <div className="relative mb-4">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input
@@ -227,21 +176,7 @@ export default function CreateRoutinePage() {
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
                   </div>
-
                   <div className="mt-4">
-                    {filteredCategories.map((category) => {
-                      const categoryProducts = filteredProducts.filter(
-                        (product) => product.category === category
-                      );
-                      if (categoryProducts.length === 0) return null;
-
-                      return (
-                        <div key={category} className="mb-6">
-                          <h3 className="font-semibold text-lg mb-2 border-b pb-1">
-                            {category}
-                          </h3>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            {categoryProducts.map((product) => (
                     {filteredCategories.map((category) => {
                       const categoryProducts = filteredProducts.filter(
                         (product) => product.category === category
@@ -284,33 +219,6 @@ export default function CreateRoutinePage() {
                                     )}
                                   </div>
                                 </div>
-                                className={`p-3 border rounded-md cursor-pointer flex items-center gap-3 ${
-                                  productIDs.includes(product.productID)
-                                    ? "bg-primary/5 border-primary"
-                                    : ""
-                                }`}
-                                onClick={() => toggleProductSelection(product.productID)}
-                              >
-                                <Checkbox
-                                  checked={productIDs.includes(product.productID)}
-                                  className="pointer-events-none"
-                                />
-                                <div className="flex-1">
-                                  <p className="font-medium">{product.productName}</p>
-                                  <p className="text-sm text-gray-500">
-                                    ID: {product.productID}
-                                  </p>
-                                  <div className="flex justify-between">
-                                    <span className="text-sm text-gray-500">
-                                      {product.category || "N/A"}
-                                    </span>
-                                    {product.price && (
-                                      <span className="text-sm font-medium">
-                                        ${product.price.toFixed(2)}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
                               </div>
                             ))}
                           </div>
@@ -323,7 +231,6 @@ export default function CreateRoutinePage() {
                       </p>
                     )}
                   </div>
-
                   <div className="flex justify-between mt-4 pt-4 border-t">
                     <span className="text-sm text-gray-500">
                       {productIDs.length} products selected
@@ -343,52 +250,6 @@ export default function CreateRoutinePage() {
                 </DialogContent>
               </Dialog>
 
-              {/* Display selected products */}
-              {productIDs.length > 0 && (
-                <div className="mt-2 space-y-2">
-                  {allProducts
-                    .filter((product) => productIDs.includes(product.productID))
-                    .map((product) => (
-                      <div
-                        key={product.productID}
-                        className="flex justify-between items-center p-2 bg-gray-50 rounded-md"
-                      >
-                        <div>
-                          <p className="font-medium">{product.productName}</p>
-                          <p className="text-xs text-gray-500">
-                            ID: {product.productID}
-                          </p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                    {filteredProducts.length === 0 && (
-                      <p className="text-center text-gray-500 my-8">
-                        No products found for this skin type or search term
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="flex justify-between mt-4 pt-4 border-t">
-                    <span className="text-sm text-gray-500">
-                      {productIDs.length} products selected
-                    </span>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => setIsProductListOpen(false)}
-                      >
-                        Cancel
-                      </Button>
-                      <Button onClick={() => setIsProductListOpen(false)}>
-                        Apply
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-
-              {/* Display selected products */}
               {productIDs.length > 0 && (
                 <div className="mt-2 space-y-2">
                   {allProducts
@@ -404,14 +265,6 @@ export default function CreateRoutinePage() {
                             ID: {product.productID}
                           </p>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleProductSelection(product.productID)}
-                          type="button"
-                        >
-                          <X className="h-4 w-4 text-gray-500" />
-                        </Button>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -424,17 +277,9 @@ export default function CreateRoutinePage() {
                     ))}
                 </div>
               )}
-                </div>
-              )}
             </div>
 
             <div className="flex justify-end space-x-2 mt-6">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.back()}
-                disabled={isLoading}
-              >
               <Button
                 type="button"
                 variant="outline"

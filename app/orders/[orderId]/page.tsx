@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Tag, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Order, OrderDetail } from "@/app/api/orderCustomerApi";
-import { fetchOrderByIdForUser } from "@/app/api/orderCustomerApi";
+import { Order, OrderDetail ,fetchOrderByIdForUser} from "@/app/api/orderCustomerApi";
+import { updateOrder } from "@/app/api/orderApi";
 import toast from "react-hot-toast";
 import stripePromise from "@/lib/stripe-client";
 
@@ -15,22 +15,10 @@ interface OrderDetailsProps {
   };
 }
 
-// Extend OrderDetail type to include necessary fields
 interface ExtendedOrderDetail extends OrderDetail {
-  discountPrice?: number; // Price after applying the discount
-  discountedTotalAmount?: number; // Total after discount for this product
-  discount?: number; // Discount percentage
-}
-
-interface ExtendedOrder extends Order {
-  orderDetails: ExtendedOrderDetail[];
-}
-
-// Extend OrderDetail type to include necessary fields
-interface ExtendedOrderDetail extends OrderDetail {
-  discountPrice?: number; // Price after applying the discount
-  discountedTotalAmount?: number; // Total after discount for this product
-  discount?: number; // Discount percentage
+  discountPrice?: number;
+  discountedTotalAmount?: number;
+  discount?: number;
 }
 
 interface ExtendedOrder extends Order {
@@ -63,11 +51,9 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
       const data = await fetchOrderByIdForUser(userID, params.orderId);
       console.log("Fetched order:", data);
 
-      // Process order details to calculate discountPrice and discountedTotalAmount
       if (data && data.orderDetails) {
         const processedOrderDetails = data.orderDetails.map((detail: ExtendedOrderDetail) => {
           const productPrice = detail.productPrice || 0;
-          // If there's a promotion (discount), calculate discountPrice and discountedTotalAmount
           if (detail.discount && detail.discount > 0) {
             const discountPrice = productPrice * (1 - detail.discount / 100);
             const discountedTotalAmount = discountPrice * detail.quantity;
@@ -78,16 +64,14 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
               discountedTotalAmount,
             };
           }
-          // If no promotion, use the original price
           return {
             ...detail,
             productPrice,
-            discountPrice: undefined, // No discount price
-            discountedTotalAmount: productPrice * detail.quantity, // Use original price * quantity
+            discountPrice: undefined,
+            discountedTotalAmount: productPrice * detail.quantity,
           };
         });
 
-        // Calculate totalAmount based on processed order details
         const calculatedTotal = processedOrderDetails.reduce(
           (sum: number, detail: ExtendedOrderDetail) =>
             sum + (detail.discountedTotalAmount || 0),
@@ -110,7 +94,6 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
     }
   };
 
-  // Function to handle payment for a pending order
   const handlePayOrder = async () => {
     if (!order) return;
 
@@ -172,6 +155,30 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
     }
   };
 
+  const handleCancelOrder = async () => {
+    if (!order) return;
+
+    try {
+      const userID = localStorage.getItem("userID");
+      if (!userID) {
+        toast.error("You need to be logged in to cancel orders.");
+        return;
+      }
+
+      if (!confirm("Are you sure you want to cancel this order?")) {
+        return;
+      }
+
+      await updateOrder(order.orderID, "CANCELLED");
+      await loadOrderDetails();
+        
+      toast.success("Order cancelled successfully");
+    } catch (error) {
+      console.error("Error cancelling order:", error);
+      toast.error("Failed to cancel order. Please try again.");
+    }
+  };
+
   const renderPaymentBadge = (payment: string | undefined) => {
     if (!payment) return <span className="px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-800">N/A</span>;
 
@@ -206,15 +213,26 @@ export default function OrderDetails({ params }: OrderDetailsProps) {
         <div className="rounded-lg border p-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold">Order Information</h2>
-            {order.status === "PENDING" && (
-              <Button
-                onClick={handlePayOrder}
-                disabled={isProcessingPayment}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                {isProcessingPayment ? "Processing..." : "Pay Order"}
-              </Button>
-            )}
+            <div className="space-x-2">
+              {order.status === "PENDING" && (
+                <>
+                  <Button
+                    onClick={handlePayOrder}
+                    disabled={isProcessingPayment}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    {isProcessingPayment ? "Processing..." : "Pay Order"}
+                  </Button>
+                  <Button
+                    onClick={handleCancelOrder}
+                    disabled={isProcessingPayment}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    Cancel Order
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
