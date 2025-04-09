@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/select";
 import { createProduct } from "@/app/api/productApi";
 import Image from "next/image";
-import { Plus, X } from "lucide-react"; // Thêm icon X để xóa
 
 export default function CreateProductPage() {
   const [newProduct, setNewProduct] = useState({
@@ -22,23 +21,17 @@ export default function CreateProductPage() {
     description: "",
     price: 0,
     category: "Cleanser",
-    skinTypes: ["Dry"] as string[], // Thay skinType bằng skinTypes là mảng
+    skinTypes: ["Dry"], // Changed to array to store multiple skin types
     rating: 0,
     imageFile: null as File | null,
     imagePreview: "",
   });
 
-  const [showSkinTypeSelect, setShowSkinTypeSelect] = useState(false); // Điều khiển hiển thị Select
   const router = useRouter();
 
   const handleCreateProduct = async () => {
     try {
-      // Chuẩn bị dữ liệu gửi lên, đảm bảo skinTypes là mảng
-      const productData = {
-        ...newProduct,
-        skinTypes: newProduct.skinTypes, // Gửi mảng skinTypes
-      };
-      await createProduct(productData);
+      await createProduct(newProduct);
       router.push("/staff/products");
     } catch (error) {
       console.error("Error creating product:", error);
@@ -56,22 +49,20 @@ export default function CreateProductPage() {
     }
   };
 
-  // Thêm skin type mới
-  const handleAddSkinType = (value: string) => {
+  const addSkinType = (value: string) => {
+    // Only add if the skin type isn't already selected
     if (!newProduct.skinTypes.includes(value)) {
       setNewProduct({
         ...newProduct,
         skinTypes: [...newProduct.skinTypes, value],
       });
     }
-    setShowSkinTypeSelect(false); // Ẩn Select sau khi chọn
   };
 
-  // Xóa skin type
-  const handleRemoveSkinType = (skinType: string) => {
+  const removeSkinType = (skinTypeToRemove: string) => {
     setNewProduct({
       ...newProduct,
-      skinTypes: newProduct.skinTypes.filter((type) => type !== skinType),
+      skinTypes: newProduct.skinTypes.filter((type) => type !== skinTypeToRemove),
     });
   };
 
@@ -138,51 +129,53 @@ export default function CreateProductPage() {
 
         <div>
           <label className="text-sm font-medium mb-1 block">Skin Types</label>
-          <div className="flex flex-wrap gap-2 mb-2">
-            {newProduct.skinTypes.map((type) => (
-              <div
-                key={type}
-                className="flex items-center bg-gray-100 px-2 py-1 rounded-md"
-              >
-                <span>{type}</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="ml-1 p-0 h-4 w-4"
-                  onClick={() => handleRemoveSkinType(type)}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              </div>
-            ))}
-          </div>
-          {showSkinTypeSelect ? (
+          <div className="flex items-center gap-2">
             <Select
-              onValueChange={handleAddSkinType}
+              onValueChange={addSkinType}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Select skin type" />
               </SelectTrigger>
               <SelectContent>
-                {["Dry", "Oily", "Combination", "Sensitive", "Normal"]
-                  .filter((type) => !newProduct.skinTypes.includes(type)) // Lọc các loại đã chọn
-                  .map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))}
+                <SelectItem value="Dry">Dry</SelectItem>
+                <SelectItem value="Oily">Oily</SelectItem>
+                <SelectItem value="Combination">Combination</SelectItem>
+                <SelectItem value="Sensitive">Sensitive</SelectItem>
+                <SelectItem value="Normal">Normal</SelectItem>
               </SelectContent>
             </Select>
-          ) : (
             <Button
+              type="button"
               variant="outline"
-              size="sm"
-              onClick={() => setShowSkinTypeSelect(true)}
-              disabled={newProduct.skinTypes.length >= 5} // Vô hiệu hóa nếu đã chọn đủ 5
+              size="icon"
+              onClick={() => {
+                const lastSelected = newProduct.skinTypes[newProduct.skinTypes.length - 1];
+                if (lastSelected && !newProduct.skinTypes.includes(lastSelected)) {
+                  addSkinType(lastSelected);
+                }
+              }}
             >
-              <Plus className="h-4 w-4 mr-1" /> Add Skin Type
+              +
             </Button>
-          )}
+          </div>
+          {/* Display selected skin types */}
+          <div className="mt-2 flex flex-wrap gap-2">
+            {newProduct.skinTypes.map((type) => (
+              <div
+                key={type}
+                className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded-md text-sm"
+              >
+                {type}
+                <button
+                  type="button"
+                  onClick={() => removeSkinType(type)}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div>
@@ -200,7 +193,6 @@ export default function CreateProductPage() {
           />
         </div>
 
-        {/* --- Image Upload --- */}
         <div>
           <label className="text-sm font-medium mb-1 block">Product Image</label>
           <div className="flex items-center gap-4">
@@ -231,11 +223,11 @@ export default function CreateProductPage() {
       </div>
 
       <div className="mt-6 flex gap-4">
-        <Button variant="outline" onClick={() => router.push("/staff/products")}>
-          Cancel
-        </Button>
-        <Button onClick={handleCreateProduct}>Create Product</Button>
+          <Button variant="outline" onClick={() => router.push("/staff/products")}>
+            Cancel
+          </Button>
+          <Button onClick={handleCreateProduct}>Create Product</Button>
+        </div>
       </div>
-    </div>
   );
 }
