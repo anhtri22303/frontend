@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { createProduct } from "@/app/api/productApi";
 import Image from "next/image";
+import toast from "react-hot-toast";
 
 export default function CreateProductPage() {
   const [newProduct, setNewProduct] = useState({
@@ -31,10 +32,19 @@ export default function CreateProductPage() {
 
   const handleCreateProduct = async () => {
     try {
-      await createProduct(newProduct);
+      const productData = {
+        ...newProduct,
+        skinTypes: [...newProduct.skinTypes], // Đảm bảo là mảng
+      };
+
+      console.log("Product Data:", productData); // Kiểm tra dữ liệu trước khi gửi
+      await createProduct(productData);
+
+      toast.success("Product created successfully!");
       router.push("/manager/products");
     } catch (error) {
       console.error("Error creating product:", error);
+      toast.error("Failed to create product. Please try again.");
     }
   };
 

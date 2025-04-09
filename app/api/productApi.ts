@@ -22,29 +22,16 @@ export const fetchProductsWithActive = async () => {
   }
 };
 
-export const createProduct = async (productData: {
-  productName: string;
-  description: string;
-  price: number;
-  category: string;
-  skinTypes: string[]; // Changed to skinTypes: string[]
-  rating: number;
-  imageFile: File | null;
-  imagePreview: string;
-}) => {
+export async function createProduct(productData: any) {
   try {
     const formData = new FormData();
-    const { imageFile, imagePreview, ...productInfo } = productData;
-    // Join skinTypes array into a comma-separated string for the API
-    formData.append(
-      "product",
-      JSON.stringify({
-        ...productInfo,
-        skinTypes: productInfo.skinTypes.join(","), // Convert array to string
-      })
-    );
-    if (imageFile) {
-      formData.append("image", imageFile);
+
+    // Thêm dữ liệu JSON vào phần "product"
+    formData.append("product", JSON.stringify(productData));
+
+    // Nếu có file ảnh, thêm vào phần "image"
+    if (productData.imageFile) {
+      formData.append("image", productData.imageFile);
     }
 
     const response = await axiosInstance.post("/products", formData, {
@@ -59,7 +46,7 @@ export const createProduct = async (productData: {
     console.error("Error creating product:", error);
     throw error;
   }
-};
+}
 
 export const updateProduct = async (id: string, formData: FormData) => {
   try {
