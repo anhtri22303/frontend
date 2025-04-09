@@ -141,7 +141,7 @@ export default function SkinQuiz() {
   
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-center mb-8">Bài kiểm tra loại da</h1>
+      <h1 className="text-3xl font-bold text-center mb-8">Skin Type Test</h1>
       <Card className="max-w-2xl mx-auto">
         <CardContent className="p-6">
           <div className="mb-6">
@@ -151,7 +151,8 @@ export default function SkinQuiz() {
                   {tiebreakerQuiz?.quizText || "Câu hỏi quyết định"}
                 </h2>
                 <p className="mb-4 text-sm text-gray-600">
-                  Hãy chọn câu trả lời phù hợp nhất với bạn để xác định loại da chính xác.
+                  Choose the answer that best suits you to determine your exact
+                  skin type.
                 </p>
                 <RadioGroup
                   value={currentSelection || ""}
@@ -160,19 +161,29 @@ export default function SkinQuiz() {
                 >
                   {tiebreakerOptions.length > 0 ? (
                     tiebreakerOptions.map((option) => (
-                      <div key={option.optionID} className="flex items-center space-x-2">
-                        <RadioGroupItem value={option.optionText} id={option.optionID} />
-                        <Label htmlFor={option.optionID}>{option.optionText}</Label>
+                      <div
+                        key={option.optionID}
+                        className="flex items-center space-x-2"
+                      >
+                        <RadioGroupItem
+                          value={option.optionText}
+                          id={option.optionID}
+                        />
+                        <Label htmlFor={option.optionID}>
+                          {option.optionText}
+                        </Label>
                       </div>
                     ))
                   ) : (
-                    <div>Không có tùy chọn khả dụng</div>
+                    <div>No options available</div>
                   )}
                 </RadioGroup>
               </>
             ) : (
               <>
-                <h2 className="text-xl font-semibold mb-4">{currentQuiz.quizText}</h2>
+                <h2 className="text-xl font-semibold mb-4">
+                  {currentQuiz.quizText}
+                </h2>
                 <RadioGroup
                   value={currentSelection || ""}
                   onValueChange={(value) => setCurrentSelection(value)}
@@ -180,13 +191,21 @@ export default function SkinQuiz() {
                 >
                   {currentQuiz?.answerOptionDTOS?.length ? (
                     currentQuiz.answerOptionDTOS.map((option) => (
-                      <div key={option.optionID} className="flex items-center space-x-2">
-                        <RadioGroupItem value={option.optionText} id={option.optionID} />
-                        <Label htmlFor={option.optionID}>{option.optionText}</Label>
+                      <div
+                        key={option.optionID}
+                        className="flex items-center space-x-2"
+                      >
+                        <RadioGroupItem
+                          value={option.optionText}
+                          id={option.optionID}
+                        />
+                        <Label htmlFor={option.optionID}>
+                          {option.optionText}
+                        </Label>
                       </div>
                     ))
                   ) : (
-                    <div>Không có tùy chọn khả dụng</div>
+                    <div>No options available</div>
                   )}
                 </RadioGroup>
               </>
@@ -197,18 +216,18 @@ export default function SkinQuiz() {
             disabled={!currentSelection}
             className="w-full"
           >
-            {showTiebreakerQuestion 
-              ? "Xem kết quả" 
-              : currentQuestionIndex === quizzes.length - 1 
-                ? "Xem kết quả" 
-                : "Câu hỏi tiếp theo"}
+            {showTiebreakerQuestion
+              ? "Xem kết quả"
+              : currentQuestionIndex === quizzes.length - 1
+              ? "Xem kết quả"
+              : "Câu hỏi tiếp theo"}
           </Button>
         </CardContent>
       </Card>
       <div className="mt-4 text-center text-sm text-gray-500">
-        {showTiebreakerQuestion 
-          ? "Câu hỏi quyết định"
-          : `Câu hỏi ${currentQuestionIndex + 1} trong số ${quizzes.length}`}
+        {showTiebreakerQuestion
+          ? "Decisive question"
+          : `Question ${currentQuestionIndex + 1} in of ${quizzes.length}`}
       </div>
     </div>
   );
